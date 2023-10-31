@@ -1,0 +1,91 @@
+body {
+  background-color: aquamarine;
+}
+
+.q_paper_base {
+  width: 90%;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  margin-top: 10px;
+  border-radius: 25px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.q_block {
+  width: 95%;
+  padding: 2%;
+  height: auto;
+  /*background-color: yellowgreen;*/
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  margin-top: 10px;
+  /* margin: 10px; */
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin-top: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+.q_block p {
+  font-weight: bold;
+}
+
+.snip {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  margin-top: 10px;
+  /* margin: 10px; */
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 1.5%;
+  margin: 1%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.sub {
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.submit_btn {
+  width: 200px;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(4px);
+  margin-top: 10px;
+  /* margin: 10px; */
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  margin-top: 20px;
+  margin: 2%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+.submit_btn p {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.submit_btn:hover {
+  border-top-right-radius: 25px;
+  border-bottom-right-radius: 25px;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
+}
+
+/*# sourceMappingURL=token.css.map */
