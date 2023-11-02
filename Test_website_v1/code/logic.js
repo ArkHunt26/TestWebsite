@@ -89,7 +89,7 @@ if (document.getElementById("6opt4").checked) {
 if (document.getElementById("7opt1").checked) {
     ++correct_count;
     // counter++;
-} else if(document.getElementById("7opt2").checked |document.getElementById("7opt2").checked | document.getElementById("7opt2").checked)
+} else if(document.getElementById("7opt2").checked |document.getElementById("7opt3").checked | document.getElementById("7opt4").checked)
 {
     ++incorrect_count;
     // counter++;
@@ -360,6 +360,6 @@ if (document.getElementById("30opt4").checked) {
     }
     else if(counter == 30)
     {
-        alert(name + "\n" + "Total marks = " + correct_count + "/30" + "\nincorrect marks" + incorrect_count);
+        alert(name + "\n" + "Total marks = " + correct_count + "/30" + "\nincorrect marks " + incorrect_count);
     }
 }
