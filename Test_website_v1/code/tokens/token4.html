@@ -296,28 +296,23 @@
                 <div class="snip">
                     #include < stdio.h ><br><br>
     
-                        int main(){<br>
-                            int i, j;<br>
-                        
-                            for (i = 2; i < 10; i++) {<br>
-                                &nbsp; &nbsp;    for (j = 2; j <= (i / j); j++)<br>
-                                &nbsp; &nbsp; &nbsp; &nbsp;    if (!(i % j))<br>
-                                &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;        break;<br>
-                                &nbsp; &nbsp; if (j > (i / j))<br>
-                                &nbsp; &nbsp;    printf("%d ", i);<br>
-                            }<br><br>
-                        
-                            &nbsp; &nbsp;return 0;<br>
-                        }<br>        
+            	    int main()<br>
+            	    {<br>
+                        &nbsp; &nbsp;signed char chr;<br>
+                        &nbsp; &nbsp;chr = 128;<br>
+                        &nbsp; &nbsp;printf("%d\n", chr);<br>
+                        &nbsp; &nbsp;return 0;<br>
+            	    }<br>
+       
                 </div>
                 <input type="radio" name="ans16" id="16opt1" value="HTML" required="required">
-                <label for="html">Excellent</label><br>
+                <label for="html">128</label><br>
                 <input type="radio" name="ans16" id="16opt2" value="C" required="required">
-                <label for="C">Pass</label><br>
+                <label for="C">-128</label><br>
                 <input type="radio" name="ans16" id="16opt3" value="C++" required="required">
-                <label for="C++">Fail</label><br>
+                <label for="C++">Depends on the compiler</label><br>
                 <input type="radio" name="ans16" id="16opt4" value="C++" required="required">
-                <label for="C++">None of these</label><br>
+                <label for="C++">None of the mentioned</label><br>
             </div>
 
 

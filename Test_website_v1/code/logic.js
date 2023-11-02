@@ -187,10 +187,10 @@ if (document.getElementById("15opt3").checked) {
 }
 
 /// 16//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-if (document.getElementById("16opt3").checked) {
+if (document.getElementById("16opt2").checked) {
     ++correct_count;
     // counter++;
-} else if(document.getElementById("16opt1").checked |document.getElementById("16opt2").checked | document.getElementById("16opt4").checked)
+} else if(document.getElementById("16opt1").checked |document.getElementById("16opt3").checked | document.getElementById("16opt4").checked)
 {
     ++incorrect_count;
     // counter++;
