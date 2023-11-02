@@ -4,12 +4,7 @@
 // }
 
 function check() {
-
-    // let opt1 = document.getElementById('op1');
-    // let opt2 = document.getElementById('op2');
-    // let opt3 = document.getElementById('op3');
-
-    var correct_count=0;
+    
     var incorrect_count=0;
     var correct_count=0;
     var counter=0;
