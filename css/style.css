@@ -1,70 +1,104 @@
-/* ===== Admin Dashboard Layout ===== */
+body{
+font-family:Arial;
+background:#f4f4f4;
+text-align:center;
+}
 
+/* MAIN PANEL */
 .container{
-    width:900px;
-    background:#a8d0cc;
-    border-radius:16px;
-    padding:30px;
+margin-top:60px;
+width:920px;
+background:#a8d0cc;
+padding:30px;
+margin-left:auto;
+margin-right:auto;
+border-radius:18px;
+box-shadow:0 10px 25px rgba(0,0,0,0.2);
 }
 
-/* GRID */
+/* GRID LAYOUT */
 .dashboard-grid{
-    display:grid;
-    grid-template-columns: 1fr 1.2fr;
-    grid-template-rows: auto auto;
-    gap:20px;
-    margin-top:20px;
+display:grid;
+grid-template-columns:1fr 1.3fr;
+grid-template-rows:auto auto;
+gap:22px;
 }
 
-/* CARD STYLE */
+/* CARDS */
 .card{
-    background:#cfe6e3;
-    border-radius:16px;
-    padding:20px;
-    border:1px solid #6b8f8b;
+background:#d7ece9;
+border-radius:18px;
+padding:22px;
+border:1px solid #6e9c97;
 }
 
-/* LEFT CARD */
+/* LEFT PANEL */
 .stats-card{
-    grid-row: span 2;
-    text-align:center;
+grid-row:1/span 2;
+text-align:center;
 }
 
-/* FORM */
+/* FORM ALIGN */
 .form-row{
-    display:flex;
-    justify-content:space-between;
-    margin:10px 0;
-}
-
-.form-row label{
-    width:45%;
-    font-weight:bold;
+display:grid;
+grid-template-columns:140px 1fr;
+align-items:center;
+margin:12px 0;
 }
 
 .form-row input{
-    width:50%;
-    padding:6px;
+padding:7px;
 }
 
 /* STATUS CARD */
 .status-card{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
 /* STATUS LIGHT */
 .status-indicator{
-    width:60px;
-    height:60px;
-    border-radius:14px;
-    background:red;
-    border:2px solid black;
+width:65px;
+height:65px;
+border-radius:16px;
+background:#9e9e9e;
+border:2px solid #222;
 }
 
-/* CHART SIZE */
+/* BUTTON */
+button{
+padding:10px 20px;
+background:#1976d2;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+transition:.25s;
+}
+
+button:hover{
+background:#0d47a1;
+}
+
+/* CHART */
 #chart{
-    max-width:220px;
-    margin:auto;
+width:220px!important;
+height:220px!important;
+margin-top:10px;
+}
+
+/* LOGIN BOX */
+#loginBox{
+margin-top:15px;
+display:flex;
+justify-content:center;
+gap:10px;
+}
+
+#pass{
+padding:10px;
+width:200px;
+border-radius:6px;
+border:1px solid #ccc;
 }
