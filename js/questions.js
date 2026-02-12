@@ -1,4 +1,6 @@
-// questions.js
+// ==============================
+// QUESTION BANK (CATEGORY BASED)
+// ==============================
 const questionBank = {
 
 c_cpp: [
@@ -71,6 +73,10 @@ options:["Active","Cutoff & Saturation","Linear","None"],answer:[1]}
 ]
 };
 
+
+// ==============================
+// CODING QUESTION (FOR FUTURE)
+// ==============================
 const codingQuestion = {
 description:"Write a C/C++ program to read an integer and print its reverse.",
 testCases:[
@@ -80,3 +86,30 @@ testCases:[
 {input:"90",output:"09"}
 ]
 };
+
+
+
+// ======================================================
+// ✅ THIS PART FIXES YOUR CURRENT ERROR
+// Converts questionBank → flat array used by test.js
+// ======================================================
+
+function pickRandom(arr, count){
+return arr.sort(()=>0.5-Math.random()).slice(0,count);
+}
+
+/* Select questions from each section */
+const selectedQuestions = [
+...pickRandom(questionBank.c_cpp,5),
+...pickRandom(questionBank.embedded,5),
+...pickRandom(questionBank.hardware,5)
+];
+
+/* Convert to format expected by test.js */
+const questions = selectedQuestions.map(q=>({
+id:q.id,
+q:q.question,
+options:q.options,
+answer:q.answer[0]   // because test.js expects single index
+}));
+
