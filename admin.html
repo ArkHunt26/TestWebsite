@@ -2,14 +2,17 @@
 <html>
 <head>
 <title>Admin</title>
+
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
-<body>
 
-<div class="outer-container">
+<body class="admin-theme">
 
-<h2 class="title">Admin Dashboard</h2>
+<div class="admin-wrapper">
+
+<h2>Admin Dashboard</h2>
 
 <!-- LOGIN -->
 <div id="loginBox">
@@ -20,16 +23,11 @@
 <!-- DASHBOARD -->
 <div id="panel" style="display:none">
 
-
 <div class="admin-grid">
-
-<!-- <div class="grid"> -->
 
     <!-- LEFT : DETAILS -->
     <div class="admin-card">
-
-    <!-- <div class="card"> -->
-        <h3 class="admin-card-title">Exam details</h3>
+        <h3>Exam details</h3>
 
         <p>Total Candidates : <span id="total"></span></p>
         <p>Total Pass Candidates : <span id="passed"></span></p>
@@ -40,7 +38,7 @@
 
     <!-- RIGHT : SETTINGS -->
     <div class="admin-card">
-        <h3 class="admin-card-title">Exam Settings</h3>
+        <h3>Exam Settings</h3>
 
         <div class="form-row">
             <label>Start Time</label>
@@ -68,9 +66,9 @@
 </div>
 
 <!-- STATUS BAR -->
-<div class="admin-status-bar">
+<div class="admin-status">
     <span>Exam status</span>
-    <div id="statusLight" class="status-light"></div>
+    <div id="statusLight" class="admin-light"></div>
     <button onclick="download()">Download Excel</button>
 </div>
 
@@ -99,6 +97,7 @@ total.innerText=d.totalCandidates;
 passed.innerText=d.passedCount;
 failed.innerText=d.failedCount;
 
+/* PIE CHART */
 if(chartInstance) chartInstance.destroy();
 
 chartInstance=new Chart(document.getElementById("chart"),{
@@ -107,12 +106,12 @@ data:{
 labels:["Pass","Fail"],
 datasets:[{
 data:[d.passedCount,d.failedCount],
-backgroundColor:["#5cff00","#ff2b2b"]
+backgroundColor:["#66ff00","#ff2b2b"]
 }]
 }
 });
 
-/* Load config */
+/* LOAD SETTINGS */
 duration.value=d.duration;
 passMark.value=d.passMark;
 enabled.checked=d.enabled;
@@ -128,7 +127,7 @@ updateStatusLight(d);
 });
 }
 
-/* STATUS COLOR LOGIC */
+/* STATUS COLOR */
 function updateStatusLight(data){
 
 const light=document.getElementById("statusLight");
@@ -143,7 +142,7 @@ const end=new Date(start.getTime()+data.duration*60000);
 
 if(now<start) light.style.background="#9e9e9e";
 else if(now>=start && now<=end) light.style.background="#ff2b2b";
-else light.style.background="#5cff00";
+else light.style.background="#66ff00";
 }
 
 function update(){
@@ -162,7 +161,7 @@ passMark:passMark.value
 }
 
 function download(){
-window.open("YOUR_SHEET_LINK_HERE");
+window.open("YOUR_SHEET_LINK");
 }
 
 document.getElementById("pass").addEventListener("keypress",e=>{
