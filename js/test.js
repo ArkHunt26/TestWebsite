@@ -1,74 +1,66 @@
 /* ===========================
    RENDER QUESTIONS
-   =========================== */
+=========================== */
 function renderMCQ(){
 
-const c = document.getElementById("mcqSection");
-c.innerHTML = "";
+    const c = document.getElementById("mcqSection");
+    c.innerHTML = "";
 
-questions.forEach(q=>{
+    questions.forEach(q=>{
 
-let d = document.createElement("div");
-d.className = "question-block";
+        let d = document.createElement("div");
+        d.className = "question-block";
 
-d.innerHTML = "<p>"+q.q+"</p>";
+        d.innerHTML = "<p>"+q.q+"</p>";
 
-q.options.forEach((o,i)=>{
-d.innerHTML += `
-<label>
-<input type="radio" name="q${q.id}" value="${i}">
-${o}
-</label><br>`;
-});
+        q.options.forEach((o,i)=>{
+            d.innerHTML += `
+            <label>
+            <input type="radio" name="q${q.id}" value="${i}">
+            ${o}
+            </label><br>`;
+        });
 
-c.appendChild(d);
-
-});
+        c.appendChild(d);
+    });
 }
 
 
 /* ===========================
    SUBMIT TEST
-   =========================== */
+=========================== */
 async function submitTest(){
 
-let score = 0;
+    if(!confirm("Are you sure you want to submit the exam?")){
+        return;
+    }
 
-/* CALCULATE SCORE */
-questions.forEach(q=>{
-let s = document.querySelector(`input[name=q${q.id}]:checked`);
-if(s && parseInt(s.value) === q.answer){
-score += 10;
-}
-});
+    let score = 0;
 
+    questions.forEach(q=>{
+        let s = document.querySelector(`input[name=q${q.id}]:checked`);
+        if(s && parseInt(s.value) === q.answer){
+            score += 10;
+        }
+    });
 
-/* PASS / FAIL */
-let passMark = parseInt(localStorage.getItem("passMark") || "0");
-let result = score >= passMark ? "PASS" : "FAIL";
+    let passMark = parseInt(localStorage.getItem("passMark") || "0");
+    let result = score >= passMark ? "PASS" : "FAIL";
 
+    const formData = new URLSearchParams();
+    formData.append("type","RESULT");
+    formData.append("name",localStorage.getItem("name"));
+    formData.append("phone",localStorage.getItem("phone"));
+    formData.append("score",score);
+    formData.append("result",result);
 
-/* ===========================
-   SEND RESULT (FORM MODE → NO CORS)
-   =========================== */
-const formData = new URLSearchParams();
+    await fetch(SCRIPT_URL,{
+        method:"POST",
+        body:formData
+    });
 
-formData.append("type","RESULT");
-formData.append("name",localStorage.getItem("name"));
-formData.append("phone",localStorage.getItem("phone"));
-formData.append("score",score);
-formData.append("result",result);
+    localStorage.setItem("score",score);
+    localStorage.setItem("result",result);
 
-await fetch(SCRIPT_URL,{
-method:"POST",
-body:formData
-});
-
-
-/* SAVE LOCAL RESULT */
-localStorage.setItem("score",score);
-localStorage.setItem("result",result);
-
-/* REDIRECT */
-window.location.href="result.html";
+    window.location.href="result.html";
 }

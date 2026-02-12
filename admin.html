@@ -161,23 +161,31 @@ else if(now>=start && now<=end) light.style.background="#ff2b2b";
 else light.style.background="#66ff00";
 }
 
+
 function update(){
 
-const formData = new URLSearchParams();
+    const formData = new URLSearchParams();
+    formData.append("type","UPDATE_CONFIG");
+    formData.append("password",password);
+    formData.append("duration",duration.value);
+    formData.append("startTime",start.value);
+    formData.append("enabled",enabled.checked);
+    formData.append("passMark",passMark.value);
 
-formData.append("type","UPDATE_CONFIG");
-formData.append("password",password);
-formData.append("duration",duration.value);
-formData.append("startTime",start.value);
-formData.append("enabled",enabled.checked);
-formData.append("passMark",passMark.value);
-
-fetch(SCRIPT_URL,{
-method:"POST",
-body:formData
-})
-.then(()=>alert("Settings Updated"));
+    fetch(SCRIPT_URL,{
+        method:"POST",
+        body:formData
+    })
+    .then(r=>r.text())
+    .then(()=>{
+        alert("Settings Updated");
+    })
+    .catch(err=>{
+        console.log("Update error:",err);
+    });
 }
+
+
 
 
 
@@ -203,6 +211,35 @@ window.open("YOUR_SHEET_LINK");
 document.getElementById("pass").addEventListener("keypress",e=>{
 if(e.key==="Enter") login();
 });
+
+function autoRefresh(){
+
+    if(!password) return;
+
+    fetch(SCRIPT_URL+"?mode=admin&password="+password)
+    .then(r=>r.json())
+    .then(d=>{
+
+        if(d.error) return;
+
+        total.innerText=d.totalCandidates;
+        passed.innerText=d.passedCount;
+        failed.innerText=d.failedCount;
+
+        updateStatusLight(d);
+
+        if(chartInstance){
+            chartInstance.data.datasets[0].data =
+                [d.passedCount,d.failedCount];
+            chartInstance.update();
+        }
+    });
+}
+
+setInterval(autoRefresh,1000);
+
+
+
 </script>
 
 </body>
