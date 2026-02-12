@@ -11,135 +11,53 @@
 
 <h2>Admin Dashboard</h2>
 
+<!-- LOGIN -->
 <div id="loginBox">
     <input type="password" id="pass" placeholder="Password">
     <button onclick="login()">Login</button>
 </div>
 
-
-<!-- <input type="password" id="pass" placeholder="Password">
-<button onclick="login()">Login</button> -->
-
+<!-- DASHBOARD -->
 <div id="panel" style="display:none">
 
-<h3>Total: <span id="total"></span></h3>
-<h3>Passed: <span id="passed"></span></h3>
-<h3>Failed: <span id="failed"></span></h3>
+<div class="dashboard">
 
-<canvas id="chart"></canvas>
+    <!-- LEFT SIDE -->
+    <div class="left-panel">
+        <h3>Total: <span id="total"></span></h3>
+        <h3>Passed: <span id="passed"></span></h3>
+        <h3>Failed: <span id="failed"></span></h3>
 
-<hr>
+        <canvas id="chart"></canvas>
+    </div>
 
-<h3>Exam Settings</h3>
+    <!-- RIGHT SIDE -->
+    <div class="right-panel">
 
-<div class="form-row">
-    <label>Start Time</label>
-    <input type="datetime-local" id="start">
-</div>
+        <h3>Exam Settings</h3>
 
-<div class="form-row">
-    <label>Duration (min)</label>
-    <input type="number" id="duration">
-</div>
+        <div class="form-row">
+            <label>Start Time</label>
+            <input type="datetime-local" id="start">
+        </div>
 
-<div class="form-row">
-    <label>Pass Mark</label>
-    <input type="number" id="passMark">
-</div>
+        <div class="form-row">
+            <label>Duration (min)</label>
+            <input type="number" id="duration">
+        </div>
 
-<div class="form-row">
-    <label>Enable Exam</label>
-    <input type="checkbox" id="enabled">
-</div>
+        <div class="form-row">
+            <label>Pass Mark</label>
+            <input type="number" id="passMark">
+        </div>
 
-<button onclick="update()">Update Settings</button>
+        <div class="form-row">
+            <label>Enable Exam</label>
+            <input type="checkbox" id="enabled">
+        </div>
 
+        <button onclick="update()">Update Settings</button>
 
-        <!-- <h3>Exam Settings</h3>
-        Start Time:<input type="datetime-local" id="start"><br>
-        Duration:<input type="number" id="duration"><br>
-        Pass Mark:<input type="number" id="passMark"><br>
-        Enable:<input type="checkbox" id="enabled"><br>
+        <hr>
 
-        <button onclick="update()">Update Settings</button> -->
-
-<hr>
-
-<button onclick="download()">Download Excel</button>
-
-</div>
-</div>
-
-<script src="js/config.js"></script>
-
-<script>
-let password="";
-
-function login(){
-password=document.getElementById("pass").value;
-
-fetch(SCRIPT_URL+"?mode=admin&password="+password)
-.then(r=>r.json())
-.then(d=>{
-
-if(d.error){
-    alert("Wrong Password");
-    return;
-}
-
-// Hide login section
-document.getElementById("loginBox").style.display="none";
-
-// Show dashboard
-document.getElementById("panel").style.display="block";
-
-
-// if(d.error){alert("Wrong");return;}
-
-// document.getElementById("panel").style.display="block";
-
-document.getElementById("total").innerText=d.totalCandidates;
-document.getElementById("passed").innerText=d.passedCount;
-document.getElementById("failed").innerText=d.failedCount;
-
-new Chart(document.getElementById("chart"),{
-type:"pie",
-data:{labels:["Pass","Fail"],datasets:[{data:[d.passedCount,d.failedCount]}]}
-});
-
-document.getElementById("duration").value=d.duration;
-document.getElementById("passMark").value=d.passMark;
-document.getElementById("enabled").checked=d.enabled;
-document.getElementById("start").value=new Date(d.startTime).toISOString().slice(0,16);
-});
-}
-
-function update(){
-fetch(SCRIPT_URL,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
-type:"UPDATE_CONFIG",
-password:password,
-duration:duration.value,
-startTime:start.value,
-enabled:enabled.checked,
-passMark:passMark.value
-})
-}).then(()=>alert("Updated"));
-}
-
-function download(){
-window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
-}
-</script>
-
-<script>
-document.getElementById("pass").addEventListener("keypress",function(e){
-    if(e.key==="Enter") login();
-});
-</script>
-
-
-</body>
-</html>
+        <button onclick="download()">Download Excel</

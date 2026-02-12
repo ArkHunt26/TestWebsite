@@ -1,22 +1,27 @@
-/* style */
+/* ===== Global Page Style ===== */
 
 body{
-    font-family: Arial;
+    font-family: Arial, Helvetica, sans-serif;
     background:#f4f4f4;
     text-align:center;
+    margin:0;
+    padding:0;
 }
+
+/* ===== Main Card Container ===== */
 
 .container{
     margin-top:80px;
     background:white;
-    padding:20px;
-    width:650px;
-    /* width:400px; */
+    padding:25px;
+    width:800px;
     margin-left:auto;
     margin-right:auto;
-    border-radius:8px;
-    box-shadow:0 0 10px rgba(0,0,0,0.3);
+    border-radius:10px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.15);
 }
+
+/* ===== Buttons (Global Style) ===== */
 
 button{
     padding:10px 20px;
@@ -25,6 +30,7 @@ button{
     border:none;
     border-radius:6px;
     cursor:pointer;
+    font-size:14px;
     transition:all 0.25s ease;
 }
 
@@ -37,44 +43,15 @@ button:active{
     transform:translateY(1px);
 }
 
-
-
-            /* button{
-                padding:10px 20px;
-                background:#007bff;
-                color:white;
-                border:none;
-                cursor:pointer;
-            } */
-
-.option{
-    margin:10px;
-}
+/* ===== Textareas ===== */
 
 textarea{
     width:90%;
     font-family: monospace;
+    padding:10px;
 }
 
-.form-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin:10px 0;
-}
-
-.form-row label{
-    width:40%;
-    text-align:left;
-    font-weight:bold;
-}
-
-.form-row input{
-    width:55%;
-    padding:6px;
-}
-
-/* ===== Login Section Styling ===== */
+/* ===== Login Section ===== */
 
 #loginBox{
     display:flex;
@@ -86,7 +63,7 @@ textarea{
 
 /* Password textbox */
 #pass{
-    padding:10px 14px;
+    padding:10px;
     width:220px;
     font-size:14px;
     border-radius:6px;
@@ -95,34 +72,70 @@ textarea{
     transition:all 0.2s ease;
 }
 
-/* Focus effect */
 #pass:focus{
     border-color:#007bff;
     box-shadow:0 0 5px rgba(0,123,255,0.4);
 }
 
-/* Login Button */
-#loginBox button{
-    padding:10px 20px;
-    font-size:14px;
-    border:none;
-    border-radius:6px;
-    background:#007bff;
-    color:white;
-    cursor:pointer;
-    transition:all 0.25s ease;
+/* ===== Dashboard Layout (Two Columns) ===== */
+
+.dashboard{
+    display:flex;
+    justify-content:space-between;
+    gap:40px;
+    margin-top:20px;
 }
 
-/* Hover effect */
-#loginBox button:hover{
-    background:#0056b3;
-    transform:translateY(-1px);
+/* Left side: Stats + Chart */
+.left-panel{
+    width:40%;
+    text-align:center;
 }
 
-/* Click effect */
-#loginBox button:active{
-    transform:translateY(1px);
+/* Right side: Settings */
+.right-panel{
+    width:60%;
+    text-align:left;
 }
 
+/* ===== Chart Styling ===== */
 
+#chart{
+    margin-top:20px;
+    max-width:260px;
+}
 
+/* ===== Form Layout ===== */
+
+.form-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:12px 0;
+}
+
+.form-row label{
+    width:45%;
+    font-weight:bold;
+}
+
+.form-row input{
+    width:55%;
+    padding:7px;
+    border-radius:4px;
+    border:1px solid #ccc;
+}
+
+/* ===== Divider ===== */
+
+hr{
+    margin:20px 0;
+    border:0;
+    border-top:1px solid #ddd;
+}
+
+/* ===== Misc ===== */
+
+.option{
+    margin:10px;
+}
