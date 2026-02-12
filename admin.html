@@ -11,8 +11,14 @@
 
 <h2>Admin Dashboard</h2>
 
-<input type="password" id="pass" placeholder="Password">
-<button onclick="login()">Login</button>
+<div id="loginBox">
+    <input type="password" id="pass" placeholder="Password">
+    <button onclick="login()">Login</button>
+</div>
+
+
+<!-- <input type="password" id="pass" placeholder="Password">
+<button onclick="login()">Login</button> -->
 
 <div id="panel" style="display:none">
 
@@ -51,9 +57,21 @@ fetch(SCRIPT_URL+"?mode=admin&password="+password)
 .then(r=>r.json())
 .then(d=>{
 
-if(d.error){alert("Wrong");return;}
+if(d.error){
+    alert("Wrong Password");
+    return;
+}
 
+// Hide login section
+document.getElementById("loginBox").style.display="none";
+
+// Show dashboard
 document.getElementById("panel").style.display="block";
+
+
+// if(d.error){alert("Wrong");return;}
+
+// document.getElementById("panel").style.display="block";
 
 document.getElementById("total").innerText=d.totalCandidates;
 document.getElementById("passed").innerText=d.passedCount;
@@ -90,6 +108,13 @@ function download(){
 window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
 }
 </script>
+
+<script>
+document.getElementById("pass").addEventListener("keypress",function(e){
+    if(e.key==="Enter") login();
+});
+</script>
+
 
 </body>
 </html>
