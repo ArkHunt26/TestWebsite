@@ -154,18 +154,42 @@ function loadDashboard(){
         /* ===== LOAD SETTINGS ONLY ONCE ===== */
         if(!settingsLoadedOnce){
 
-            duration.value = d.duration || "";
-            passMark.value = d.passMark || "";
-            enabled.checked = d.enabled || false;
+            document.getElementById("duration").value = d.duration || "";
+            document.getElementById("passMark").value = d.passMark || "";
+            document.getElementById("enabled").checked = d.enabled === true;
 
-            if(d.startTime){
+            const startInput = document.getElementById("start");
+
+            if(d.startTime && d.startTime !== ""){
+
                 const dt = new Date(d.startTime);
+
                 if(!isNaN(dt)){
-                    start.value = dt.toISOString().slice(0,16);
+                    const offset = dt.getTimezoneOffset();
+                    const local = new Date(dt.getTime() - offset * 60000);
+                    startInput.value = local.toISOString().slice(0,16);
+                } else {
+                    startInput.value = "";
                 }
+
+            } else {
+                startInput.value = "";   // 🔥 If no config → keep empty
             }
 
             settingsLoadedOnce = true;
+
+                            // duration.value = d.duration || "";
+                            // passMark.value = d.passMark || "";
+                            // enabled.checked = d.enabled || false;
+
+                            // if(d.startTime){
+                            //     const dt = new Date(d.startTime);
+                            //     if(!isNaN(dt)){
+                            //         start.value = dt.toISOString().slice(0,16);
+                            //     }
+                            // }
+
+                            // settingsLoadedOnce = true;
         }
 
         updateStatusLight(d);
@@ -216,25 +240,27 @@ function updateStatusLight(data){
 
     const light = document.getElementById("statusLight");
 
-    if(!data.enabled || !data.startTime){
-        light.style.background="#9e9e9e"; // Not scheduled
+    // No config or disabled
+    if(!data.enabled || !data.startTime || !data.duration){
+        light.style.background = "#9e9e9e"; // GREY
         return;
     }
 
-    const now = new Date();
+    const now   = new Date();
     const start = new Date(data.startTime);
-    const end = new Date(
-        start.getTime() +
-        (Number(data.duration) * 60000)
-    );
+    const end   = new Date(start.getTime() + data.duration * 60000);
 
-    if(now < start)
-        light.style.background="#9e9e9e";
-    else if(now >= start && now <= end)
-        light.style.background="#ff2b2b";
-    else
-        light.style.background="#66ff00";
+    if(now < start){
+        light.style.background = "#9e9e9e"; // NOT STARTED → GREY
+    }
+    else if(now >= start && now <= end){
+        light.style.background = "#66ff00"; // RUNNING → GREEN
+    }
+    else{
+        light.style.background = "#ff2b2b"; // TIMEOUT → RED
+    }
 }
+
 
 
 /* ============================
