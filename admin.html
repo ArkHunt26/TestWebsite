@@ -20,11 +20,16 @@
 <!-- DASHBOARD -->
 <div id="panel" style="display:none">
 
-<div class="grid">
+
+<div class="admin-grid">
+
+<!-- <div class="grid"> -->
 
     <!-- LEFT : DETAILS -->
-    <div class="card">
-        <h3 class="card-title">Exam details</h3>
+    <div class="admin-card">
+
+    <!-- <div class="card"> -->
+        <h3 class="admin-card-title">Exam details</h3>
 
         <p>Total Candidates : <span id="total"></span></p>
         <p>Total Pass Candidates : <span id="passed"></span></p>
@@ -34,8 +39,8 @@
     </div>
 
     <!-- RIGHT : SETTINGS -->
-    <div class="card">
-        <h3 class="card-title">Exam Settings</h3>
+    <div class="admin-card">
+        <h3 class="admin-card-title">Exam Settings</h3>
 
         <div class="form-row">
             <label>Start Time</label>
@@ -63,7 +68,7 @@
 </div>
 
 <!-- STATUS BAR -->
-<div class="status-bar">
+<div class="admin-status-bar">
     <span>Exam status</span>
     <div id="statusLight" class="status-light"></div>
     <button onclick="download()">Download Excel</button>
