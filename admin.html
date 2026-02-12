@@ -7,9 +7,9 @@
 </head>
 <body>
 
-<div class="container">
+<div class="outer-container">
 
-<h2>Admin Dashboard</h2>
+<h2 class="title">Admin Dashboard</h2>
 
 <!-- LOGIN -->
 <div id="loginBox">
@@ -20,20 +20,22 @@
 <!-- DASHBOARD -->
 <div id="panel" style="display:none">
 
-<div class="dashboard-grid">
+<div class="grid">
 
-    <!-- LEFT : STATS -->
-    <div class="card stats-card">
-        <h3>Total: <span id="total"></span></h3>
-        <h3>Passed: <span id="passed"></span></h3>
-        <h3>Failed: <span id="failed"></span></h3>
+    <!-- LEFT : DETAILS -->
+    <div class="card">
+        <h3 class="card-title">Exam details</h3>
+
+        <p>Total Candidates : <span id="total"></span></p>
+        <p>Total Pass Candidates : <span id="passed"></span></p>
+        <p>Total Failed Candidates : <span id="failed"></span></p>
 
         <canvas id="chart"></canvas>
     </div>
 
-    <!-- RIGHT TOP : SETTINGS -->
-    <div class="card settings-card">
-        <h3>Exam Settings</h3>
+    <!-- RIGHT : SETTINGS -->
+    <div class="card">
+        <h3 class="card-title">Exam Settings</h3>
 
         <div class="form-row">
             <label>Start Time</label>
@@ -58,17 +60,15 @@
         <button onclick="update()">Update Settings</button>
     </div>
 
-    <!-- RIGHT BOTTOM : STATUS -->
-    <div class="card status-card">
-        <div class="status-row">
-            <span>Exam Status</span>
-            <div class="status-indicator" id="statusLight"></div>
-        </div>
-
-        <button onclick="download()">Download Excel</button>
-    </div>
-
 </div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+    <span>Exam status</span>
+    <div id="statusLight" class="status-light"></div>
+    <button onclick="download()">Download Excel</button>
+</div>
+
 </div>
 </div>
 
@@ -85,19 +85,15 @@ fetch(SCRIPT_URL+"?mode=admin&password="+password)
 .then(r=>r.json())
 .then(d=>{
 
-if(d.error){
-alert("Wrong Password");
-return;
-}
+if(d.error){ alert("Wrong Password"); return; }
 
 document.getElementById("loginBox").style.display="none";
 document.getElementById("panel").style.display="block";
 
-document.getElementById("total").innerText=d.totalCandidates;
-document.getElementById("passed").innerText=d.passedCount;
-document.getElementById("failed").innerText=d.failedCount;
+total.innerText=d.totalCandidates;
+passed.innerText=d.passedCount;
+failed.innerText=d.failedCount;
 
-/* PIE CHART */
 if(chartInstance) chartInstance.destroy();
 
 chartInstance=new Chart(document.getElementById("chart"),{
@@ -106,75 +102,53 @@ data:{
 labels:["Pass","Fail"],
 datasets:[{
 data:[d.passedCount,d.failedCount],
-backgroundColor:["#4CAF50","#F44336"]
+backgroundColor:["#5cff00","#ff2b2b"]
 }]
 }
 });
 
-/* LOAD CONFIG VALUES */
-document.getElementById("duration").value=d.duration;
-document.getElementById("passMark").value=d.passMark;
-document.getElementById("enabled").checked=d.enabled;
+/* Load config */
+duration.value=d.duration;
+passMark.value=d.passMark;
+enabled.checked=d.enabled;
 
 if(d.startTime){
 const dt=new Date(d.startTime);
 if(!isNaN(dt)){
-document.getElementById("start").value=dt.toISOString().slice(0,16);
+start.value=dt.toISOString().slice(0,16);
 }
 }
 
-/* UPDATE STATUS LIGHT */
 updateStatusLight(d);
-
 });
 }
 
-/* STATUS LOGIC */
+/* STATUS COLOR LOGIC */
 function updateStatusLight(data){
 
 const light=document.getElementById("statusLight");
 
 if(!data.enabled || !data.startTime){
-light.style.background="#9e9e9e";  // GREY
-light.title="Exam Not Scheduled";
-return;
+light.style.background="#9e9e9e"; return;
 }
 
 const now=new Date();
 const start=new Date(data.startTime);
 const end=new Date(start.getTime()+data.duration*60000);
 
-if(now<start){
-light.style.background="#9e9e9e"; // NOT STARTED
-light.title="Exam Not Started";
-}
-else if(now>=start && now<=end){
-light.style.background="#e53935"; // ONGOING
-light.title="Exam Ongoing";
-}
-else{
-light.style.background="#43a047"; // FINISHED
-light.title="Exam Finished";
-}
+if(now<start) light.style.background="#9e9e9e";
+else if(now>=start && now<=end) light.style.background="#ff2b2b";
+else light.style.background="#5cff00";
 }
 
-/* UPDATE SETTINGS */
 function update(){
-
-const dur=parseInt(duration.value);
-
-if(isNaN(dur)||dur<30){
-alert("Duration must be ≥ 30 minutes");
-return;
-}
-
 fetch(SCRIPT_URL,{
 method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({
 type:"UPDATE_CONFIG",
 password:password,
-duration:dur,
+duration:duration.value,
 startTime:start.value,
 enabled:enabled.checked,
 passMark:passMark.value
@@ -182,15 +156,12 @@ passMark:passMark.value
 }).then(()=>alert("Settings Updated"));
 }
 
-/* DOWNLOAD */
 function download(){
-window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
+window.open("YOUR_SHEET_LINK_HERE");
 }
 
-document.addEventListener("DOMContentLoaded",()=>{
-document.getElementById("pass").addEventListener("keypress",function(e){
+document.getElementById("pass").addEventListener("keypress",e=>{
 if(e.key==="Enter") login();
-});
 });
 </script>
 
