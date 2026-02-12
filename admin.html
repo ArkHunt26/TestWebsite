@@ -20,10 +20,10 @@
 <!-- DASHBOARD -->
 <div id="panel" style="display:none">
 
-<div class="dashboard">
+<div class="dashboard-grid">
 
-    <!-- LEFT SIDE -->
-    <div class="left-panel">
+    <!-- LEFT : STATS -->
+    <div class="card stats-card">
         <h3>Total: <span id="total"></span></h3>
         <h3>Passed: <span id="passed"></span></h3>
         <h3>Failed: <span id="failed"></span></h3>
@@ -31,9 +31,8 @@
         <canvas id="chart"></canvas>
     </div>
 
-    <!-- RIGHT SIDE -->
-    <div class="right-panel">
-
+    <!-- RIGHT TOP : SETTINGS -->
+    <div class="card settings-card">
         <h3>Exam Settings</h3>
 
         <div class="form-row">
@@ -44,8 +43,6 @@
         <div class="form-row">
             <label>Duration (min)</label>
             <input type="number" id="duration" min="30" placeholder="Enter minutes (e.g., 45)">
-
-            <!-- <input type="number" id="duration"> -->
         </div>
 
         <div class="form-row">
@@ -59,133 +56,109 @@
         </div>
 
         <button onclick="update()">Update Settings</button>
+    </div>
 
-        <hr>
+    <!-- RIGHT BOTTOM : STATUS -->
+    <div class="card status-card">
+        <div class="status-row">
+            <span>Exam status</span>
+            <div class="status-indicator" id="statusLight"></div>
+        </div>
 
         <button onclick="download()">Download Excel</button>
-
     </div>
 
 </div>
 </div>
 </div>
 
-<!-- IMPORTANT: Load config first -->
 <script src="js/config.js"></script>
 
 <script>
 let password="";
 let chartInstance=null;
 
-/* LOGIN FUNCTION */
 function login(){
-    password=document.getElementById("pass").value;
+password=document.getElementById("pass").value;
 
-    fetch(SCRIPT_URL+"?mode=admin&password="+password)
-    .then(r=>r.json())
-    .then(d=>{
+fetch(SCRIPT_URL+"?mode=admin&password="+password)
+.then(r=>r.json())
+.then(d=>{
 
-        if(d.error){
-            alert("Wrong Password");
-            return;
-        }
-
-        document.getElementById("loginBox").style.display="none";
-        document.getElementById("panel").style.display="block";
-
-        document.getElementById("total").innerText=d.totalCandidates;
-        document.getElementById("passed").innerText=d.passedCount;
-        document.getElementById("failed").innerText=d.failedCount;
-
-        if(chartInstance) chartInstance.destroy();
-
-        chartInstance=new Chart(document.getElementById("chart"),{
-            type:"pie",
-            data:{
-                labels:["Pass","Fail"],
-                datasets:[{
-                    data:[d.passedCount,d.failedCount],
-                    backgroundColor:["#4CAF50","#F44336"]
-                }]
-            }
-        });
-
-        document.getElementById("duration").value=d.duration;
-        document.getElementById("passMark").value=d.passMark;
-        document.getElementById("enabled").checked=d.enabled;
-        if(d.startTime){
-            const dt = new Date(d.startTime);
-            if(!isNaN(dt)){
-                document.getElementById("start").value = dt.toISOString().slice(0,16);
-            }
-        }
-
-        
-                // document.getElementById("start").value=new Date(d.startTime).toISOString().slice(0,16);
-    });
+if(d.error){
+    alert("Wrong Password");
+    return;
 }
 
-/* UPDATE SETTINGS */
+document.getElementById("loginBox").style.display="none";
+document.getElementById("panel").style.display="block";
+
+document.getElementById("total").innerText=d.totalCandidates;
+document.getElementById("passed").innerText=d.passedCount;
+document.getElementById("failed").innerText=d.failedCount;
+
+if(chartInstance) chartInstance.destroy();
+
+chartInstance=new Chart(document.getElementById("chart"),{
+type:"pie",
+data:{
+labels:["Pass","Fail"],
+datasets:[{
+data:[d.passedCount,d.failedCount],
+backgroundColor:["#4CAF50","#F44336"]
+}]
+}
+});
+
+document.getElementById("duration").value=d.duration;
+document.getElementById("passMark").value=d.passMark;
+document.getElementById("enabled").checked=d.enabled;
+
+if(d.startTime){
+const dt=new Date(d.startTime);
+if(!isNaN(dt)){
+document.getElementById("start").value=dt.toISOString().slice(0,16);
+}
+}
+
+/* STATUS LIGHT */
+document.getElementById("statusLight").style.background =
+d.enabled ? "green" : "red";
+
+});
+}
+
 function update(){
 
-    const dur = parseInt(document.getElementById("duration").value);
+const dur=parseInt(duration.value);
 
-    if(isNaN(dur)){
-        alert("Please enter a valid duration");
-        return;
-    }
-
-    if(dur < 30){
-        alert("Minimum allowed duration is 30 minutes");
-        return;
-    }
-
-    if(!start.value){
-        alert("Please select exam start time");
-        return;
-    }
-
-    fetch(SCRIPT_URL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            type:"UPDATE_CONFIG",
-            password:password,
-            duration:dur,
-            startTime:start.value,
-            enabled:enabled.checked,
-            passMark:passMark.value
-        })
-    }).then(()=>alert("Settings Updated Successfully"));
+if(isNaN(dur) || dur<30){
+alert("Duration must be at least 30 minutes");
+return;
 }
 
+fetch(SCRIPT_URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+type:"UPDATE_CONFIG",
+password:password,
+duration:dur,
+startTime:start.value,
+enabled:enabled.checked,
+passMark:passMark.value
+})
+}).then(()=>alert("Settings Updated"));
+}
 
-
-// function update(){
-//     fetch(SCRIPT_URL,{
-//         method:"POST",
-//         headers:{"Content-Type":"application/json"},
-//         body:JSON.stringify({
-//             type:"UPDATE_CONFIG",
-//             password:password,
-//             duration:duration.value,
-//             startTime:start.value,
-//             enabled:enabled.checked,
-//             passMark:passMark.value
-//         })
-//     }).then(()=>alert("Settings Updated"));
-// }
-
-/* DOWNLOAD SHEET */
 function download(){
-    window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
+window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
 }
 
-/* ENTER KEY LOGIN SUPPORT */
 document.addEventListener("DOMContentLoaded",()=>{
-    document.getElementById("pass").addEventListener("keypress",function(e){
-        if(e.key==="Enter") login();
-    });
+document.getElementById("pass").addEventListener("keypress",function(e){
+if(e.key==="Enter") login();
+});
 });
 </script>
 
