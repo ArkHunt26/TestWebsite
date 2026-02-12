@@ -79,89 +79,135 @@
 <script src="js/config.js"></script>
 
 <script>
+
 let password="";
 let chartInstance=null;
+let refreshInterval=null;
 
+
+/* ===========================
+   LOAD DASHBOARD DATA
+   =========================== */
+function loadDashboard(){
+
+    if(!password) return;
+
+    fetch(SCRIPT_URL+"?mode=admin&password="+password)
+    .then(r=>r.json())
+    .then(d=>{
+
+        if(d.error){
+            alert("Session expired. Please login again.");
+            clearInterval(refreshInterval);
+            location.reload();
+            return;
+        }
+
+        /* UPDATE NUMBERS */
+        document.getElementById("total").innerText = d.totalCandidates;
+        document.getElementById("passed").innerText = d.passedCount;
+        document.getElementById("failed").innerText = d.failedCount;
+
+        /* UPDATE CHART */
+        if(chartInstance){
+            chartInstance.data.datasets[0].data = 
+                [d.passedCount, d.failedCount];
+            chartInstance.update();
+        } else {
+            chartInstance = new Chart(document.getElementById("chart"), {
+                type: "pie",
+                data: {
+                    labels: ["Pass","Fail"],
+                    datasets: [{
+                        data: [d.passedCount, d.failedCount],
+                        backgroundColor: ["#66ff00","#ff2b2b"]
+                    }]
+                },
+                options:{
+                    responsive:false,
+                    plugins:{ legend:{display:false} }
+                }
+            });
+        }
+
+        /* UPDATE SETTINGS LIVE */
+        duration.value = d.duration;
+        passMark.value = d.passMark;
+        enabled.checked = d.enabled;
+
+        if(d.startTime){
+            const dt=new Date(d.startTime);
+            if(!isNaN(dt)){
+                start.value=dt.toISOString().slice(0,16);
+            }
+        }
+
+        updateStatusLight(d);
+
+    })
+    .catch(err=>{
+        console.log("Refresh error:",err);
+    });
+}
+
+
+
+/* ===========================
+   LOGIN
+   =========================== */
 function login(){
-password=document.getElementById("pass").value;
 
-fetch(SCRIPT_URL+"?mode=admin&password="+password)
-.then(r=>r.json())
-.then(d=>{
+    password=document.getElementById("pass").value;
 
-if(d.error){ alert("Wrong Password"); return; }
+    fetch(SCRIPT_URL+"?mode=admin&password="+password)
+    .then(r=>r.json())
+    .then(d=>{
 
-document.getElementById("loginBox").style.display="none";
-document.getElementById("panel").style.display="block";
+        if(d.error){ 
+            alert("Wrong Password"); 
+            return; 
+        }
 
-total.innerText=d.totalCandidates;
-passed.innerText=d.passedCount;
-failed.innerText=d.failedCount;
+        document.getElementById("loginBox").style.display="none";
+        document.getElementById("panel").style.display="block";
 
-/* DESTROY OLD CHART */
-if(chartInstance) chartInstance.destroy();
+        /* First load */
+        loadDashboard();
 
-/* FINAL PIE CHART (NO LEGEND, NO BLUR) */
-chartInstance = new Chart(document.getElementById("chart"), {
-type: "pie",
-data: {
-labels: ["Pass","Fail"],
-datasets: [{
-data: [d.passedCount, d.failedCount],
-backgroundColor: ["#66ff00","#ff2b2b"],
-borderWidth: 1
-}]
+        /* Start live refresh every 3 seconds */
+        refreshInterval = setInterval(loadDashboard,3000);
 
-},
-
-options: {
-responsive: false,
-maintainAspectRatio: true,
-devicePixelRatio: window.devicePixelRatio,   // ⭐ ensures crisp rendering
-
-plugins: {
-legend: { display: false },
-tooltip: { enabled: true }
-}
+    });
 }
 
 
-});
 
-/* LOAD SETTINGS */
-duration.value=d.duration;
-passMark.value=d.passMark;
-enabled.checked=d.enabled;
-
-if(d.startTime){
-const dt=new Date(d.startTime);
-if(!isNaN(dt)){
-start.value=dt.toISOString().slice(0,16);
-}
-}
-
-updateStatusLight(d);
-});
-}
-
-/* STATUS COLOR */
+/* ===========================
+   STATUS LIGHT
+   =========================== */
 function updateStatusLight(data){
-const light=document.getElementById("statusLight");
 
-if(!data.enabled || !data.startTime){
-light.style.background="#9e9e9e"; return;
+    const light=document.getElementById("statusLight");
+
+    if(!data.enabled || !data.startTime){
+        light.style.background="#9e9e9e";
+        return;
+    }
+
+    const now=new Date();
+    const start=new Date(data.startTime);
+    const end=new Date(start.getTime()+data.duration*60000);
+
+    if(now<start) light.style.background="#9e9e9e";
+    else if(now>=start && now<=end) light.style.background="#ff2b2b";
+    else light.style.background="#66ff00";
 }
 
-const now=new Date();
-const start=new Date(data.startTime);
-const end=new Date(start.getTime()+data.duration*60000);
-
-if(now<start) light.style.background="#9e9e9e";
-else if(now>=start && now<=end) light.style.background="#ff2b2b";
-else light.style.background="#66ff00";
-}
 
 
+/* ===========================
+   UPDATE SETTINGS
+   =========================== */
 function update(){
 
     const formData = new URLSearchParams();
@@ -179,6 +225,9 @@ function update(){
     .then(r=>r.text())
     .then(()=>{
         alert("Settings Updated");
+
+        /* Immediately refresh dashboard */
+        loadDashboard();
     })
     .catch(err=>{
         console.log("Update error:",err);
@@ -187,94 +236,13 @@ function update(){
 
 
 
-
-
-        // function update(){
-        // fetch(SCRIPT_URL,{
-        // method:"POST",
-        // headers:{"Content-Type":"application/json"},
-        // body:JSON.stringify({
-        // type:"UPDATE_CONFIG",
-        // password:password,
-        // duration:duration.value,
-        // startTime:start.value,
-        // enabled:enabled.checked,
-        // passMark:passMark.value
-        // })
-        // }).then(()=>alert("Settings Updated"));
-        // }
-
-function download(){
-window.open("YOUR_SHEET_LINK");
-}
-
+/* ENTER KEY LOGIN */
 document.getElementById("pass").addEventListener("keypress",e=>{
-if(e.key==="Enter") login();
+    if(e.key==="Enter") login();
 });
 
-function autoRefresh(){
-
-    if(!password) return;
-
-    fetch(SCRIPT_URL + "?mode=admin&password=" + password)
-    .then(r=>r.json())
-    .then(d=>{
-
-        if(d.error) return;
-
-        document.getElementById("total").innerText = d.totalCandidates;
-        document.getElementById("passed").innerText = d.passedCount;
-        document.getElementById("failed").innerText = d.failedCount;
-
-        updateStatusLight(d);
-
-        if(chartInstance){
-            chartInstance.data.datasets[0].data =
-                [d.passedCount, d.failedCount];
-            chartInstance.update();
-        }
-    })
-    .catch(err=>{
-        console.log("Auto refresh error:", err);
-    });
-}
-
-/* Start live refresh AFTER login */
-function startLiveUpdates(){
-    setInterval(autoRefresh, 2000);
-}
-
-
-
-                // function autoRefresh(){
-
-                //     if(!password) return;
-
-                //     fetch(SCRIPT_URL+"?mode=admin&password="+password)
-                //     .then(r=>r.json())
-                //     .then(d=>{
-
-                //         if(d.error) return;
-
-                //         total.innerText=d.totalCandidates;
-                //         passed.innerText=d.passedCount;
-                //         failed.innerText=d.failedCount;
-
-                //         updateStatusLight(d);
-
-                //         if(chartInstance){
-                //             chartInstance.data.datasets[0].data =
-                //                 [d.passedCount,d.failedCount];
-                //             chartInstance.update();
-                //         }
-                //     });
-                // }
-
-                // setInterval(autoRefresh,1000);
-
-
-
 </script>
+
 
 </body>
 </html>
