@@ -1,34 +1,45 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Start Exam</title>
-    <link rel="stylesheet" href="css/style.css">
+<title>Start Exam</title>
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>Online Exam</h2>
+<h2>Online Exam</h2>
 
-    <input type="text" id="name" placeholder="Full Name"><br><br>
-    <input type="text" id="phone" placeholder="Phone Number"><br><br>
+<input type="text" id="name" placeholder="Full Name"><br><br>
+<input type="text" id="phone" placeholder="Phone Number"><br><br>
 
-    <button onclick="startExam()">Start Exam</button>
+<button onclick="startExam()">Start Exam</button>
 </div>
 
+<script src="js/config.js"></script>
+
 <script>
-function startExam(){
-    let name = document.getElementById("name").value;
-    let phone = document.getElementById("phone").value;
+async function startExam(){
 
-    if(name === "" || phone === ""){
-        alert("Enter details!");
-        return;
-    }
+let name=document.getElementById("name").value;
+let phone=document.getElementById("phone").value;
 
-    localStorage.setItem("name", name);
-    localStorage.setItem("phone", phone);
-    window.location.href = "test.html";
+if(!name || !phone){ alert("Enter details"); return; }
+
+const res=await fetch(SCRIPT_URL+"?mode=student");
+const cfg=await res.json();
+
+if(!cfg.enabled){ alert("Exam disabled"); return; }
+
+if(new Date()<new Date(cfg.startTime)){
+alert("Exam not started yet"); return;
+}
+
+localStorage.setItem("name",name);
+localStorage.setItem("phone",phone);
+localStorage.setItem("duration",cfg.duration);
+localStorage.setItem("passMark",cfg.passMark);
+
+window.location.href="test.html";
 }
 </script>
 

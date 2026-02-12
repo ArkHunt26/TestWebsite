@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
+<title>Admin</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -10,63 +11,83 @@
 
 <h2>Admin Dashboard</h2>
 
-<div id="loginBox">
-<input type="password" id="adminPass" placeholder="Enter Password">
+<input type="password" id="pass" placeholder="Password">
 <button onclick="login()">Login</button>
-</div>
 
-<div id="dashboard" style="display:none;">
-<h3>Total Candidates: <span id="total"></span></h3>
+<div id="panel" style="display:none">
+
+<h3>Total: <span id="total"></span></h3>
 <h3>Passed: <span id="passed"></span></h3>
 <h3>Failed: <span id="failed"></span></h3>
 
-<button onclick="downloadExcel()">Download Excel</button>
+<canvas id="chart"></canvas>
 
-<table border="1" width="100%" id="resultTable"></table>
+<hr>
+
+<h3>Exam Settings</h3>
+Start Time:<input type="datetime-local" id="start"><br>
+Duration:<input type="number" id="duration"><br>
+Pass Mark:<input type="number" id="passMark"><br>
+Enable:<input type="checkbox" id="enabled"><br>
+
+<button onclick="update()">Update Settings</button>
+
+<hr>
+
+<button onclick="download()">Download Excel</button>
+
 </div>
-
 </div>
 
 <script src="js/config.js"></script>
 
 <script>
+let password="";
+
 function login(){
+password=document.getElementById("pass").value;
 
-const pass = document.getElementById("adminPass").value;
+fetch(SCRIPT_URL+"?mode=admin&password="+password)
+.then(r=>r.json())
+.then(d=>{
 
-fetch(SCRIPT_URL + "?mode=admin&password=" + pass)
-.then(res=>res.json())
-.then(data=>{
+if(d.error){alert("Wrong");return;}
 
-if(data.error){ alert("Wrong Password"); return; }
+document.getElementById("panel").style.display="block";
 
-document.getElementById("loginBox").style.display="none";
-document.getElementById("dashboard").style.display="block";
+document.getElementById("total").innerText=d.totalCandidates;
+document.getElementById("passed").innerText=d.passedCount;
+document.getElementById("failed").innerText=d.failedCount;
 
-document.getElementById("total").innerText=data.totalCandidates;
-document.getElementById("passed").innerText=data.passed;
-document.getElementById("failed").innerText=data.failed;
+new Chart(document.getElementById("chart"),{
+type:"pie",
+data:{labels:["Pass","Fail"],datasets:[{data:[d.passedCount,d.failedCount]}]}
+});
 
-renderTable(data.results);
+document.getElementById("duration").value=d.duration;
+document.getElementById("passMark").value=d.passMark;
+document.getElementById("enabled").checked=d.enabled;
+document.getElementById("start").value=new Date(d.startTime).toISOString().slice(0,16);
 });
 }
 
-function renderTable(results){
-let table=document.getElementById("resultTable");
-
-results.forEach(row=>{
-let tr=document.createElement("tr");
-row.forEach(col=>{
-let td=document.createElement("td");
-td.innerText=col;
-tr.appendChild(td);
-});
-table.appendChild(tr);
-});
+function update(){
+fetch(SCRIPT_URL,{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({
+type:"UPDATE_CONFIG",
+password:password,
+duration:duration.value,
+startTime:start.value,
+enabled:enabled.checked,
+passMark:passMark.value
+})
+}).then(()=>alert("Updated"));
 }
 
-function downloadExcel(){
-window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/export?format=xlsx","_blank");
+function download(){
+window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
 }
 </script>
 
