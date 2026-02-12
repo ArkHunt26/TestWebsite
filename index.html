@@ -18,29 +18,51 @@
 <script src="js/config.js"></script>
 
 <script>
+
 async function startExam(){
 
-let name=document.getElementById("name").value;
-let phone=document.getElementById("phone").value;
+    let name = document.getElementById("name").value;
+    let phone = document.getElementById("phone").value;
 
-if(!name || !phone){ alert("Enter details"); return; }
+    if(name === "" || phone === ""){
+        alert("Enter details!");
+        return;
+    }
 
-const res=await fetch(SCRIPT_URL+"?mode=student");
-const cfg=await res.json();
+    const res = await fetch(SCRIPT_URL + "?mode=student");
+    const config = await res.json();
 
-if(!cfg.enabled){ alert("Exam disabled"); return; }
+    if(!config.enabled){
+        alert("Exam is not enabled.");
+        return;
+    }
 
-if(new Date()<new Date(cfg.startTime)){
-alert("Exam not started yet"); return;
+    if(!config.startTime){
+        alert("Exam is not scheduled.");
+        return;
+    }
+
+    const start = new Date(config.startTime);
+    const end = new Date(start.getTime() + config.duration * 60000);
+    const now = new Date();
+
+    if(now < start){
+        alert("Exam has not started yet.");
+        return;
+    }
+
+    if(now > end){
+        alert("Exam time is over.");
+        return;
+    }
+
+    localStorage.setItem("name", name);
+    localStorage.setItem("phone", phone);
+    localStorage.setItem("passMark", config.passMark);
+
+    window.location.href = "test.html";
 }
 
-localStorage.setItem("name",name);
-localStorage.setItem("phone",phone);
-localStorage.setItem("duration",cfg.duration);
-localStorage.setItem("passMark",cfg.passMark);
-
-window.location.href="test.html";
-}
 </script>
 
 </body>

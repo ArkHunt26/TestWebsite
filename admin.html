@@ -216,27 +216,61 @@ function autoRefresh(){
 
     if(!password) return;
 
-    fetch(SCRIPT_URL+"?mode=admin&password="+password)
+    fetch(SCRIPT_URL + "?mode=admin&password=" + password)
     .then(r=>r.json())
     .then(d=>{
 
         if(d.error) return;
 
-        total.innerText=d.totalCandidates;
-        passed.innerText=d.passedCount;
-        failed.innerText=d.failedCount;
+        document.getElementById("total").innerText = d.totalCandidates;
+        document.getElementById("passed").innerText = d.passedCount;
+        document.getElementById("failed").innerText = d.failedCount;
 
         updateStatusLight(d);
 
         if(chartInstance){
             chartInstance.data.datasets[0].data =
-                [d.passedCount,d.failedCount];
+                [d.passedCount, d.failedCount];
             chartInstance.update();
         }
+    })
+    .catch(err=>{
+        console.log("Auto refresh error:", err);
     });
 }
 
-setInterval(autoRefresh,1000);
+/* Start live refresh AFTER login */
+function startLiveUpdates(){
+    setInterval(autoRefresh, 2000);
+}
+
+
+
+                // function autoRefresh(){
+
+                //     if(!password) return;
+
+                //     fetch(SCRIPT_URL+"?mode=admin&password="+password)
+                //     .then(r=>r.json())
+                //     .then(d=>{
+
+                //         if(d.error) return;
+
+                //         total.innerText=d.totalCandidates;
+                //         passed.innerText=d.passedCount;
+                //         failed.innerText=d.failedCount;
+
+                //         updateStatusLight(d);
+
+                //         if(chartInstance){
+                //             chartInstance.data.datasets[0].data =
+                //                 [d.passedCount,d.failedCount];
+                //             chartInstance.update();
+                //         }
+                //     });
+                // }
+
+                // setInterval(autoRefresh,1000);
 
 
 
