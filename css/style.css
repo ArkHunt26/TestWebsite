@@ -10,7 +10,8 @@ body{
     margin-top:80px;
     background:white;
     padding:20px;
-    width:400px;
+    width:650px;
+    /* width:400px; */
     margin-left:auto;
     margin-right:auto;
     border-radius:8px;
@@ -34,3 +35,20 @@ textarea{
     font-family: monospace;
 }
 
+.form-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin:10px 0;
+}
+
+.form-row label{
+    width:40%;
+    text-align:left;
+    font-weight:bold;
+}
+
+.form-row input{
+    width:55%;
+    padding:6px;
+}
