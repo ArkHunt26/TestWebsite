@@ -1,22 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Admin Panel</title>
+    <title>Admin Dashboard</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
 <div class="container">
-    <h2>Exam Results (Admin)</h2>
 
-    <p>
-        Click below to open the live result sheet:
-    </p>
+<h2>Admin Dashboard</h2>
 
-    <a href="https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing" target="_blank">
-        <button>Open Results Sheet</button>
-    </a>
+<div id="loginBox">
+<input type="password" id="adminPass" placeholder="Enter Password">
+<button onclick="login()">Login</button>
 </div>
+
+<div id="dashboard" style="display:none;">
+<h3>Total Candidates: <span id="total"></span></h3>
+<h3>Passed: <span id="passed"></span></h3>
+<h3>Failed: <span id="failed"></span></h3>
+
+<button onclick="downloadExcel()">Download Excel</button>
+
+<table border="1" width="100%" id="resultTable"></table>
+</div>
+
+</div>
+
+<script src="js/config.js"></script>
+
+<script>
+function login(){
+
+const pass = document.getElementById("adminPass").value;
+
+fetch(SCRIPT_URL + "?mode=admin&password=" + pass)
+.then(res=>res.json())
+.then(data=>{
+
+if(data.error){ alert("Wrong Password"); return; }
+
+document.getElementById("loginBox").style.display="none";
+document.getElementById("dashboard").style.display="block";
+
+document.getElementById("total").innerText=data.totalCandidates;
+document.getElementById("passed").innerText=data.passed;
+document.getElementById("failed").innerText=data.failed;
+
+renderTable(data.results);
+});
+}
+
+function renderTable(results){
+let table=document.getElementById("resultTable");
+
+results.forEach(row=>{
+let tr=document.createElement("tr");
+row.forEach(col=>{
+let td=document.createElement("td");
+td.innerText=col;
+tr.appendChild(td);
+});
+table.appendChild(tr);
+});
+}
+
+function downloadExcel(){
+window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/export?format=xlsx","_blank");
+}
+</script>
 
 </body>
 </html>

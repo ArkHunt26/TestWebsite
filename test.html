@@ -10,15 +10,12 @@
 <div class="container">
 
     <h2>Online Examination</h2>
-
     <h3>Time Left: <span id="timer">60:00</span></h3>
 
-    <!-- MCQ Section -->
     <div id="mcqSection"></div>
 
     <hr>
 
-    <!-- Coding Section -->
     <h3>Coding Question</h3>
     <p id="codingDesc"></p>
 
@@ -29,13 +26,11 @@
 
     <br><br>
 
-    <textarea id="codeEditor" rows="10" cols="50"
-    placeholder="Write your code here..."></textarea>
+    <textarea id="codeEditor" rows="10"></textarea>
 
     <br><br>
 
     <button onclick="runCode()">Run Code</button>
-
     <p id="codeResult"></p>
 
     <hr>
@@ -50,14 +45,13 @@
 <script src="js/timer.js"></script>
 
 <script>
-document.getElementById("codingDesc").innerText =
-codingQuestion.description;
-
+document.getElementById("codingDesc").innerText = codingQuestion.description;
 renderMCQ();
 </script>
 
 </body>
 </html>
+
 
 
 
