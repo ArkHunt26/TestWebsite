@@ -162,19 +162,46 @@ else light.style.background="#66ff00";
 }
 
 function update(){
-fetch(SCRIPT_URL,{
-method:"POST",
-headers:{"Content-Type":"application/json"},
-body:JSON.stringify({
+
+const payload = {
 type:"UPDATE_CONFIG",
 password:password,
-duration:duration.value,
+duration:Number(duration.value),
 startTime:start.value,
 enabled:enabled.checked,
-passMark:passMark.value
+passMark:Number(passMark.value)
+};
+
+fetch(SCRIPT_URL,{
+method:"POST",
+body:JSON.stringify(payload)   // ❗ no headers
 })
-}).then(()=>alert("Settings Updated"));
+.then(res => res.text())
+.then(txt => {
+console.log("Server response:", txt);
+alert("Settings Updated");
+})
+.catch(err => {
+console.error("POST FAILED:", err);
+alert("Failed to update settings");
+});
 }
+
+
+        // function update(){
+        // fetch(SCRIPT_URL,{
+        // method:"POST",
+        // headers:{"Content-Type":"application/json"},
+        // body:JSON.stringify({
+        // type:"UPDATE_CONFIG",
+        // password:password,
+        // duration:duration.value,
+        // startTime:start.value,
+        // enabled:enabled.checked,
+        // passMark:passMark.value
+        // })
+        // }).then(()=>alert("Settings Updated"));
+        // }
 
 function download(){
 window.open("YOUR_SHEET_LINK");
