@@ -43,7 +43,9 @@
 
         <div class="form-row">
             <label>Duration (min)</label>
-            <input type="number" id="duration">
+            <input type="number" id="duration" min="30" placeholder="Enter minutes (e.g., 45)">
+
+            <!-- <input type="number" id="duration"> -->
         </div>
 
         <div class="form-row">
@@ -111,25 +113,68 @@ function login(){
         document.getElementById("duration").value=d.duration;
         document.getElementById("passMark").value=d.passMark;
         document.getElementById("enabled").checked=d.enabled;
-        document.getElementById("start").value=new Date(d.startTime).toISOString().slice(0,16);
+        if(d.startTime){
+            const dt = new Date(d.startTime);
+            if(!isNaN(dt)){
+                document.getElementById("start").value = dt.toISOString().slice(0,16);
+            }
+        }
+
+        
+                // document.getElementById("start").value=new Date(d.startTime).toISOString().slice(0,16);
     });
 }
 
 /* UPDATE SETTINGS */
 function update(){
+
+    const dur = parseInt(document.getElementById("duration").value);
+
+    if(isNaN(dur)){
+        alert("Please enter a valid duration");
+        return;
+    }
+
+    if(dur < 30){
+        alert("Minimum allowed duration is 30 minutes");
+        return;
+    }
+
+    if(!start.value){
+        alert("Please select exam start time");
+        return;
+    }
+
     fetch(SCRIPT_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
             type:"UPDATE_CONFIG",
             password:password,
-            duration:duration.value,
+            duration:dur,
             startTime:start.value,
             enabled:enabled.checked,
             passMark:passMark.value
         })
-    }).then(()=>alert("Settings Updated"));
+    }).then(()=>alert("Settings Updated Successfully"));
 }
+
+
+
+// function update(){
+//     fetch(SCRIPT_URL,{
+//         method:"POST",
+//         headers:{"Content-Type":"application/json"},
+//         body:JSON.stringify({
+//             type:"UPDATE_CONFIG",
+//             password:password,
+//             duration:duration.value,
+//             startTime:start.value,
+//             enabled:enabled.checked,
+//             passMark:passMark.value
+//         })
+//     }).then(()=>alert("Settings Updated"));
+// }
 
 /* DOWNLOAD SHEET */
 function download(){
