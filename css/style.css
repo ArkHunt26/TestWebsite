@@ -23,8 +23,29 @@ button{
     background:#007bff;
     color:white;
     border:none;
+    border-radius:6px;
     cursor:pointer;
+    transition:all 0.25s ease;
 }
+
+button:hover{
+    background:#0056b3;
+    transform:translateY(-1px);
+}
+
+button:active{
+    transform:translateY(1px);
+}
+
+
+
+            /* button{
+                padding:10px 20px;
+                background:#007bff;
+                color:white;
+                border:none;
+                cursor:pointer;
+            } */
 
 .option{
     margin:10px;
@@ -52,3 +73,56 @@ textarea{
     width:55%;
     padding:6px;
 }
+
+/* ===== Login Section Styling ===== */
+
+#loginBox{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin-top:15px;
+}
+
+/* Password textbox */
+#pass{
+    padding:10px 14px;
+    width:220px;
+    font-size:14px;
+    border-radius:6px;
+    border:1px solid #ccc;
+    outline:none;
+    transition:all 0.2s ease;
+}
+
+/* Focus effect */
+#pass:focus{
+    border-color:#007bff;
+    box-shadow:0 0 5px rgba(0,123,255,0.4);
+}
+
+/* Login Button */
+#loginBox button{
+    padding:10px 20px;
+    font-size:14px;
+    border:none;
+    border-radius:6px;
+    background:#007bff;
+    color:white;
+    cursor:pointer;
+    transition:all 0.25s ease;
+}
+
+/* Hover effect */
+#loginBox button:hover{
+    background:#0056b3;
+    transform:translateY(-1px);
+}
+
+/* Click effect */
+#loginBox button:active{
+    transform:translateY(1px);
+}
+
+
+
