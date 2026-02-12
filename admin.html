@@ -33,7 +33,8 @@
         <p>Total Pass Candidates : <span id="passed"></span></p>
         <p>Total Failed Candidates : <span id="failed"></span></p>
 
-        <canvas id="chart"></canvas>
+        <!-- FIXED CANVAS SIZE (Prevents Blur) -->
+        <canvas id="chart" width="240" height="240"></canvas>
     </div>
 
     <!-- RIGHT : SETTINGS -->
@@ -97,18 +98,34 @@ total.innerText=d.totalCandidates;
 passed.innerText=d.passedCount;
 failed.innerText=d.failedCount;
 
-/* PIE CHART */
+/* DESTROY OLD CHART */
 if(chartInstance) chartInstance.destroy();
 
-chartInstance=new Chart(document.getElementById("chart"),{
-type:"pie",
-data:{
-labels:["Pass","Fail"],
-datasets:[{
-data:[d.passedCount,d.failedCount],
-backgroundColor:["#66ff00","#ff2b2b"]
+/* FINAL PIE CHART (NO LEGEND, NO BLUR) */
+chartInstance = new Chart(document.getElementById("chart"), {
+type: "pie",
+data: {
+labels: ["Pass","Fail"],
+datasets: [{
+data: [d.passedCount, d.failedCount],
+backgroundColor: ["#66ff00","#ff2b2b"],
+borderWidth: 1
 }]
+
+},
+
+options: {
+responsive: false,
+maintainAspectRatio: true,
+devicePixelRatio: window.devicePixelRatio,   // ⭐ ensures crisp rendering
+
+plugins: {
+legend: { display: false },
+tooltip: { enabled: true }
 }
+}
+
+
 });
 
 /* LOAD SETTINGS */
@@ -129,7 +146,6 @@ updateStatusLight(d);
 
 /* STATUS COLOR */
 function updateStatusLight(data){
-
 const light=document.getElementById("statusLight");
 
 if(!data.enabled || !data.startTime){
