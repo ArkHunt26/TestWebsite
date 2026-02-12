@@ -1,38 +1,87 @@
+<!-- test.html -->
 <!DOCTYPE html>
 <html>
 <head>
-<title>Exam</title>
-<link rel="stylesheet" href="css/style.css">
+    <title>Exam</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+
+    <h2>Online Examination</h2>
+
+    <h3>Time Left: <span id="timer">60:00</span></h3>
+
+    <!-- MCQ Section -->
+    <div id="mcqSection"></div>
+
+    <hr>
+
+    <!-- Coding Section -->
+    <h3>Coding Question</h3>
+    <p id="codingDesc"></p>
+
+    <select id="language">
+        <option value="c">C</option>
+        <option value="cpp">C++</option>
+    </select>
+
+    <br><br>
+
+    <textarea id="codeEditor" rows="10" cols="50"
+    placeholder="Write your code here..."></textarea>
+
+    <br><br>
+
+    <button onclick="runCode()">Run Code</button>
+
+    <p id="codeResult"></p>
+
+    <hr>
+
+    <button onclick="submitTest()">Submit Test</button>
+
+</div>
+
 <script src="js/config.js"></script>
 <script src="js/questions.js"></script>
 <script src="js/test.js"></script>
 <script src="js/timer.js"></script>
-</head>
-<body onload="renderMCQ()">
 
-<div class="header">
-<h3>Exam</h3>
-<div id="timer"></div>
-</div>
+<script>
+document.getElementById("codingDesc").innerText =
+codingQuestion.description;
 
-<div class="container">
+renderMCQ();
+</script>
 
-<div id="mcqSection"></div>
-
-<h3>Coding Section</h3>
-
-<select id="language">
-<option value="c">C</option>
-<option value="cpp">C++</option>
-</select>
-
-<textarea id="codeEditor" rows="10" style="width:100%;"></textarea>
-
-<button onclick="runCode()">Run</button>
-<div id="codeResult"></div>
-
-<button onclick="submitTest()">Submit</button>
-
-</div>
 </body>
 </html>
+
+
+
+
+                    <!-- <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Exam</title>
+                        <link rel="stylesheet" href="css/style.css">
+                    </head>
+                    <body>
+
+                    <div class="container">
+                        <h3 id="timer">Time Left: </h3>
+                        <h3 id="question"></h3>
+                        <div id="options"></div>
+
+                        <button onclick="nextQuestion()">Next</button>
+                    </div>
+
+                    <script src="js/config.js"></script>
+                    <script src="js/questions.js"></script>
+                    <script src="js/timer.js"></script>
+                    <script src="js/test.js"></script>
+
+                    </body>
+                    </html> -->

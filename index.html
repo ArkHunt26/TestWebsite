@@ -1,0 +1,36 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Start Exam</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="container">
+    <h2>Online Exam</h2>
+
+    <input type="text" id="name" placeholder="Full Name"><br><br>
+    <input type="text" id="phone" placeholder="Phone Number"><br><br>
+
+    <button onclick="startExam()">Start Exam</button>
+</div>
+
+<script>
+function startExam(){
+    let name = document.getElementById("name").value;
+    let phone = document.getElementById("phone").value;
+
+    if(name === "" || phone === ""){
+        alert("Enter details!");
+        return;
+    }
+
+    localStorage.setItem("name", name);
+    localStorage.setItem("phone", phone);
+    window.location.href = "test.html";
+}
+</script>
+
+</body>
+</html>

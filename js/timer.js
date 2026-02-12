@@ -1,3 +1,5 @@
+// timer.js
+
 let timeLeft = 3600;
 let examActive = true;
 
