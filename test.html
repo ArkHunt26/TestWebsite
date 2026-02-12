@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Exam</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="js/config.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/test.js"></script>
+<script src="js/timer.js"></script>
+</head>
+<body onload="renderMCQ()">
+
+<div class="header">
+<h3>Exam</h3>
+<div id="timer"></div>
+</div>
+
+<div class="container">
+
+<div id="mcqSection"></div>
+
+<h3>Coding Section</h3>
+
+<select id="language">
+<option value="c">C</option>
+<option value="cpp">C++</option>
+</select>
+
+<textarea id="codeEditor" rows="10" style="width:100%;"></textarea>
+
+<button onclick="runCode()">Run</button>
+<div id="codeResult"></div>
+
+<button onclick="submitTest()">Submit</button>
+
+</div>
+</body>
+</html>
