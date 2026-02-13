@@ -76,6 +76,13 @@
         </div>
 
         <div class="form-group">
+            <label>Session ID</label>
+            <input type="text" id="sessionId" placeholder="Enter Session ID">
+        </div>
+    
+
+
+        <div class="form-group">
             <label>Pass Mark</label>
             <input type="number" id="passMark">
         </div>
@@ -144,6 +151,7 @@ return;
 total.innerText=d.totalCandidates;
 passed.innerText=d.passedCount;
 failed.innerText=d.failedCount;
+document.getElementById("sessionId").value = d.sessionId || "";
 
 /* PIE CHART */
 if(chartInstance){
@@ -249,6 +257,8 @@ formData.append("duration",duration.value);
 formData.append("startTime",start.value);
 formData.append("enabled",enabled.checked);
 formData.append("passMark",passMark.value);
+formData.append("sessionId",sessionId.value);
+
 
 fetch(SCRIPT_URL,{method:"POST",body:formData})
 .then(()=>{alert("Updated");loadDashboard();});

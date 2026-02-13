@@ -76,7 +76,8 @@ body{
 
     <input type="text" id="name" placeholder="Full Name">
     <input type="text" id="phone" placeholder="Phone Number">
-
+    <input type="text" id="sessionInput" placeholder="Session ID">
+    
     <button onclick="startExam()">Start Exam</button>
 </div>
 
@@ -88,14 +89,21 @@ async function startExam(){
 
     let name = document.getElementById("name").value.trim();
     let phone = document.getElementById("phone").value.trim();
+    let enteredSession = document.getElementById("sessionInput").value.trim();
 
-    if(name === "" || phone === ""){
-        alert("Enter details!");
+    if(name === "" || phone === "" || enteredSession === ""){
+        alert("Enter all details!");
         return;
     }
 
     const res = await fetch(SCRIPT_URL + "?mode=student");
     const config = await res.json();
+
+    /* SESSION CHECK */
+    if(!config.sessionId || enteredSession !== config.sessionId){
+        alert("Invalid Session ID.");
+        return;
+    }
 
     if(!config.enabled){
         alert("Exam is not enabled.");
@@ -129,6 +137,7 @@ async function startExam(){
 
     window.location.href = "test.html";
 }
+
 
 </script>
 
