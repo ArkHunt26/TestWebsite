@@ -1,287 +1,152 @@
-/* ===========================
-   ADMIN DASHBOARD THEME ONLY
-   =========================== */
-
 .admin-theme{
-    background:#e9ecef;
-    font-family:Arial, sans-serif;
+background:#e9ecef;
+font-family:Arial, sans-serif;
 }
 
-/* OUTER PANEL */
-.admin-wrapper{
-width:880px;
-margin:60px auto;
+/* LOGIN */
+.login-container{
+height:100vh;
+display:flex;
+justify-content:center;
+align-items:center;
+}
+
+.login-card{
 background:#a8d0cc;
-padding:25px;
-border-radius:18px;
-border:2px solid #2a80d7;
+padding:40px;
+width:320px;
+border-radius:16px;
+text-align:center;
 box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
 
-.admin-wrapper h2{
-text-align:center;
-text-decoration:underline;
+.login-card h2{
 margin-bottom:25px;
+text-decoration:underline;
 }
 
-/* GRID */
+.login-card input{
+width:100%;
+padding:12px;
+margin-bottom:20px;
+border-radius:8px;
+border:1px solid #6c9c97;
+}
+
+.login-card button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:8px;
+background:#38d6c4;
+cursor:pointer;
+font-weight:bold;
+}
+
+.login-card button:hover{
+background:#1fb5a3;
+}
+
+/* DASHBOARD */
+.admin-wrapper{
+width:1000px;
+margin:60px auto;
+background:#a8d0cc;
+padding:30px;
+border-radius:20px;
+box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
+
+.dashboard-title{
+text-align:center;
+margin-bottom:30px;
+text-decoration:underline;
+}
+
 .admin-grid{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:20px;
+gap:25px;
 }
 
-/* CARD */
 .admin-card{
-background:#bfe3df;
-padding:20px;
-border-radius:15px;
+background:#c4e6e3;
+padding:25px;
+border-radius:16px;
 border:1px solid #6c9c97;
 }
 
 .admin-card h3{
 text-decoration:underline;
-margin-bottom:15px;
-}
-
-/* FORM */
-.admin-card .form-row{
-display:grid;
-grid-template-columns:140px 1fr;
-margin:10px 0;
-align-items:center;
-}
-
-.admin-card input{
-padding:6px;
-width:100%;
-}
-
-/* STATUS BAR */
-.admin-status{
-margin-top:20px;
-background:#bfe3df;
-padding:18px;
-border-radius:15px;
-border:1px solid #6c9c97;
-
-display:flex;
-align-items:center;
-justify-content:center;
-gap:30px;
-}
-
-/* STATUS LIGHT */
-.admin-light{
-width:55px;
-height:55px;
-border-radius:14px;
-background:red;
-border:2px solid black;
-}
-
-/* =========================
-   MODERN LOGIN UI
-========================= */
-
-.login-container{
-    height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-
-            /* display:flex;
-            justify-content:center;
-            align-items:center;
-            height:100vh; */
-}
-
-.login-card{
-    background:#a8d0cc;
-    padding:40px;
-    width:320px;
-    border-radius:16px;
-    text-align:center;
-    box-shadow:0 8px 20px rgba(0,0,0,0.15);
-}
-
-.login-card h2{
-    margin-bottom:25px;
-    text-decoration:underline;
-}
-
-.login-card input{
-    width:100%;
-    padding:10px;
-    margin-bottom:20px;
-    border-radius:8px;
-    border:1px solid #6c9c97;
-
-
-                /* width:93%;
-                padding:10px;
-                margin-bottom:20px;
-                border-radius:8px;
-                border:1px solid #6c9c97; */
-}
-
-.login-card button{
-    width:100%;
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    background:#38d6c4;
-    cursor:pointer;
-    font-weight:bold;
-
-                /* width:100%;
-                padding:10px;
-                border:none;
-                border-radius:8px;
-                background:#38d6c4;
-                cursor:pointer;
-                font-weight:bold;
-                transition:0.3s; */
-}
-
-.login-card button:hover{
-    background:#1fb5a3;
-}
-
-/* DASHBOARD */
-.dashboard-container{
-    width:1000px;
-    margin:60px auto;
-    background:#a8d0cc;
-    padding:30px;
-    border-radius:20px;
-    box-shadow:0 8px 20px rgba(0,0,0,0.15);
-}
-
-.dashboard-title{
-    text-align:center;
-    margin-bottom:30px;
-    text-decoration:underline;
-}
-
-.dashboard-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:25px;
-}
-
-.dashboard-card{
-    background:#c4e6e3;
-    padding:25px;
-    border-radius:16px;
-    border:1px solid #6c9c97;
-}
-
-.dashboard-card h3{
-    text-decoration:underline;
-    margin-bottom:20px;
+margin-bottom:20px;
 }
 
 .chart-wrapper{
-    width:260px;
-    margin:0 auto 20px;
+width:260px;
+margin:0 auto 20px;
 }
 
 .stats-box p{
-    margin:8px 0;
+margin:8px 0;
 }
 
-/* SETTINGS */
+/* STATUS + DOWNLOAD */
 .top-row{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
 }
 
 .status-group{
-    display:flex;
-    align-items:center;
-    gap:10px;
+display:flex;
+align-items:center;
+gap:10px;
 }
 
 .status-light{
-    width:30px;
-    height:30px;
-    border-radius:10px;
-    border:2px solid #000;
+width:30px;
+height:30px;
+border-radius:10px;
+border:2px solid #000;
 }
 
 .download-btn{
-    background:#2e89ff;
-    color:#fff;
-    border:none;
-    padding:8px 14px;
-    border-radius:8px;
-    cursor:pointer;
+background:#2e89ff;
+color:#fff;
+border:none;
+padding:8px 14px;
+border-radius:8px;
+cursor:pointer;
 }
 
 .form-group{
-    margin-bottom:15px;
-    display:flex;
-    flex-direction:column;
+margin-bottom:15px;
+display:flex;
+flex-direction:column;
 }
 
 .form-group input{
-    padding:8px;
-    border-radius:8px;
-    border:1px solid #ccc;
-}
-
-.checkbox-row{
-    flex-direction:row;
-    align-items:center;
-    gap:10px;
-}
-
-.update-btn{
-    width:100%;
-    margin-top:10px;
-    padding:10px;
-    border:none;
-    border-radius:8px;
-    background:#38d6c4;
-    cursor:pointer;
-    font-weight:bold;
-}
-
-/* CHART SIZE */
-/* #chart{
-width:230px!important;
-height:230px!important;
-margin:15px auto;
-display:block;
-} */
-
-
-/* LOGIN MODERN */
-.login-modern{
-display:flex;
-flex-direction:column;
-align-items:center;
-gap:15px;
-padding:40px;
-}
-
-.login-modern input{
-padding:12px;
-width:260px;
+padding:8px;
 border-radius:8px;
 border:1px solid #ccc;
 }
 
-.login-modern button{
-padding:10px 25px;
-background:#2a80d7;
-color:white;
+.checkbox-row{
+flex-direction:row;
+align-items:center;
+gap:10px;
+}
+
+.update-btn{
+width:100%;
+margin-top:10px;
+padding:10px;
 border:none;
 border-radius:8px;
+background:#38d6c4;
 cursor:pointer;
+font-weight:bold;
 }
 
 /* RESULT DASHBOARD */
@@ -292,6 +157,7 @@ margin-top:60px;
 .result-dashboard h2{
 text-align:center;
 margin-bottom:25px;
+text-decoration:underline;
 }
 
 .result-grid{

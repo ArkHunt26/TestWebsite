@@ -10,70 +10,91 @@
 
 <body class="admin-theme">
 
-<div class="admin-wrapper">
+<!-- ================= LOGIN SCREEN ================= -->
+<div id="loginSection" class="login-container">
 
-<h2>Admin Dashboard</h2>
+    <div class="login-card">
+        <h2>Admin Dashboard</h2>
+        <input type="password" id="pass" placeholder="Enter password">
+        <button onclick="login()">Login</button>
+    </div>
 
-<!-- LOGIN -->
-<div id="loginBox" class="login-modern">
-    <input type="password" id="pass" placeholder="Enter password">
-    <button onclick="login()">Login</button>
 </div>
 
-<!-- DASHBOARD -->
+
+<!-- ================= DASHBOARD ================= -->
 <div id="panel" style="display:none">
+
+<div class="admin-wrapper">
+
+<h2 class="dashboard-title">Admin Dashboard</h2>
 
 <div class="admin-grid">
 
-    <!-- LEFT -->
+    <!-- LEFT CARD -->
     <div class="admin-card">
-        <h3>Exam details</h3>
+        <h3>Exam Details</h3>
 
-        <p>Total Candidates : <span id="total">0</span></p>
-        <p>Total Pass Candidates : <span id="passed">0</span></p>
-        <p>Total Failed Candidates : <span id="failed">0</span></p>
+        <div class="chart-wrapper">
+            <canvas id="chart" width="260" height="260"></canvas>
+        </div>
 
-        <canvas id="chart" width="240" height="240"></canvas>
+        <div class="stats-box">
+            <p>Total Candidates : <span id="total">0</span></p>
+            <p>Total Pass Candidates : <span id="passed">0</span></p>
+            <p>Total Failed Candidates : <span id="failed">0</span></p>
+        </div>
     </div>
 
-    <!-- RIGHT -->
+
+    <!-- RIGHT CARD -->
     <div class="admin-card">
+
+        <div class="top-row">
+
+            <div class="status-group">
+                <span>Exam Status</span>
+                <div id="statusLight" class="status-light"></div>
+            </div>
+
+            <button class="download-btn" onclick="download()">
+                Download Excel
+            </button>
+
+        </div>
+
         <h3>Exam Settings</h3>
 
-        <div class="form-row">
+        <div class="form-group">
             <label>Start Time</label>
             <input type="datetime-local" id="start">
         </div>
 
-        <div class="form-row">
+        <div class="form-group">
             <label>Duration (min)</label>
             <input type="number" id="duration" min="1">
         </div>
 
-        <div class="form-row">
+        <div class="form-group">
             <label>Pass Mark</label>
             <input type="number" id="passMark">
         </div>
 
-        <div class="form-row">
-            <label>Enable Exam</label>
+        <div class="form-group checkbox-row">
             <input type="checkbox" id="enabled">
+            <label>Enable Exam</label>
         </div>
 
-        <button onclick="update()">Update Settings</button>
+        <button class="update-btn" onclick="update()">
+            Update Settings
+        </button>
+
     </div>
 
 </div>
 
-<!-- STATUS -->
-<div class="admin-status">
-    <span>Exam status</span>
-    <div id="statusLight" class="admin-light"></div>
-    <button onclick="download()">Download Excel</button>
-</div>
 
-
-<!-- RESULT DASHBOARD -->
+<!-- ================= RESULT DASHBOARD ================= -->
 <div class="result-dashboard">
 
     <h2>Result Dashboard</h2>
@@ -105,6 +126,7 @@ let password="";
 let chartInstance=null;
 let refreshInterval=null;
 
+/* ================= LOAD DASHBOARD ================= */
 function loadDashboard(){
 
 fetch(SCRIPT_URL+"?mode=admin&password="+password)
@@ -118,14 +140,14 @@ location.reload();
 return;
 }
 
+/* UPDATE NUMBERS */
 total.innerText=d.totalCandidates;
 passed.innerText=d.passedCount;
 failed.innerText=d.failedCount;
 
-/* CHART */
+/* PIE CHART */
 if(chartInstance){
-chartInstance.data.datasets[0].data=
-[d.passedCount,d.failedCount];
+chartInstance.data.datasets[0].data=[d.passedCount,d.failedCount];
 chartInstance.update();
 }else{
 chartInstance=new Chart(document.getElementById("chart"),{
@@ -144,11 +166,9 @@ legend:{display:false},
 tooltip:{
 callbacks:{
 label:function(context){
-const total=context.dataset.data
-.reduce((a,b)=>a+b,0);
+const total=context.dataset.data.reduce((a,b)=>a+b,0);
 const value=context.raw;
-const percent=total?
-((value/total)*100).toFixed(1):0;
+const percent=total?((value/total)*100).toFixed(1):0;
 return context.label+" – "+percent+"%";
 }
 }
@@ -178,38 +198,50 @@ failList.innerHTML+=`
 </div>`;
 });
 
-/* STATUS LIGHT */
 updateStatusLight(d);
 
 });
 }
 
+/* ================= LOGIN ================= */
 function login(){
 password=pass.value;
+
 fetch(SCRIPT_URL+"?mode=admin&password="+password)
 .then(r=>r.json())
 .then(d=>{
 if(d.error){alert("Wrong Password");return;}
-loginBox.style.display="none";
+
+loginSection.style.display="none";
 panel.style.display="block";
+
 loadDashboard();
 refreshInterval=setInterval(loadDashboard,3000);
 });
 }
 
+/* ================= STATUS LIGHT ================= */
 function updateStatusLight(data){
+
 const light=document.getElementById("statusLight");
+
 if(!data.enabled||!data.startTime||!data.duration){
-light.style.background="#9e9e9e";return;}
+light.style.background="#9e9e9e";
+return;
+}
+
 const now=new Date();
 const start=new Date(data.startTime);
 const end=new Date(start.getTime()+data.duration*60000);
+
 if(now<start) light.style.background="#9e9e9e";
 else if(now<=end) light.style.background="#4caf50";
 else light.style.background="#f44336";
 }
 
+/* ================= UPDATE CONFIG ================= */
 function update(){
+
 const formData=new URLSearchParams();
 formData.append("type","UPDATE_CONFIG");
 formData.append("password",password);
@@ -217,15 +249,15 @@ formData.append("duration",duration.value);
 formData.append("startTime",start.value);
 formData.append("enabled",enabled.checked);
 formData.append("passMark",passMark.value);
+
 fetch(SCRIPT_URL,{method:"POST",body:formData})
 .then(()=>{alert("Updated");loadDashboard();});
 }
 
+/* ================= DOWNLOAD ================= */
 function download(){
 const fileId="1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g";
-window.open(
-`https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`
-);
+window.open(`https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`);
 }
 
 </script>
