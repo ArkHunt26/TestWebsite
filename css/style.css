@@ -3,7 +3,8 @@
    =========================== */
 
 .admin-theme{
-background:#ececec;
+    background:#e9ecef;
+    font-family:Arial, sans-serif;
 }
 
 /* OUTER PANEL */
@@ -84,19 +85,24 @@ border:2px solid black;
 ========================= */
 
 .login-container{
+    height:100vh;
     display:flex;
     justify-content:center;
     align-items:center;
-    height:100vh;
+
+            /* display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh; */
 }
 
 .login-card{
     background:#a8d0cc;
     padding:40px;
     width:320px;
-    border-radius:15px;
+    border-radius:16px;
     text-align:center;
-    box-shadow:0 8px 20px rgba(0,0,0,0.2);
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
 }
 
 .login-card h2{
@@ -105,11 +111,18 @@ border:2px solid black;
 }
 
 .login-card input{
-    width:93%;
+    width:100%;
     padding:10px;
     margin-bottom:20px;
     border-radius:8px;
     border:1px solid #6c9c97;
+
+
+                /* width:93%;
+                padding:10px;
+                margin-bottom:20px;
+                border-radius:8px;
+                border:1px solid #6c9c97; */
 }
 
 .login-card button{
@@ -120,13 +133,122 @@ border:2px solid black;
     background:#38d6c4;
     cursor:pointer;
     font-weight:bold;
-    transition:0.3s;
+
+                /* width:100%;
+                padding:10px;
+                border:none;
+                border-radius:8px;
+                background:#38d6c4;
+                cursor:pointer;
+                font-weight:bold;
+                transition:0.3s; */
 }
 
 .login-card button:hover{
     background:#1fb5a3;
 }
 
+/* DASHBOARD */
+.dashboard-container{
+    width:1000px;
+    margin:60px auto;
+    background:#a8d0cc;
+    padding:30px;
+    border-radius:20px;
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
+}
+
+.dashboard-title{
+    text-align:center;
+    margin-bottom:30px;
+    text-decoration:underline;
+}
+
+.dashboard-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:25px;
+}
+
+.dashboard-card{
+    background:#c4e6e3;
+    padding:25px;
+    border-radius:16px;
+    border:1px solid #6c9c97;
+}
+
+.dashboard-card h3{
+    text-decoration:underline;
+    margin-bottom:20px;
+}
+
+.chart-wrapper{
+    width:260px;
+    margin:0 auto 20px;
+}
+
+.stats-box p{
+    margin:8px 0;
+}
+
+/* SETTINGS */
+.top-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+}
+
+.status-group{
+    display:flex;
+    align-items:center;
+    gap:10px;
+}
+
+.status-light{
+    width:30px;
+    height:30px;
+    border-radius:10px;
+    border:2px solid #000;
+}
+
+.download-btn{
+    background:#2e89ff;
+    color:#fff;
+    border:none;
+    padding:8px 14px;
+    border-radius:8px;
+    cursor:pointer;
+}
+
+.form-group{
+    margin-bottom:15px;
+    display:flex;
+    flex-direction:column;
+}
+
+.form-group input{
+    padding:8px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.checkbox-row{
+    flex-direction:row;
+    align-items:center;
+    gap:10px;
+}
+
+.update-btn{
+    width:100%;
+    margin-top:10px;
+    padding:10px;
+    border:none;
+    border-radius:8px;
+    background:#38d6c4;
+    cursor:pointer;
+    font-weight:bold;
+}
 
 /* CHART SIZE */
 /* #chart{
