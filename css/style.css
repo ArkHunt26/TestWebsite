@@ -649,4 +649,18 @@ font-weight:bold;
 }
 
 
+.circuit-box{
+    margin:15px 0;
+    text-align:center;
+}
+
+.circuit-img{
+    max-width:350px;
+    border-radius:10px;
+    background:white;
+    padding:10px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+}
+
+
 

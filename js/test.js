@@ -44,16 +44,36 @@ container.innerHTML+=`
 if(q.type==="text"){
 
 container.innerHTML+=`
-<div class="question-card modern-card">
-    <div class="question-title">
-        Q${index+1}. ${q.q}
-    </div>
+<div class="question-card">
 
-    <input type="text" class="modern-input" id="text${index}" placeholder="Enter your answer here">
+<p><b>Q${index+1}.</b> ${q.q}</p>
+
+${q.image ? `<div class="circuit-box">
+<img src="${q.image}" class="circuit-img">
+</div>` : ""}
+
+<input type="text" id="text${index}" placeholder="Enter your answer here">
+
 </div>
 `;
-
 }
+
+
+
+
+                // if(q.type==="text"){
+
+                // container.innerHTML+=`
+                // <div class="question-card modern-card">
+                //     <div class="question-title">
+                //         Q${index+1}. ${q.q}
+                //     </div>
+
+                //     <input type="text" class="modern-input" id="text${index}" placeholder="Enter your answer here">
+                // </div>
+                // `;
+
+                // }
 
 /* ================= CODING ================= */
 if(q.type==="coding"){

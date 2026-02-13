@@ -106,9 +106,32 @@ const hardwareMCQ = [
 ];
 
 const hardwareText = [
-{section:"Hardware",type:"text",q:"Voltage divider: Vin=10V, R1=10kΩ, R2=10kΩ. Find Vout.",answer:5,marks:2.5,tolerance:0.2},
-{section:"Hardware",type:"text",q:"Voltage divider: Vin=12V, R1=4kΩ, R2=2kΩ. Find Vout.",answer:4,marks:2.5,tolerance:0.2}
+
+{
+type:"text",
+q:"Voltage divider: Vin=12V, R1=4kΩ, R2=2kΩ. Find Vout.",
+image:"images/voltage_divider.png",
+answer:4,
+marks:2.5,
+tolerance:0.2
+},
+
+{
+type:"text",
+q:"Voltage divider: Vin=10V, R1=10kΩ, R2=10kΩ. Find Vout.",
+image:"images/voltage_divider.png",
+answer:5,
+marks:2.5,
+tolerance:0.2
+}
+
 ];
+
+
+// const hardwareText = [
+// {section:"Hardware",type:"text",q:"Voltage divider: Vin=10V, R1=10kΩ, R2=10kΩ. Find Vout.",answer:5,marks:2.5,tolerance:0.2},
+// {section:"Hardware",type:"text",q:"Voltage divider: Vin=12V, R1=4kΩ, R2=2kΩ. Find Vout.",answer:4,marks:2.5,tolerance:0.2}
+// ];
 
 /* ======================= CODING ======================= */
 const codingQuestions = [
@@ -132,6 +155,7 @@ const selectedQuestions = [
 ...pickRandom(codingQuestions,1).map(q=>({...q, section:"Coding Challenge"}))
 
 ];
+
 
 
 
