@@ -408,3 +408,122 @@ font-weight:bold;
     background:#ffcdd2;
     color:#c62828;
 }
+
+
+/* ============================
+   EXAM MODERN UI
+============================ */
+
+.exam-theme{
+    background:#dfe6e9;
+    font-family:Arial, sans-serif;
+}
+
+.exam-wrapper{
+    width:900px;
+    margin:40px auto;
+    padding:30px;
+    background:#b2d8d8;
+    border-radius:25px;
+}
+
+/* HEADER STRIP */
+.exam-header{
+    background:#9be28c;
+    padding:18px 25px;
+    border-radius:20px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+}
+
+.exam-header h2{
+    margin:0;
+}
+
+.timer-box{
+    background:#e8f5e9;
+    padding:10px 18px;
+    border-radius:15px;
+    font-weight:bold;
+}
+
+/* QUESTION SECTION */
+.question-container{
+    display:flex;
+    flex-direction:column;
+    gap:25px;
+}
+
+/* QUESTION CARD */
+.question-card{
+    background:#bcd9d9;
+    padding:20px;
+    border-radius:20px;
+    border:2px solid #7fb3b3;
+}
+
+.question-card p{
+    margin-bottom:15px;
+    font-size:16px;
+}
+
+/* OPTIONS */
+.question-card label{
+    display:block;
+    margin-bottom:8px;
+    cursor:pointer;
+}
+
+/* TEXT ANSWER */
+.question-card input[type="text"]{
+    padding:8px;
+    width:250px;
+    border-radius:8px;
+    border:1px solid #999;
+}
+
+/* CODING AREA */
+.question-card textarea{
+    width:100%;
+    border-radius:10px;
+    padding:10px;
+    border:1px solid #999;
+    font-family:monospace;
+}
+
+/* RUN BUTTON */
+.question-card button{
+    margin-top:10px;
+    padding:6px 12px;
+    border-radius:8px;
+    border:none;
+    background:#2ecc71;
+    cursor:pointer;
+}
+
+/* SUBMIT */
+.submit-container{
+    text-align:center;
+    margin-top:35px;
+}
+
+.submit-btn{
+    padding:12px 30px;
+    border:none;
+    border-radius:15px;
+    background:#1abc9c;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.section-title{
+    margin-top:25px;
+    margin-bottom:10px;
+    font-size:20px;
+    font-weight:bold;
+}
+
+
+

@@ -3,8 +3,23 @@ function renderMCQ(){
 const container = document.getElementById("mcqSection");
 container.innerHTML = "";
 
+/* Track section change */
+let currentSection = "";
+
 selectedQuestions.forEach((q,index)=>{
 
+/* ===== SHOW SECTION TITLE WHEN SECTION CHANGES ===== */
+if(q.section && q.section !== currentSection){
+    currentSection = q.section;
+
+    container.innerHTML += `
+    <div class="section-title">
+        <h3>${currentSection}</h3>
+    </div>
+    `;
+}
+
+/* ===== MCQ TYPE ===== */
 if(q.type==="mcq"){
 
 container.innerHTML+=`
@@ -14,12 +29,12 @@ ${q.options.map((opt,i)=>`
 <label>
 <input type="radio" name="q${index}" value="${i}">
 ${opt}
-</label><br>`).join("")}
+</label>`).join("")}
 </div>
 `;
-
 }
 
+/* ===== TEXT TYPE ===== */
 if(q.type==="text"){
 
 container.innerHTML+=`
@@ -28,25 +43,76 @@ container.innerHTML+=`
 <input type="text" id="text${index}" placeholder="Enter answer">
 </div>
 `;
-
 }
 
+/* ===== CODING TYPE ===== */
 if(q.type==="coding"){
 
 container.innerHTML+=`
 <div class="question-card">
 <h3>C Programming Question (5 Marks)</h3>
 <p>${q.description}</p>
-<textarea id="codeArea" rows="10" style="width:100%;"></textarea>
+<textarea id="codeArea" rows="10"></textarea>
 <button onclick="runCode()">Run Code</button>
 <pre id="outputBox"></pre>
 </div>
 `;
-
 }
 
 });
 }
+
+                    
+                    
+                    // function renderMCQ(){
+
+                    // const container = document.getElementById("mcqSection");
+                    // container.innerHTML = "";
+
+                    // selectedQuestions.forEach((q,index)=>{
+
+                    // if(q.type==="mcq"){
+
+                    // container.innerHTML+=`
+                    // <div class="question-card">
+                    // <p><b>Q${index+1}.</b> ${q.q}</p>
+                    // ${q.options.map((opt,i)=>`
+                    // <label>
+                    // <input type="radio" name="q${index}" value="${i}">
+                    // ${opt}
+                    // </label><br>`).join("")}
+                    // </div>
+                    // `;
+
+                    // }
+
+                    // if(q.type==="text"){
+
+                    // container.innerHTML+=`
+                    // <div class="question-card">
+                    // <p><b>Q${index+1}.</b> ${q.q}</p>
+                    // <input type="text" id="text${index}" placeholder="Enter answer">
+                    // </div>
+                    // `;
+
+                    // }
+
+                    // if(q.type==="coding"){
+
+                    // container.innerHTML+=`
+                    // <div class="question-card">
+                    // <h3>C Programming Question (5 Marks)</h3>
+                    // <p>${q.description}</p>
+                    // <textarea id="codeArea" rows="10" style="width:100%;"></textarea>
+                    // <button onclick="runCode()">Run Code</button>
+                    // <pre id="outputBox"></pre>
+                    // </div>
+                    // `;
+
+                    // }
+
+                    // });
+                    // }
 
 let codingScore = 0;
 
