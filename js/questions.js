@@ -122,11 +122,25 @@ const codingQuestions = [
 
 /* ======================= FINAL SELECTION ======================= */
 const selectedQuestions = [
-...pickRandom(cQuestions,5),
-...pickRandom(cppQuestions,5),
-...pickRandom(embeddedQuestions,5),
-...pickRandom(rtosQuestions,5),
-...pickRandom(hardwareMCQ,3),
-...pickRandom(hardwareText,2),
-...pickRandom(codingQuestions,1)
+
+...pickRandom(cQuestions,5).map(q=>({...q, section:"C Programming"})),
+...pickRandom(cppQuestions,5).map(q=>({...q, section:"C++ Programming"})),
+...pickRandom(embeddedQuestions,5).map(q=>({...q, section:"Embedded Systems"})),
+...pickRandom(rtosQuestions,5).map(q=>({...q, section:"RTOS"})),
+...pickRandom(hardwareMCQ,3).map(q=>({...q, section:"Hardware"})),
+...pickRandom(hardwareText,2).map(q=>({...q, section:"Hardware"})),
+...pickRandom(codingQuestions,1).map(q=>({...q, section:"Coding Challenge"}))
+
 ];
+
+
+
+        // const selectedQuestions = [
+        // ...pickRandom(cQuestions,5),
+        // ...pickRandom(cppQuestions,5),
+        // ...pickRandom(embeddedQuestions,5),
+        // ...pickRandom(rtosQuestions,5),
+        // ...pickRandom(hardwareMCQ,3),
+        // ...pickRandom(hardwareText,2),
+        // ...pickRandom(codingQuestions,1)
+        // ];

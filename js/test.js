@@ -3,64 +3,84 @@ function renderMCQ(){
 const container = document.getElementById("mcqSection");
 container.innerHTML = "";
 
-/* Track section change */
 let currentSection = "";
 
 selectedQuestions.forEach((q,index)=>{
 
-/* ===== SHOW SECTION TITLE WHEN SECTION CHANGES ===== */
+/* ================= SECTION TITLE ================= */
 if(q.section && q.section !== currentSection){
-    currentSection = q.section;
+currentSection = q.section;
 
-    container.innerHTML += `
-    <div class="section-title">
-        <h3>${currentSection}</h3>
-    </div>
-    `;
+container.innerHTML += `
+<div class="section-divider">
+    <span>${currentSection}</span>
+</div>
+`;
 }
 
-/* ===== MCQ TYPE ===== */
+/* ================= MCQ ================= */
 if(q.type==="mcq"){
 
 container.innerHTML+=`
-<div class="question-card">
-<p><b>Q${index+1}.</b> ${q.q}</p>
-${q.options.map((opt,i)=>`
-<label>
-<input type="radio" name="q${index}" value="${i}">
-${opt}
-</label>`).join("")}
+<div class="question-card modern-card">
+    <div class="question-title">
+        Q${index+1}. ${q.q}
+    </div>
+
+    <div class="options-container">
+        ${q.options.map((opt,i)=>`
+        <label class="modern-option">
+            <input type="radio" name="q${index}" value="${i}">
+            <span>${opt}</span>
+        </label>
+        `).join("")}
+    </div>
 </div>
 `;
+
 }
 
-/* ===== TEXT TYPE ===== */
+/* ================= TEXT ================= */
 if(q.type==="text"){
 
 container.innerHTML+=`
-<div class="question-card">
-<p><b>Q${index+1}.</b> ${q.q}</p>
-<input type="text" id="text${index}" placeholder="Enter answer">
+<div class="question-card modern-card">
+    <div class="question-title">
+        Q${index+1}. ${q.q}
+    </div>
+
+    <input type="text" class="modern-input" id="text${index}" placeholder="Enter your answer here">
 </div>
 `;
+
 }
 
-/* ===== CODING TYPE ===== */
+/* ================= CODING ================= */
 if(q.type==="coding"){
 
 container.innerHTML+=`
-<div class="question-card">
-<h3>C Programming Question (5 Marks)</h3>
-<p>${q.description}</p>
-<textarea id="codeArea" rows="10"></textarea>
-<button onclick="runCode()">Run Code</button>
-<pre id="outputBox"></pre>
+<div class="question-card coding-card">
+    <div class="coding-header">
+        C Programming Question (5 Marks)
+    </div>
+
+    <p class="coding-description">${q.description}</p>
+
+    <textarea id="codeArea" class="code-editor" rows="10"
+    placeholder="Write your C code here..."></textarea>
+
+    <button class="run-btn" onclick="runCode()">Run Code</button>
+
+    <pre id="outputBox" class="output-box"></pre>
 </div>
 `;
+
 }
 
 });
+
 }
+
 
                     
                     
