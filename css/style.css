@@ -257,3 +257,77 @@ height:230px!important;
 margin:15px auto;
 display:block;
 } */
+
+
+/* LOGIN MODERN */
+.login-modern{
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:15px;
+padding:40px;
+}
+
+.login-modern input{
+padding:12px;
+width:260px;
+border-radius:8px;
+border:1px solid #ccc;
+}
+
+.login-modern button{
+padding:10px 25px;
+background:#2a80d7;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;
+}
+
+/* RESULT DASHBOARD */
+.result-dashboard{
+margin-top:60px;
+}
+
+.result-dashboard h2{
+text-align:center;
+margin-bottom:25px;
+}
+
+.result-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:30px;
+}
+
+.result-card{
+padding:20px;
+border-radius:15px;
+min-height:250px;
+}
+
+.pass-card{
+background:#dcedc8;
+border:2px solid #8bc34a;
+}
+
+.fail-card{
+background:#ffcdd2;
+border:2px solid #f44336;
+}
+
+.result-row{
+background:white;
+padding:8px 15px;
+margin-bottom:10px;
+border-radius:20px;
+display:flex;
+justify-content:space-between;
+}
+
+.score-badge{
+background:#eeeeee;
+padding:5px 12px;
+border-radius:15px;
+font-weight:bold;
+}

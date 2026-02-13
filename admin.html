@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Admin Dashboard</title>
+<title>Admin</title>
 
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -10,94 +10,92 @@
 
 <body class="admin-theme">
 
-<!-- LOGIN -->
-<div id="loginContainer" class="login-container">
-    <div class="login-card">
-        <h2>Admin Dashboard</h2>
-        <input type="password" id="pass" placeholder="Enter password">
-        <button onclick="login()">Login</button>
-    </div>
-</div>
+<div class="admin-wrapper">
 
+<h2>Admin Dashboard</h2>
+
+<!-- LOGIN -->
+<div id="loginBox" class="login-modern">
+    <input type="password" id="pass" placeholder="Enter password">
+    <button onclick="login()">Login</button>
+</div>
 
 <!-- DASHBOARD -->
-<div id="dashboardContainer" class="dashboard-container" style="display:none;">
+<div id="panel" style="display:none">
 
-    <h1 class="dashboard-title">Admin Dashboard</h1>
+<div class="admin-grid">
 
-    <div class="dashboard-grid">
+    <!-- LEFT -->
+    <div class="admin-card">
+        <h3>Exam details</h3>
 
-        <!-- LEFT CARD -->
-        <div class="dashboard-card">
+        <p>Total Candidates : <span id="total">0</span></p>
+        <p>Total Pass Candidates : <span id="passed">0</span></p>
+        <p>Total Failed Candidates : <span id="failed">0</span></p>
 
-            <h3>Exam details</h3>
+        <canvas id="chart" width="240" height="240"></canvas>
+    </div>
 
-            <div class="chart-wrapper">
-                <canvas id="chart"></canvas>
-            </div>
+    <!-- RIGHT -->
+    <div class="admin-card">
+        <h3>Exam Settings</h3>
 
-            <div class="stats-box">
-                <p>Total Candidates :
-                    <span id="total">0</span></p>
-                <p>Total Pass Candidates :
-                    <span id="passed">0</span></p>
-                <p>Total Failed Candidates :
-                    <span id="failed">0</span></p>
-            </div>
-
+        <div class="form-row">
+            <label>Start Time</label>
+            <input type="datetime-local" id="start">
         </div>
 
-        <!-- RIGHT CARD -->
-        <div class="dashboard-card">
+        <div class="form-row">
+            <label>Duration (min)</label>
+            <input type="number" id="duration" min="1">
+        </div>
 
-            <h3>Exam Settings</h3>
+        <div class="form-row">
+            <label>Pass Mark</label>
+            <input type="number" id="passMark">
+        </div>
 
-            <div class="top-row">
-                <div class="status-group">
-                    <label>Exam status</label>
-                    <div id="statusLight"
-                         class="status-light"></div>
-                </div>
+        <div class="form-row">
+            <label>Enable Exam</label>
+            <input type="checkbox" id="enabled">
+        </div>
 
-                <button class="download-btn"
-                        onclick="download()">
-                        Download Excel
-                </button>
-            </div>
+        <button onclick="update()">Update Settings</button>
+    </div>
 
-            <div class="form-group">
-                <label>Start Time</label>
-                <input type="datetime-local" id="start">
-            </div>
+</div>
 
-            <div class="form-group">
-                <label>Duration (min)</label>
-                <input type="number" id="duration" min="1"
-                       placeholder="Enter minutes (e.g., 45)">
-            </div>
+<!-- STATUS -->
+<div class="admin-status">
+    <span>Exam status</span>
+    <div id="statusLight" class="admin-light"></div>
+    <button onclick="download()">Download Excel</button>
+</div>
 
-            <div class="form-group">
-                <label>Pass Mark</label>
-                <input type="number" id="passMark">
-            </div>
 
-            <div class="form-group checkbox-row">
-                <label>Enable Exam</label>
-                <input type="checkbox" id="enabled">
-            </div>
+<!-- RESULT DASHBOARD -->
+<div class="result-dashboard">
 
-            <button class="update-btn"
-                    onclick="update()">
-                Update Settings
-            </button>
+    <h2>Result Dashboard</h2>
 
+    <div class="result-grid">
+
+        <div class="result-card pass-card">
+            <h3>Pass candidates</h3>
+            <div id="passList"></div>
+        </div>
+
+        <div class="result-card fail-card">
+            <h3>Fail candidates</h3>
+            <div id="failList"></div>
         </div>
 
     </div>
 
 </div>
 
-
+</div>
+</div>
 
 <script src="js/config.js"></script>
 
@@ -107,167 +105,128 @@ let password="";
 let chartInstance=null;
 let refreshInterval=null;
 
-function login(){
-
-    password=document.getElementById("pass").value;
-
-    fetch(SCRIPT_URL+"?mode=admin&password="+password)
-    .then(r=>r.json())
-    .then(d=>{
-
-        if(d.error){
-            alert("Wrong Password");
-            return;
-        }
-
-        document.getElementById("loginContainer")
-            .style.display="none";
-
-        document.getElementById("dashboardContainer")
-            .style.display="block";
-
-        loadDashboard();
-
-        refreshInterval=
-            setInterval(loadDashboard,3000);
-    });
-}
-
-
 function loadDashboard(){
 
-    fetch(SCRIPT_URL+"?mode=admin&password="+password)
-    .then(r=>r.json())
-    .then(d=>{
+fetch(SCRIPT_URL+"?mode=admin&password="+password)
+.then(r=>r.json())
+.then(d=>{
 
-        total.innerText=d.totalCandidates;
-        passed.innerText=d.passedCount;
-        failed.innerText=d.failedCount;
-
-        if(chartInstance){
-            chartInstance.data.datasets[0].data =
-                [d.passedCount,d.failedCount];
-            chartInstance.update();
-        }else{
-            chartInstance=new Chart(
-                document.getElementById("chart"),{
-                type:"pie",
-                data:{
-                    labels:["Pass","Fail"],
-                    datasets:[{
-                        data:[
-                            d.passedCount,
-                            d.failedCount],
-                        backgroundColor:[
-                            "#4cff00",
-                            "#ff3b3b"]
-                    }]
-                },
-                options:{
-                    responsive:true,
-                    plugins:{
-                        legend:{display:false},
-                        tooltip:{
-                            callbacks:{
-                                label:function(context){
-                                    const total =
-                                        context.dataset.data
-                                        .reduce((a,b)=>a+b,0);
-                                    const val=context.raw;
-                                    const per =
-                                        total ?
-                                        ((val/total)*100)
-                                        .toFixed(1):0;
-                                    return context.label +
-                                        " : " + per + "%";
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        updateStatusLight(d);
-
-        duration.value=d.duration || "";
-        passMark.value=d.passMark || "";
-        enabled.checked=d.enabled || false;
-
-        if(d.startTime){
-            const dt=new Date(d.startTime);
-            if(!isNaN(dt)){
-                const offset=
-                    dt.getTimezoneOffset();
-                const local=
-                    new Date(
-                        dt.getTime()-
-                        offset*60000);
-                start.value=
-                    local.toISOString().slice(0,16);
-            }
-        }
-    });
+if(d.error){
+clearInterval(refreshInterval);
+alert("Session expired");
+location.reload();
+return;
 }
 
+total.innerText=d.totalCandidates;
+passed.innerText=d.passedCount;
+failed.innerText=d.failedCount;
+
+/* CHART */
+if(chartInstance){
+chartInstance.data.datasets[0].data=
+[d.passedCount,d.failedCount];
+chartInstance.update();
+}else{
+chartInstance=new Chart(document.getElementById("chart"),{
+type:"pie",
+data:{
+labels:["Pass","Fail"],
+datasets:[{
+data:[d.passedCount,d.failedCount],
+backgroundColor:["#4caf50","#f44336"]
+}]
+},
+options:{
+responsive:false,
+plugins:{
+legend:{display:false},
+tooltip:{
+callbacks:{
+label:function(context){
+const total=context.dataset.data
+.reduce((a,b)=>a+b,0);
+const value=context.raw;
+const percent=total?
+((value/total)*100).toFixed(1):0;
+return context.label+" – "+percent+"%";
+}
+}
+}
+}
+}
+});
+}
+
+/* RESULT LIST */
+passList.innerHTML="";
+failList.innerHTML="";
+
+d.passList.forEach(c=>{
+passList.innerHTML+=`
+<div class="result-row">
+<span>${c.name}</span>
+<span class="score-badge">${c.score}</span>
+</div>`;
+});
+
+d.failList.forEach(c=>{
+failList.innerHTML+=`
+<div class="result-row">
+<span>${c.name}</span>
+<span class="score-badge">${c.score}</span>
+</div>`;
+});
+
+/* STATUS LIGHT */
+updateStatusLight(d);
+
+});
+}
+
+function login(){
+password=pass.value;
+fetch(SCRIPT_URL+"?mode=admin&password="+password)
+.then(r=>r.json())
+.then(d=>{
+if(d.error){alert("Wrong Password");return;}
+loginBox.style.display="none";
+panel.style.display="block";
+loadDashboard();
+refreshInterval=setInterval(loadDashboard,3000);
+});
+}
 
 function updateStatusLight(data){
-
-    const light=
-        document.getElementById("statusLight");
-
-    if(!data.enabled ||
-       !data.startTime ||
-       !data.duration){
-        light.style.background="#9e9e9e";
-        return;
-    }
-
-    const now=new Date();
-    const start=new Date(data.startTime);
-    const end=
-        new Date(start.getTime()+
-        data.duration*60000);
-
-    if(now<start)
-        light.style.background="#9e9e9e";
-    else if(now<=end)
-        light.style.background="#4cff00";
-    else
-        light.style.background="#ff3b3b";
+const light=document.getElementById("statusLight");
+if(!data.enabled||!data.startTime||!data.duration){
+light.style.background="#9e9e9e";return;}
+const now=new Date();
+const start=new Date(data.startTime);
+const end=new Date(start.getTime()+data.duration*60000);
+if(now<start) light.style.background="#9e9e9e";
+else if(now<=end) light.style.background="#4caf50";
+else light.style.background="#f44336";
 }
-
 
 function update(){
-
-    const formData=new URLSearchParams();
-
-    formData.append("type","UPDATE_CONFIG");
-    formData.append("password",password);
-    formData.append("duration",duration.value);
-    formData.append("startTime",start.value);
-    formData.append("enabled",enabled.checked);
-    formData.append("passMark",passMark.value);
-
-    fetch(SCRIPT_URL,{
-        method:"POST",
-        body:formData
-    })
-    .then(()=>loadDashboard());
+const formData=new URLSearchParams();
+formData.append("type","UPDATE_CONFIG");
+formData.append("password",password);
+formData.append("duration",duration.value);
+formData.append("startTime",start.value);
+formData.append("enabled",enabled.checked);
+formData.append("passMark",passMark.value);
+fetch(SCRIPT_URL,{method:"POST",body:formData})
+.then(()=>{alert("Updated");loadDashboard();});
 }
-
 
 function download(){
-    const fileId="1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g";
-    window.open(
-        `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`
-    );
+const fileId="1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g";
+window.open(
+`https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`
+);
 }
-
-document.getElementById("pass")
-.addEventListener("keypress",e=>{
-    if(e.key==="Enter") login();
-});
 
 </script>
 
