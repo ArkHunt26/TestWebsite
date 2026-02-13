@@ -105,10 +105,11 @@ gap:10px;
 }
 
 .status-light{
-width:30px;
-height:30px;
-border-radius:10px;
-border:2px solid #000;
+    width:30px;
+    height:30px;
+    border-radius:10px;
+    border:2px solid #000;
+    background:#9e9e9e;   /* default grey */
 }
 
 .download-btn{

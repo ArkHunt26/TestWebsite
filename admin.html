@@ -132,6 +132,8 @@
 let password="";
 let chartInstance=null;
 let refreshInterval=null;
+let settingsLoaded = false;   // ✅ ADD THIS LINE
+
 
 /* ================= LOAD DASHBOARD ================= */
 function loadDashboard(){
@@ -151,7 +153,29 @@ return;
 total.innerText=d.totalCandidates;
 passed.innerText=d.passedCount;
 failed.innerText=d.failedCount;
-document.getElementById("sessionId").value = d.sessionId || "";
+// document.getElementById("sessionId").value = d.sessionId || "";
+/* LOAD SETTINGS ONLY ONCE */
+if(!settingsLoaded){
+
+    document.getElementById("sessionId").value = d.sessionId || "";
+    document.getElementById("duration").value = d.duration || "";
+    document.getElementById("passMark").value = d.passMark || "";
+    document.getElementById("enabled").checked = d.enabled === true;
+
+    if(d.startTime){
+        const dt = new Date(d.startTime);
+        if(!isNaN(dt)){
+            const offset = dt.getTimezoneOffset();
+            const local = new Date(dt.getTime() - offset * 60000);
+            document.getElementById("start").value =
+                local.toISOString().slice(0,16);
+        }
+    }
+
+    settingsLoaded = true;
+}
+
+
 
 /* PIE CHART */
 if(chartInstance){
@@ -261,7 +285,15 @@ formData.append("sessionId",sessionId.value);
 
 
 fetch(SCRIPT_URL,{method:"POST",body:formData})
-.then(()=>{alert("Updated");loadDashboard();});
+// .then(()=>{alert("Updated");loadDashboard();});
+
+.then(()=>{
+    alert("Updated");
+    settingsLoaded = false;   // ✅ ADD THIS
+    loadDashboard();
+});
+
+
 }
 
 /* ================= DOWNLOAD ================= */
