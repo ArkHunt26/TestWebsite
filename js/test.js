@@ -1,29 +1,69 @@
 /* ===========================
    RENDER QUESTIONS
 =========================== */
+
 function renderMCQ(){
 
-    const c = document.getElementById("mcqSection");
-    c.innerHTML = "";
+    const container = document.getElementById("mcqSection");
+    container.innerHTML = "";
 
-    questions.forEach(q=>{
+    questions.forEach((q,index)=>{
 
-        let d = document.createElement("div");
-        d.className = "question-block";
+        const card = document.createElement("div");
+        card.className = "question-card";
 
-        d.innerHTML = "<p>"+q.q+"</p>";
+        // Question Header
+        const header = document.createElement("div");
+        header.className = "question-header";
+        header.innerText = (index+1) + ". " + q.q;
 
-        q.options.forEach((o,i)=>{
-            d.innerHTML += `
-            <label>
-            <input type="radio" name="q${q.id}" value="${i}">
-            ${o}
-            </label><br>`;
+        // Options Box
+        const optionsBox = document.createElement("div");
+        optionsBox.className = "options-box";
+
+        q.options.forEach((option,i)=>{
+            const label = document.createElement("label");
+            label.className = "option-item";
+
+            label.innerHTML = `
+                <input type="radio" name="q${q.id}" value="${i}">
+                <span>${option}</span>
+            `;
+
+            optionsBox.appendChild(label);
         });
 
-        c.appendChild(d);
+        card.appendChild(header);
+        card.appendChild(optionsBox);
+
+        container.appendChild(card);
     });
 }
+
+
+            // function renderMCQ(){
+
+            //     const c = document.getElementById("mcqSection");
+            //     c.innerHTML = "";
+
+            //     questions.forEach(q=>{
+
+            //         let d = document.createElement("div");
+            //         d.className = "question-block";
+
+            //         d.innerHTML = "<p>"+q.q+"</p>";
+
+            //         q.options.forEach((o,i)=>{
+            //             d.innerHTML += `
+            //             <label>
+            //             <input type="radio" name="q${q.id}" value="${i}">
+            //             ${o}
+            //             </label><br>`;
+            //         });
+
+            //         c.appendChild(d);
+            //     });
+            // }
 
 
 /* ===========================

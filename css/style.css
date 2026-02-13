@@ -291,3 +291,51 @@ font-weight:bold;
     background:#1fb5a3;
 }
 
+/* ===============================
+   QUESTION CARD STYLE (NEW UI)
+================================ */
+
+.question-card{
+    background:#c9ecea;
+    border-radius:16px;
+    padding:0;
+    margin-bottom:25px;
+    border:2px solid #7bb8b4;
+    box-shadow:0 4px 10px rgba(0,0,0,0.08);
+}
+
+.question-header{
+    background:#a8e6cf;
+    padding:12px 18px;
+    border-radius:14px 14px 0 0;
+    font-weight:bold;
+    font-size:16px;
+    border-bottom:1px solid #7bb8b4;
+}
+
+.options-box{
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+}
+
+.option-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#e0f7f6;
+    padding:8px 12px;
+    border-radius:10px;
+    cursor:pointer;
+    transition:0.2s ease;
+}
+
+.option-item:hover{
+    background:#d2f0ee;
+}
+
+.option-item input{
+    transform:scale(1.1);
+}
+
