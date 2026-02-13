@@ -10,18 +10,32 @@
 
 <body class="admin-theme">
 
-<div class="admin-wrapper">
+<!-- =========================
+     LOGIN CARD (NEW UI)
+========================= -->
+<div id="loginContainer" class="login-container">
 
-<h2>Admin Dashboard</h2>
+    <div class="login-card">
+        <h2>Admin Dashboard</h2>
 
-<!-- LOGIN -->
-<div id="loginBox">
-    <input type="password" id="pass" placeholder="Password">
-    <button onclick="login()">Login</button>
+        <input type="password" id="pass"
+               placeholder="Enter password">
+
+        <button onclick="login()">Login</button>
+    </div>
+
 </div>
 
-<!-- DASHBOARD -->
-<div id="panel" style="display:none">
+
+
+<!-- =========================
+     DASHBOARD (UNCHANGED)
+========================= -->
+<div id="dashboardContainer"
+     class="admin-wrapper"
+     style="display:none;">
+
+<h2>Admin Dashboard</h2>
 
 <div class="admin-grid">
 
@@ -29,11 +43,16 @@
     <div class="admin-card">
         <h3>Exam details</h3>
 
-        <p>Total Candidates : <span id="total">0</span></p>
-        <p>Total Pass Candidates : <span id="passed">0</span></p>
-        <p>Total Failed Candidates : <span id="failed">0</span></p>
+        <p>Total Candidates :
+            <span id="total">0</span></p>
+        <p>Total Pass Candidates :
+            <span id="passed">0</span></p>
+        <p>Total Failed Candidates :
+            <span id="failed">0</span></p>
 
-        <canvas id="chart" width="240" height="240"></canvas>
+        <canvas id="chart"
+                width="240"
+                height="240"></canvas>
     </div>
 
     <!-- RIGHT : SETTINGS -->
@@ -47,20 +66,26 @@
 
         <div class="form-row">
             <label>Duration (min)</label>
-            <input type="number" id="duration" min="1">
+            <input type="number"
+                   id="duration"
+                   min="1">
         </div>
 
         <div class="form-row">
             <label>Pass Mark</label>
-            <input type="number" id="passMark">
+            <input type="number"
+                   id="passMark">
         </div>
 
         <div class="form-row">
             <label>Enable Exam</label>
-            <input type="checkbox" id="enabled">
+            <input type="checkbox"
+                   id="enabled">
         </div>
 
-        <button onclick="update()">Update Settings</button>
+        <button onclick="update()">
+            Update Settings
+        </button>
     </div>
 
 </div>
@@ -68,12 +93,16 @@
 <!-- STATUS BAR -->
 <div class="admin-status">
     <span>Exam status</span>
-    <div id="statusLight" class="admin-light"></div>
-    <button onclick="download()">Download Excel</button>
+    <div id="statusLight"
+         class="admin-light"></div>
+    <button onclick="download()">
+        Download Excel
+    </button>
 </div>
 
 </div>
-</div>
+
+
 
 <script src="js/config.js"></script>
 
@@ -85,142 +114,27 @@ let refreshInterval = null;
 let settingsLoadedOnce = false;
 
 
-/* ============================
-   LOAD DASHBOARD
-============================ */
-function loadDashboard(){
+/* =========================
+   LOGIN
+========================= */
+function login(){
 
-    if(!password) return;
+    password = document.getElementById("pass").value;
 
     fetch(SCRIPT_URL + "?mode=admin&password=" + password)
     .then(r => r.json())
     .then(d => {
 
         if(d.error){
-            clearInterval(refreshInterval);
-            alert("Session expired. Login again.");
-            location.reload();
-            return;
-        }
-
-        /* ===== UPDATE NUMBERS ===== */
-        total.innerText  = d.totalCandidates;
-        passed.innerText = d.passedCount;
-        failed.innerText = d.failedCount;
-
-        /* ===== UPDATE CHART ===== */
-        if(chartInstance){
-            chartInstance.data.datasets[0].data =
-                [d.passedCount, d.failedCount];
-            chartInstance.update();
-        } else {
-
-            chartInstance = new Chart(document.getElementById("chart"),{
-                type:"pie",
-                data:{
-                    labels:["Pass","Fail"],
-                    datasets:[{
-                        data:[d.passedCount,d.failedCount],
-                        backgroundColor:["#66ff00","#ff2b2b"]
-                    }]
-                },
-                options:{
-                    responsive:false,
-                    plugins:{
-                        legend:{display:false},
-                        tooltip:{
-                            callbacks:{
-                                label:function(context){
-                                    const total =
-                                        context.dataset.data
-                                        .reduce((a,b)=>a+b,0);
-
-                                    const value = context.raw;
-                                    const percentage =
-                                        total ? 
-                                        ((value/total)*100)
-                                        .toFixed(1) : 0;
-
-                                    return context.label +
-                                        " – " + percentage + "%";
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        /* ===== LOAD SETTINGS ONLY ONCE ===== */
-        if(!settingsLoadedOnce){
-
-            document.getElementById("duration").value = d.duration || "";
-            document.getElementById("passMark").value = d.passMark || "";
-            document.getElementById("enabled").checked = d.enabled === true;
-
-            const startInput = document.getElementById("start");
-
-            if(d.startTime && d.startTime !== ""){
-
-                const dt = new Date(d.startTime);
-
-                if(!isNaN(dt)){
-                    const offset = dt.getTimezoneOffset();
-                    const local = new Date(dt.getTime() - offset * 60000);
-                    startInput.value = local.toISOString().slice(0,16);
-                } else {
-                    startInput.value = "";
-                }
-
-            } else {
-                startInput.value = "";   // 🔥 If no config → keep empty
-            }
-
-            settingsLoadedOnce = true;
-
-                            // duration.value = d.duration || "";
-                            // passMark.value = d.passMark || "";
-                            // enabled.checked = d.enabled || false;
-
-                            // if(d.startTime){
-                            //     const dt = new Date(d.startTime);
-                            //     if(!isNaN(dt)){
-                            //         start.value = dt.toISOString().slice(0,16);
-                            //     }
-                            // }
-
-                            // settingsLoadedOnce = true;
-        }
-
-        updateStatusLight(d);
-
-    })
-    .catch(err=>{
-        console.log("Refresh error:",err);
-    });
-}
-
-
-/* ============================
-   LOGIN
-============================ */
-function login(){
-
-    password = document.getElementById("pass").value;
-
-    fetch(SCRIPT_URL + "?mode=admin&password=" + password)
-    .then(r=>r.json())
-    .then(d=>{
-
-        if(d.error){
             alert("Wrong Password");
             return;
         }
 
-        loginBox.style.display="none";
-        panel.style.display="block";
+        document.getElementById("loginContainer")
+            .style.display = "none";
 
-        settingsLoadedOnce = false;
+        document.getElementById("dashboardContainer")
+            .style.display = "block";
 
         loadDashboard();
 
@@ -228,47 +142,105 @@ function login(){
             clearInterval(refreshInterval);
 
         refreshInterval =
-            setInterval(loadDashboard,3000);
+            setInterval(loadDashboard, 3000);
     });
 }
 
 
-/* ============================
+
+/* =========================
+   LOAD DASHBOARD
+========================= */
+function loadDashboard(){
+
+    fetch(SCRIPT_URL +
+          "?mode=admin&password=" + password)
+    .then(r => r.json())
+    .then(d => {
+
+        if(d.error){
+            clearInterval(refreshInterval);
+            alert("Session expired.");
+            location.reload();
+            return;
+        }
+
+        total.innerText  = d.totalCandidates;
+        passed.innerText = d.passedCount;
+        failed.innerText = d.failedCount;
+
+        if(chartInstance){
+            chartInstance.data.datasets[0].data =
+                [d.passedCount, d.failedCount];
+            chartInstance.update();
+        }
+        else{
+            chartInstance =
+                new Chart(document.getElementById("chart"),{
+                    type:"pie",
+                    data:{
+                        labels:["Pass","Fail"],
+                        datasets:[{
+                            data:[d.passedCount,
+                                  d.failedCount],
+                            backgroundColor:[
+                                "#66ff00",
+                                "#ff2b2b"]
+                        }]
+                    },
+                    options:{
+                        responsive:false,
+                        plugins:{
+                            legend:{display:false}
+                        }
+                    }
+                });
+        }
+
+        updateStatusLight(d);
+    });
+}
+
+
+
+/* =========================
    STATUS LIGHT
-============================ */
+========================= */
 function updateStatusLight(data){
 
-    const light = document.getElementById("statusLight");
+    const light =
+        document.getElementById("statusLight");
 
-    // No config or disabled
-    if(!data.enabled || !data.startTime || !data.duration){
-        light.style.background = "#9e9e9e"; // GREY
+    if(!data.enabled ||
+       !data.startTime ||
+       !data.duration){
+        light.style.background="#9e9e9e";
         return;
     }
 
     const now   = new Date();
     const start = new Date(data.startTime);
-    const end   = new Date(start.getTime() + data.duration * 60000);
+    const end   = new Date(
+        start.getTime() +
+        data.duration * 60000);
 
-    if(now < start){
-        light.style.background = "#9e9e9e"; // NOT STARTED → GREY
-    }
-    else if(now >= start && now <= end){
-        light.style.background = "#66ff00"; // RUNNING → GREEN
-    }
-    else{
-        light.style.background = "#ff2b2b"; // TIMEOUT → RED
-    }
+    if(now < start)
+        light.style.background="#9e9e9e";
+    else if(now <= end)
+        light.style.background="#66ff00";
+    else
+        light.style.background="#ff2b2b";
 }
 
 
 
-/* ============================
+/* =========================
    UPDATE SETTINGS
-============================ */
+========================= */
 function update(){
 
-    const formData = new URLSearchParams();
+    const formData =
+        new URLSearchParams();
 
     formData.append("type","UPDATE_CONFIG");
     formData.append("password",password);
@@ -281,44 +253,26 @@ function update(){
         method:"POST",
         body:formData
     })
-    .then(()=>{
-
-        alert("Settings Updated");
-
-        settingsLoadedOnce = false;
-        loadDashboard();
-
-    })
-    .catch(err=>{
-        console.log("Update error:",err);
-    });
+    .then(()=>loadDashboard());
 }
 
 
-/* ============================
-   ENTER KEY LOGIN
-============================ */
+
+function download(){
+    const fileId =
+    "1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g";
+
+    window.open(
+      `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`
+    );
+}
+
+
+
 document.getElementById("pass")
 .addEventListener("keypress",e=>{
     if(e.key==="Enter") login();
 });
-
-function download(){
-    const fileId = "1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g";
-
-    const link = document.createElement("a");
-    link.href = `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`;
-    link.download = "ExamResults.xlsx";
-
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-
-        // function download(){
-        //     window.open("https://docs.google.com/spreadsheets/d/1PYDJPxUnHa13L6IAPacDLE5gZwKneBZWeUqwm-m1t4g/edit?usp=sharing");
-        // }
 
 </script>
 
