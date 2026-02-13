@@ -4,15 +4,26 @@
 <title>Exam</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="exam-theme">
 
-<div class="container">
-<h2>Exam</h2>
-<h3>Time Left: <span id="timer"></span></h3>
+<div class="exam-wrapper">
 
-<div id="mcqSection"></div>
+    <!-- HEADER -->
+    <div class="exam-header">
+        <h2>Q&A</h2>
+        <div class="timer-box">
+            Time Left : <span id="timer"></span>
+        </div>
+    </div>
 
-<button onclick="submitTest()">Submit</button>
+    <!-- QUESTIONS -->
+    <div id="mcqSection" class="question-container"></div>
+
+    <!-- SUBMIT -->
+    <div class="submit-container">
+        <button class="submit-btn" onclick="submitTest()">Submit Exam</button>
+    </div>
+
 </div>
 
 <script src="js/config.js"></script>
@@ -20,7 +31,38 @@
 <script src="js/test.js"></script>
 <script src="js/timer.js"></script>
 
-<script>renderMCQ();</script>
+<script>
+renderMCQ();
+</script>
 
 </body>
 </html>
+
+
+
+            <!-- <!DOCTYPE html>
+            <html>
+            <head>
+            <title>Exam</title>
+            <link rel="stylesheet" href="css/style.css">
+            </head>
+            <body>
+
+            <div class="container">
+            <h2>Exam</h2>
+            <h3>Time Left: <span id="timer"></span></h3>
+
+            <div id="mcqSection"></div>
+
+            <button onclick="submitTest()">Submit</button>
+            </div>
+
+            <script src="js/config.js"></script>
+            <script src="js/questions.js"></script>
+            <script src="js/test.js"></script>
+            <script src="js/timer.js"></script>
+
+            <script>renderMCQ();</script>
+
+            </body>
+            </html> -->
