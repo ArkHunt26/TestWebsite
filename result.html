@@ -1,22 +1,81 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Result</title>
+<title>Exam Completed</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
 
-<div class="container">
-<h2>Exam Completed</h2>
-<p id="info"></p>
+<body class="result-theme">
+
+<div class="result-container">
+
+    <div class="result-card-modern">
+
+        <h2>Exam Completed</h2>
+
+        <div class="result-pill">
+
+            <span id="resName">Name</span>
+
+            <span class="result-score" id="resScore">Score</span>
+
+        </div>
+
+        <div class="result-status" id="resStatus">
+            RESULT
+        </div>
+
+    </div>
+
 </div>
 
 <script>
-document.getElementById("info").innerText =
-"Name: "+localStorage.getItem("name")+
-"\nScore: "+localStorage.getItem("score")+
-"\nResult: "+localStorage.getItem("result");
+
+document.getElementById("resName").innerText =
+    localStorage.getItem("name") || "Candidate";
+
+document.getElementById("resScore").innerText =
+    localStorage.getItem("score") || "0";
+
+const result = localStorage.getItem("result") || "FAIL";
+const statusBox = document.getElementById("resStatus");
+
+statusBox.innerText = result;
+
+if(result === "PASS"){
+    statusBox.classList.add("status-pass");
+}else{
+    statusBox.classList.add("status-fail");
+}
+
 </script>
 
 </body>
 </html>
+
+
+
+
+
+            <!-- <!DOCTYPE html>
+            <html>
+            <head>
+            <title>Result</title>
+            <link rel="stylesheet" href="css/style.css">
+            </head>
+            <body>
+
+            <div class="container">
+            <h2>Exam Completed</h2>
+            <p id="info"></p>
+            </div>
+
+            <script>
+            document.getElementById("info").innerText =
+            "Name: "+localStorage.getItem("name")+
+            "\nScore: "+localStorage.getItem("score")+
+            "\nResult: "+localStorage.getItem("result");
+            </script>
+
+            </body>
+            </html> -->
