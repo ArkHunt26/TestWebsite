@@ -9,7 +9,6 @@
 
 <div class="exam-wrapper">
 
-    <!-- HEADER -->
     <div class="exam-header">
         <h2>Q&A</h2>
         <div class="timer-box">
@@ -17,10 +16,8 @@
         </div>
     </div>
 
-    <!-- QUESTIONS -->
     <div id="mcqSection" class="question-container"></div>
 
-    <!-- SUBMIT -->
     <div class="submit-container">
         <button class="submit-btn" onclick="submitTest()">
             Submit Exam
@@ -35,93 +32,84 @@
 <script src="js/timer.js"></script>
 
 <script>
-renderMCQ();
 
-/* ================= ANTI CHEAT SYSTEM ================= */
+/* Wait until everything loads */
+window.onload = function() {
+    if (typeof renderMCQ === "function") {
+        renderMCQ();
+    } else {
+        console.error("renderMCQ not found");
+    }
+};
 
-/* ---------------- FULLSCREEN ON FIRST CLICK ---------------- */
-document.addEventListener("click", function startExamOnce() {
-    document.removeEventListener("click", startExamOnce);
+/* ================= FULLSCREEN START ================= */
 
+let examStarted = false;
+
+function startFullscreen() {
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
         elem.requestFullscreen();
     }
+}
+
+/* Start fullscreen only when user clicks anywhere */
+document.addEventListener("click", function startOnce() {
+    if (!examStarted) {
+        examStarted = true;
+        startFullscreen();
+    }
 });
 
-/* ------------- EXIT FULLSCREEN = AUTO SUBMIT ------------- */
+/* ================= CHEAT DETECTION ================= */
+
+let examSubmitted = false;
+
+function showCheatPopup(reason) {
+
+    if (examSubmitted) return;
+
+    const choice = confirm(
+        reason +
+        "\n\nPress OK to return to exam.\nPress Cancel to submit immediately."
+    );
+
+    if (choice) {
+        startFullscreen();
+    } else {
+        forceSubmit();
+    }
+}
+
+/* Fullscreen exit detection */
 document.addEventListener("fullscreenchange", function () {
-    if (!document.fullscreenElement) {
-        alert("Fullscreen exited. Exam will be submitted.");
-        forceSubmit();
+    if (!document.fullscreenElement && !examSubmitted) {
+        showCheatPopup("Cheating detected: Fullscreen exited.");
     }
 });
 
-/* ------------- TAB SWITCH / MINIMIZE DETECTION ------------- */
-let violationCount = 0;
-
-function handleViolation(reason) {
-    violationCount++;
-    alert(reason);
-
-    if (violationCount >= 1) {
-        forceSubmit();
-    }
-}
-
+/* Tab switch detection */
 document.addEventListener("visibilitychange", function () {
-    if (document.hidden) {
-        handleViolation("Tab switch detected. Exam submitted.");
+    if (document.hidden && !examSubmitted) {
+        showCheatPopup("Cheating detected: Tab switched.");
     }
 });
 
+/* Window blur detection */
 window.addEventListener("blur", function () {
-    handleViolation("Window lost focus. Exam submitted.");
-});
-
-/* ------------- DISABLE RIGHT CLICK ------------- */
-document.addEventListener("contextmenu", function (e) {
-    e.preventDefault();
-});
-
-/* ------------- DISABLE DEVTOOLS SHORTCUTS ------------- */
-document.addEventListener("keydown", function (e) {
-
-    if (e.key === "F12") e.preventDefault();
-
-    if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) {
-        e.preventDefault();
-    }
-
-    if (e.ctrlKey && e.key === "u") {
-        e.preventDefault();
+    if (!examSubmitted) {
+        showCheatPopup("Cheating detected: Window focus lost.");
     }
 });
 
-/* ------------- DISABLE COPY PASTE ------------- */
-document.addEventListener("copy", e => e.preventDefault());
-document.addEventListener("cut", e => e.preventDefault());
-document.addEventListener("paste", e => e.preventDefault());
+/* ================= FORCE SUBMIT ================= */
 
-/* ------------- PREVENT BACK BUTTON ------------- */
-history.pushState(null, null, location.href);
-window.onpopstate = function () {
-    history.go(1);
-};
-
-/* ------------- FORCE SUBMIT FUNCTION ------------- */
 function forceSubmit() {
-
-    if (!window.examAlreadySubmitted) {
-        window.examAlreadySubmitted = true;
-
-        submitTest();   // calls your existing submit function
-
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        }
-    }
+    if (examSubmitted) return;
+    examSubmitted = true;
+    submitTest(true);
 }
+
 </script>
 
 </body>

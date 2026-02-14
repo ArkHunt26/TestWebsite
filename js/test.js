@@ -1,114 +1,53 @@
-/* =====================================================
-   GLOBAL VARIABLES
-===================================================== */
-
 let codingScore = 0;
 let examSubmitted = false;
-let fullscreenWarningActive = false;
-let tabWarningActive = false;
 
+/* ================= RENDER QUESTIONS ================= */
 
-/* =====================================================
-   ENTER FULLSCREEN
-===================================================== */
+function renderMCQ(){
 
-function enterFullscreen(){
-    const elem = document.documentElement;
-    if(elem.requestFullscreen){
-        elem.requestFullscreen().catch(()=>{});
-    }
-}
+    const container = document.getElementById("mcqSection");
+    if(!container) return;
 
-function exitFullscreenSafe(){
-    if(document.fullscreenElement){
-        document.exitFullscreen().catch(()=>{});
-    }
-}
+    container.innerHTML = "";
 
+    selectedQuestions.forEach((q,index)=>{
 
-/* =====================================================
-   AUTO ENTER FULLSCREEN ON LOAD
-===================================================== */
+        if(q.type==="mcq"){
 
-window.addEventListener("load", () => {
-    enterFullscreen();
-});
-
-
-/* =====================================================
-   ANTI CHEAT SYSTEM (FINAL STABLE)
-===================================================== */
-
-document.addEventListener("fullscreenchange", async () => {
-
-    if(examSubmitted) return;
-
-    if(!document.fullscreenElement && !fullscreenWarningActive){
-
-        fullscreenWarningActive = true;
-
-        const action = confirm(
-            "⚠ Fullscreen exited.\n\nPress OK to return to fullscreen.\nPress Cancel to submit exam."
-        );
-
-        if(action){
-            enterFullscreen();
-            fullscreenWarningActive = false;
-        }else{
-            await forceSubmit("Cheating detected: Fullscreen exited.");
+            container.innerHTML+=`
+            <div class="question-card">
+                <div><b>Q${index+1}. ${q.q}</b></div>
+                ${q.options.map((opt,i)=>`
+                    <label>
+                        <input type="radio" name="q${index}" value="${i}">
+                        ${opt}
+                    </label><br>
+                `).join("")}
+            </div>
+            `;
         }
-    }
-});
 
+        if(q.type==="coding"){
 
-document.addEventListener("visibilitychange", async () => {
-
-    if(examSubmitted) return;
-
-    if(document.hidden && !tabWarningActive){
-
-        tabWarningActive = true;
-
-        const action = confirm(
-            "⚠ Tab switch detected.\n\nPress OK to continue exam.\nPress Cancel to submit exam."
-        );
-
-        if(action){
-            tabWarningActive = false;
-        }else{
-            await forceSubmit("Cheating detected: Tab switched.");
+            container.innerHTML+=`
+            <div class="question-card">
+                <div><b>C Programming (5 Marks)</b></div>
+                <p>${q.description}</p>
+                <textarea id="codeArea" rows="10" placeholder="Write C code here..."></textarea>
+                <button onclick="runCode()">Run Code</button>
+                <pre id="outputBox"></pre>
+            </div>
+            `;
         }
-    }
-});
-
-
-/* =====================================================
-   FORCE SUBMIT
-===================================================== */
-
-async function forceSubmit(reason){
-
-    if(examSubmitted) return;
-
-    alert(reason + "\n\nExam will now be submitted.");
-
-    await submitTest();
+    });
 }
 
-
-/* =====================================================
-   RUN CODE (5 MARKS)
-===================================================== */
+/* ================= RUN CODE ================= */
 
 async function runCode(){
 
     const code = document.getElementById("codeArea").value;
     const codingQ = selectedQuestions.find(q=>q.type==="coding");
-
-    if(!codingQ){
-        alert("Coding question not found.");
-        return;
-    }
 
     let passedAll = true;
 
@@ -135,58 +74,38 @@ async function runCode(){
 
     if(passedAll){
         codingScore = 5;
-        document.getElementById("outputBox").innerText =
-            "All test cases passed ✅ (5 Marks)";
+        document.getElementById("outputBox").innerText = "All test cases passed ✅";
     }else{
         codingScore = 0;
-        document.getElementById("outputBox").innerText =
-            "Test case failed ❌ (0 Marks)";
+        document.getElementById("outputBox").innerText = "Test case failed ❌";
     }
 }
 
+/* ================= SUBMIT TEST ================= */
 
-/* =====================================================
-   SUBMIT TEST (FINAL FIXED)
-   TOTAL MARKS = 30
-===================================================== */
-
-async function submitTest(){
+async function submitTest(force = false){
 
     if(examSubmitted) return;
     examSubmitted = true;
 
     let score = 0;
 
-    /* ================= MCQ SCORING (1 MARK EACH) ================= */
-
     selectedQuestions.forEach((q,index)=>{
 
-        if(q.type === "mcq"){
-            const selected = document.querySelector(
-                `input[name="q${index}"]:checked`
-            );
-
-            if(selected && Number(selected.value) === q.answer){
-                score += 1;   // 1 mark
+        if(q.type==="mcq"){
+            const selected = document.querySelector(`input[name="q${index}"]:checked`);
+            if(selected && Number(selected.value)===q.answer){
+                score += 1; // MCQ = 1 mark
             }
         }
     });
 
-    /* ================= CODING SCORE (5 MARKS) ================= */
-
-    score += codingScore;
-
-    /* ================= RESULT ================= */
+    score += codingScore; // Coding = 5 marks
 
     let passMark = parseInt(localStorage.getItem("passMark") || "0");
     let result = score >= passMark ? "PASS" : "FAIL";
 
-    localStorage.setItem("score",score);
-    localStorage.setItem("result",result);
-
-    /* ================= SEND TO GOOGLE SHEET ================= */
-
-    const formData = new FormData();
+    const formData = new URLSearchParams();
     formData.append("type","RESULT");
     formData.append("name",localStorage.getItem("name"));
     formData.append("phone",localStorage.getItem("phone"));
@@ -196,18 +115,14 @@ async function submitTest(){
     try{
         await fetch(SCRIPT_URL,{
             method:"POST",
-            body:formData,
-            keepalive:true
+            body:formData
         });
-    }catch(e){
-        console.log("Sheet update error:",e);
+    }catch(err){
+        console.error("Sheet update failed",err);
     }
 
-    /* ================= CLEANUP ================= */
+    localStorage.setItem("score",score);
+    localStorage.setItem("result",result);
 
-    exitFullscreenSafe();
-
-    setTimeout(()=>{
-        window.location.href="result.html";
-    },800);
+    window.location.href="result.html";
 }
