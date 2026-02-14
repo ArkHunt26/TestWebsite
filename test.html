@@ -37,69 +37,91 @@
 <script>
 renderMCQ();
 
-/* ================= ANTI CHEAT ================= */
+/* ================= ANTI CHEAT SYSTEM ================= */
 
-/* ---- FULLSCREEN ---- */
-function enterFullScreen() {
+/* ---------------- FULLSCREEN ON FIRST CLICK ---------------- */
+document.addEventListener("click", function startExamOnce() {
+    document.removeEventListener("click", startExamOnce);
+
     const elem = document.documentElement;
-    if (elem.requestFullscreen) elem.requestFullscreen();
-}
-
-function exitFullScreen() {
-    if (document.exitFullscreen) document.exitFullscreen();
-}
-
-window.onload = function () {
-    enterFullScreen();
-};
-
-/* Exit fullscreen detection */
-document.addEventListener("fullscreenchange", function () {
-    if (!document.fullscreenElement) {
-        alert("You exited fullscreen. Exam will be submitted.");
-        submitTest();
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
     }
 });
 
-/* Disable right click */
+/* ------------- EXIT FULLSCREEN = AUTO SUBMIT ------------- */
+document.addEventListener("fullscreenchange", function () {
+    if (!document.fullscreenElement) {
+        alert("Fullscreen exited. Exam will be submitted.");
+        forceSubmit();
+    }
+});
+
+/* ------------- TAB SWITCH / MINIMIZE DETECTION ------------- */
+let violationCount = 0;
+
+function handleViolation(reason) {
+    violationCount++;
+    alert(reason);
+
+    if (violationCount >= 1) {
+        forceSubmit();
+    }
+}
+
+document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+        handleViolation("Tab switch detected. Exam submitted.");
+    }
+});
+
+window.addEventListener("blur", function () {
+    handleViolation("Window lost focus. Exam submitted.");
+});
+
+/* ------------- DISABLE RIGHT CLICK ------------- */
 document.addEventListener("contextmenu", function (e) {
     e.preventDefault();
 });
 
-/* Disable DevTools shortcuts */
+/* ------------- DISABLE DEVTOOLS SHORTCUTS ------------- */
 document.addEventListener("keydown", function (e) {
+
     if (e.key === "F12") e.preventDefault();
-    if (e.ctrlKey && e.shiftKey && e.key === "I") e.preventDefault();
-    if (e.ctrlKey && e.shiftKey && e.key === "J") e.preventDefault();
-    if (e.ctrlKey && e.key === "u") e.preventDefault();
-});
 
-/* Tab switch detection */
-let tabSwitchCount = 0;
+    if (e.ctrlKey && e.shiftKey && (e.key === "I" || e.key === "J" || e.key === "C")) {
+        e.preventDefault();
+    }
 
-document.addEventListener("visibilitychange", function () {
-    if (document.hidden) {
-        tabSwitchCount++;
-        alert("Tab switching detected!");
-
-        if (tabSwitchCount >= 2) {
-            alert("Multiple violations. Exam submitted.");
-            submitTest();
-        }
+    if (e.ctrlKey && e.key === "u") {
+        e.preventDefault();
     }
 });
 
-/* Disable copy paste */
+/* ------------- DISABLE COPY PASTE ------------- */
 document.addEventListener("copy", e => e.preventDefault());
 document.addEventListener("cut", e => e.preventDefault());
 document.addEventListener("paste", e => e.preventDefault());
 
-/* Prevent back button */
+/* ------------- PREVENT BACK BUTTON ------------- */
 history.pushState(null, null, location.href);
 window.onpopstate = function () {
     history.go(1);
 };
 
+/* ------------- FORCE SUBMIT FUNCTION ------------- */
+function forceSubmit() {
+
+    if (!window.examAlreadySubmitted) {
+        window.examAlreadySubmitted = true;
+
+        submitTest();   // calls your existing submit function
+
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+}
 </script>
 
 </body>
