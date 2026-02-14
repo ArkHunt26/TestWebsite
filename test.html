@@ -12,14 +12,14 @@
     <div class="exam-header">
         <h2>Q&A</h2>
         <div class="timer-box">
-            Time Left : <span id="timer"></span>
+            Time Left : <span id="timer">--:--</span>
         </div>
     </div>
 
     <div id="mcqSection" class="question-container"></div>
 
     <div class="submit-container">
-        <button class="submit-btn" onclick="submitTest()">
+        <button class="submit-btn" onclick="submitTest(false)">
             Submit Exam
         </button>
     </div>
@@ -32,84 +32,10 @@
 <script src="js/timer.js"></script>
 
 <script>
-
-/* Wait until everything loads */
-window.onload = function() {
-    if (typeof renderMCQ === "function") {
-        renderMCQ();
-    } else {
-        console.error("renderMCQ not found");
-    }
+window.onload = function(){
+    renderMCQ();
+    initExamTimer();
 };
-
-/* ================= FULLSCREEN START ================= */
-
-let examStarted = false;
-
-function startFullscreen() {
-    const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-    }
-}
-
-/* Start fullscreen only when user clicks anywhere */
-document.addEventListener("click", function startOnce() {
-    if (!examStarted) {
-        examStarted = true;
-        startFullscreen();
-    }
-});
-
-/* ================= CHEAT DETECTION ================= */
-
-let examSubmitted = false;
-
-function showCheatPopup(reason) {
-
-    if (examSubmitted) return;
-
-    const choice = confirm(
-        reason +
-        "\n\nPress OK to return to exam.\nPress Cancel to submit immediately."
-    );
-
-    if (choice) {
-        startFullscreen();
-    } else {
-        forceSubmit();
-    }
-}
-
-/* Fullscreen exit detection */
-document.addEventListener("fullscreenchange", function () {
-    if (!document.fullscreenElement && !examSubmitted) {
-        showCheatPopup("Cheating detected: Fullscreen exited.");
-    }
-});
-
-/* Tab switch detection */
-document.addEventListener("visibilitychange", function () {
-    if (document.hidden && !examSubmitted) {
-        showCheatPopup("Cheating detected: Tab switched.");
-    }
-});
-
-/* Window blur detection */
-window.addEventListener("blur", function () {
-    if (!examSubmitted) {
-        showCheatPopup("Cheating detected: Window focus lost.");
-    }
-});
-
-/* ================= FORCE SUBMIT ================= */
-
-function forceSubmit() {
-    if (examSubmitted) return;
-    examSubmitted = true;
-    submitTest(true);
-}
-
 </script>
 
 </body>
