@@ -91,41 +91,62 @@ body{
 <script src="js/config.js"></script>
 
 <script>
-    
-function startExam(){
 
-    const name  = document.getElementById("name").value.trim();
-    const phone = document.getElementById("phone").value.trim();
-    const session = document.getElementById("session").value.trim();
+async function startExam(){
 
-    // ✅ PHONE VALIDATION HERE
+    const nameInput  = document.getElementById("name");
+    const phoneInput = document.getElementById("phone");
+    const sessionInput = document.getElementById("sessionId");
+
+    if(!nameInput || !phoneInput || !sessionInput){
+        alert("Form error. Contact admin.");
+        return;
+    }
+
+    const name = nameInput.value.trim();
+    const phone = phoneInput.value.trim();
+    const sessionId = sessionInput.value.trim();
+
+    if(!name || !phone || !sessionId){
+        alert("Please fill all fields");
+        return;
+    }
+
     if(!/^[0-9]{10}$/.test(phone)){
         alert("Enter valid 10 digit phone number");
         return;
     }
 
-    // (optional but recommended)
-    if(name === ""){
-        alert("Enter your name");
-        return;
+    try{
+
+        const res = await fetch(SCRIPT_URL + "?mode=student");
+        const config = await res.json();
+
+        if(!config.enabled){
+            alert("Exam not enabled.");
+            return;
+        }
+
+        if(sessionId !== config.sessionId){
+            alert("Invalid Session ID");
+            return;
+        }
+
+        // Save candidate info
+        localStorage.setItem("name", name);
+        localStorage.setItem("phone", phone);
+
+        window.location.href = "test.html";
+
+    }catch(err){
+        alert("Unable to verify exam.");
+        console.log(err);
     }
 
-    if(session === ""){
-        alert("Enter session ID");
-        return;
-    }
-
-    // Save details
-    localStorage.setItem("name", name);
-    localStorage.setItem("phone", phone);
-    localStorage.setItem("sessionId", session);
-
-    // Go to exam page
-    window.location.href = "test.html";
 }
 
-
 </script>
+
 
 </body>
 </html>
