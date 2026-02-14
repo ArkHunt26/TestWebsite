@@ -36,36 +36,71 @@
 
 <script>
 renderMCQ();
+
+/* ================= ANTI CHEAT ================= */
+
+/* ---- FULLSCREEN ---- */
+function enterFullScreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) elem.requestFullscreen();
+}
+
+function exitFullScreen() {
+    if (document.exitFullscreen) document.exitFullscreen();
+}
+
+window.onload = function () {
+    enterFullScreen();
+};
+
+/* Exit fullscreen detection */
+document.addEventListener("fullscreenchange", function () {
+    if (!document.fullscreenElement) {
+        alert("You exited fullscreen. Exam will be submitted.");
+        submitTest();
+    }
+});
+
+/* Disable right click */
+document.addEventListener("contextmenu", function (e) {
+    e.preventDefault();
+});
+
+/* Disable DevTools shortcuts */
+document.addEventListener("keydown", function (e) {
+    if (e.key === "F12") e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && e.key === "I") e.preventDefault();
+    if (e.ctrlKey && e.shiftKey && e.key === "J") e.preventDefault();
+    if (e.ctrlKey && e.key === "u") e.preventDefault();
+});
+
+/* Tab switch detection */
+let tabSwitchCount = 0;
+
+document.addEventListener("visibilitychange", function () {
+    if (document.hidden) {
+        tabSwitchCount++;
+        alert("Tab switching detected!");
+
+        if (tabSwitchCount >= 2) {
+            alert("Multiple violations. Exam submitted.");
+            submitTest();
+        }
+    }
+});
+
+/* Disable copy paste */
+document.addEventListener("copy", e => e.preventDefault());
+document.addEventListener("cut", e => e.preventDefault());
+document.addEventListener("paste", e => e.preventDefault());
+
+/* Prevent back button */
+history.pushState(null, null, location.href);
+window.onpopstate = function () {
+    history.go(1);
+};
+
 </script>
 
 </body>
 </html>
-
-
-
-            <!-- <!DOCTYPE html>
-            <html>
-            <head>
-            <title>Exam</title>
-            <link rel="stylesheet" href="css/style.css">
-            </head>
-            <body>
-
-            <div class="container">
-            <h2>Exam</h2>
-            <h3>Time Left: <span id="timer"></span></h3>
-
-            <div id="mcqSection"></div>
-
-            <button onclick="submitTest()">Submit</button>
-            </div>
-
-            <script src="js/config.js"></script>
-            <script src="js/questions.js"></script>
-            <script src="js/test.js"></script>
-            <script src="js/timer.js"></script>
-
-            <script>renderMCQ();</script>
-
-            </body>
-            </html> -->

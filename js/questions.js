@@ -109,7 +109,7 @@ const hardwareText = [
 
 {
 type:"text",
-q:"Voltage divider: Vin=12V, R1=4kΩ, R2=2kΩ. Find Vout.",
+q:"Voltage divider: Vin=12V, R1=4kΩ, R2=2kΩ. Find Vout (Enter numeric value only, no units).",
 image:"images/voltage_divider.png",
 answer:4,
 marks:2.5,
@@ -118,7 +118,7 @@ tolerance:0.2
 
 {
 type:"text",
-q:"Voltage divider: Vin=10V, R1=10kΩ, R2=10kΩ. Find Vout.",
+q:"Voltage divider: Vin=10V, R1=10kΩ, R2=10kΩ. Find Vout (Enter numeric value only, no units).",
 image:"images/voltage_divider.png",
 answer:5,
 marks:2.5,
