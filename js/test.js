@@ -170,7 +170,7 @@ document.getElementById("outputBox").innerText = "Test case failed ❌";
    SUBMIT TEST (SAFE VERSION)
 ===================================================== */
 
-async function submitTest(){
+function submitTest(){
 
 if(examSubmitted) return;
 examSubmitted = true;
@@ -203,36 +203,43 @@ score += codingScore;
 let passMark = parseInt(localStorage.getItem("passMark") || "0");
 let result = score >= passMark ? "PASS" : "FAIL";
 
-/* Prevent duplicate submission */
+/* Prevent duplicate */
 if(localStorage.getItem("examSubmitted")){
     window.location.href="result.html";
     return;
 }
 
 localStorage.setItem("examSubmitted","true");
+localStorage.setItem("score",score);
+localStorage.setItem("result",result);
 
-const formData = new URLSearchParams();
+/* Prepare data */
+const formData = new FormData();
 formData.append("type","RESULT");
 formData.append("name",localStorage.getItem("name"));
 formData.append("phone",localStorage.getItem("phone"));
 formData.append("score",score);
 formData.append("result",result);
 
-try {
-    await fetch(SCRIPT_URL,{
+/* 🔥 CRITICAL FIX — use sendBeacon */
+if(navigator.sendBeacon){
+    navigator.sendBeacon(SCRIPT_URL, formData);
+}else{
+    fetch(SCRIPT_URL,{
         method:"POST",
-        body:formData
+        body:formData,
+        keepalive:true
     });
-} catch(err){
-    console.error("Excel update failed", err);
 }
-
-localStorage.setItem("score",score);
-localStorage.setItem("result",result);
 
 exitFullscreenSafe();
-window.location.href="result.html";
+
+/* Delay redirect slightly to ensure send */
+setTimeout(()=>{
+    window.location.href="result.html";
+},300);
 }
+
 
 /* =====================================================
    ANTI CHEAT SYSTEM (STABLE)
