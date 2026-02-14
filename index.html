@@ -96,7 +96,7 @@ async function startExam(){
 
     const nameInput  = document.getElementById("name");
     const phoneInput = document.getElementById("phone");
-    const sessionInput = document.getElementById("sessionId");
+    const sessionInput = document.getElementById("sessionInput"); // ✅ FIXED ID
 
     if(!nameInput || !phoneInput || !sessionInput){
         alert("Form error. Contact admin.");
@@ -135,6 +135,7 @@ async function startExam(){
         // Save candidate info
         localStorage.setItem("name", name);
         localStorage.setItem("phone", phone);
+        localStorage.setItem("passMark", config.passMark);
 
         window.location.href = "test.html";
 
@@ -142,10 +143,10 @@ async function startExam(){
         alert("Unable to verify exam.");
         console.log(err);
     }
-
 }
 
 </script>
+
 
 
 </body>
