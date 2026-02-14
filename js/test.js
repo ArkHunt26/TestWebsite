@@ -1,3 +1,11 @@
+function enterFullscreen(){
+const elem = document.documentElement;
+if(elem.requestFullscreen){
+elem.requestFullscreen();
+}
+}
+
+
 let codingScore = 0;
 
 /* =========================
@@ -147,18 +155,22 @@ document.getElementById("outputBox").innerText = "Test case failed ❌";
 /* =========================
    SUBMIT TEST
 ========================= */
+let examSubmitted = false;
 
-async function submitTest(){
+async function submitTest(forceSubmit = false){
 
-if(document.exitFullscreen){
-document.exitFullscreen();
+if(examSubmitted) return; // prevent double submit
+examSubmitted = true;
+
+/* Exit fullscreen safely */
+if(document.fullscreenElement){
+    await document.exitFullscreen();
 }
 
 let score = 0;
 
 selectedQuestions.forEach((q,index)=>{
 
-/* MCQ = 1 mark */
 if(q.type==="mcq"){
 const selected = document.querySelector(`input[name="q${index}"]:checked`);
 if(selected && Number(selected.value)===q.answer){
@@ -166,7 +178,6 @@ score += 1;
 }
 }
 
-/* TEXT = 2.5 marks */
 if(q.type==="text"){
 const inputEl = document.getElementById(`text${index}`);
 if(inputEl){
@@ -179,13 +190,19 @@ score += q.marks;
 
 });
 
-/* Coding = 5 marks */
 score += codingScore;
 
 let passMark = parseInt(localStorage.getItem("passMark") || "0");
 let result = score >= passMark ? "PASS" : "FAIL";
 
-/* Send to Google Sheet */
+/* Prevent multiple submission via localStorage */
+if(localStorage.getItem("examSubmitted")){
+    window.location.href="result.html";
+    return;
+}
+
+localStorage.setItem("examSubmitted","true");
+
 const formData = new URLSearchParams();
 formData.append("type","RESULT");
 formData.append("name",localStorage.getItem("name"));
@@ -203,3 +220,11 @@ localStorage.setItem("result",result);
 
 window.location.href="result.html";
 }
+
+document.addEventListener("visibilitychange", function(){
+if(document.hidden && !examSubmitted){
+alert("Tab switching detected. Exam will be submitted.");
+submitTest(true);
+}
+});
+

@@ -50,6 +50,9 @@ async function initExamTimer(){
         console.log("Timer init error:",err);
         alert("Unable to load exam config.");
     }
+
+    enterFullscreen();
+
 }
 
 
