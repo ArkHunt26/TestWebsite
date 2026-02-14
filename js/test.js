@@ -1,16 +1,40 @@
-function enterFullscreen(){
-const elem = document.documentElement;
-if(elem.requestFullscreen){
-elem.requestFullscreen();
-}
-}
-
+/* =====================================================
+   GLOBAL VARIABLES
+===================================================== */
 
 let codingScore = 0;
+let examSubmitted = false;
+let fullscreenWarningGiven = false;
+let tabWarningGiven = false;
 
-/* =========================
+/* =====================================================
+   ENTER FULLSCREEN
+===================================================== */
+
+function enterFullscreen() {
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(() => {});
+    }
+}
+
+function exitFullscreenSafe() {
+    if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+    }
+}
+
+/* =====================================================
+   AUTO ENTER FULLSCREEN ON LOAD
+===================================================== */
+
+window.addEventListener("load", () => {
+    enterFullscreen();
+});
+
+/* =====================================================
    RENDER QUESTIONS
-========================= */
+===================================================== */
 
 function renderMCQ(){
 
@@ -21,7 +45,6 @@ let currentSection = "";
 
 selectedQuestions.forEach((q,index)=>{
 
-/* ===== SECTION TITLE ===== */
 if(q.section && q.section !== currentSection){
 currentSection = q.section;
 
@@ -51,15 +74,13 @@ container.innerHTML+=`
     </div>
 </div>
 `;
-
 }
 
-/* ===== TEXT (Hardware) ===== */
+/* ===== TEXT ===== */
 if(q.type==="text"){
 
 container.innerHTML+=`
 <div class="question-card modern-card">
-
     <div class="question-title">
         Q${index+1}. ${q.q}
     </div>
@@ -73,10 +94,9 @@ container.innerHTML+=`
     <input type="text"
            class="modern-input"
            id="text${index}"
-           placeholder="Enter your answer here (numeric only)">
+           placeholder="Enter numeric answer only">
 </div>
 `;
-
 }
 
 /* ===== CODING ===== */
@@ -84,7 +104,6 @@ if(q.type==="coding"){
 
 container.innerHTML+=`
 <div class="question-card coding-card">
-
     <div class="coding-header">
         C Programming Question (5 Marks)
     </div>
@@ -99,19 +118,16 @@ container.innerHTML+=`
     <button class="run-btn" onclick="runCode()">Run Code</button>
 
     <pre id="outputBox" class="output-box"></pre>
-
 </div>
 `;
-
 }
 
 });
-
 }
 
-/* =========================
-   RUN CODE (PISTON API)
-========================= */
+/* =====================================================
+   RUN CODE
+===================================================== */
 
 async function runCode(){
 
@@ -139,7 +155,6 @@ if(!result.run || result.run.output.trim() !== test.output){
 passedAll = false;
 break;
 }
-
 }
 
 if(passedAll){
@@ -149,23 +164,16 @@ document.getElementById("outputBox").innerText = "All test cases passed ✅";
 codingScore = 0;
 document.getElementById("outputBox").innerText = "Test case failed ❌";
 }
-
 }
 
-/* =========================
-   SUBMIT TEST
-========================= */
-let examSubmitted = false;
+/* =====================================================
+   SUBMIT TEST (SAFE VERSION)
+===================================================== */
 
-async function submitTest(forceSubmit = false){
+async function submitTest(){
 
-if(examSubmitted) return; // prevent double submit
+if(examSubmitted) return;
 examSubmitted = true;
-
-/* Exit fullscreen safely */
-if(document.fullscreenElement){
-    await document.exitFullscreen();
-}
 
 let score = 0;
 
@@ -195,7 +203,7 @@ score += codingScore;
 let passMark = parseInt(localStorage.getItem("passMark") || "0");
 let result = score >= passMark ? "PASS" : "FAIL";
 
-/* Prevent multiple submission via localStorage */
+/* Prevent duplicate submission */
 if(localStorage.getItem("examSubmitted")){
     window.location.href="result.html";
     return;
@@ -210,21 +218,68 @@ formData.append("phone",localStorage.getItem("phone"));
 formData.append("score",score);
 formData.append("result",result);
 
-await fetch(SCRIPT_URL,{
-method:"POST",
-body:formData
-});
+try {
+    await fetch(SCRIPT_URL,{
+        method:"POST",
+        body:formData
+    });
+} catch(err){
+    console.error("Excel update failed", err);
+}
 
 localStorage.setItem("score",score);
 localStorage.setItem("result",result);
 
+exitFullscreenSafe();
 window.location.href="result.html";
 }
 
-document.addEventListener("visibilitychange", function(){
-if(document.hidden && !examSubmitted){
-alert("Tab switching detected. Exam will be submitted.");
-submitTest(true);
+/* =====================================================
+   ANTI CHEAT SYSTEM (STABLE)
+===================================================== */
+
+/* Fullscreen Monitor */
+document.addEventListener("fullscreenchange", () => {
+
+if(examSubmitted) return;
+
+if(!document.fullscreenElement){
+
+if(!fullscreenWarningGiven){
+
+fullscreenWarningGiven = true;
+
+const confirmReturn = confirm(
+"You exited fullscreen.\n\nPress OK to return.\nPress Cancel to submit exam."
+);
+
+if(confirmReturn){
+enterFullscreen();
+}else{
+submitTest();
+}
+}
 }
 });
 
+/* Tab Switch Monitor */
+document.addEventListener("visibilitychange", () => {
+
+if(examSubmitted) return;
+
+if(document.hidden){
+
+if(!tabWarningGiven){
+
+tabWarningGiven = true;
+
+const confirmReturn = confirm(
+"Tab switching detected.\n\nPress OK to continue.\nPress Cancel to submit exam."
+);
+
+if(!confirmReturn){
+submitTest();
+}
+}
+}
+});
