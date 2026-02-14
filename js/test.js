@@ -1,5 +1,5 @@
 /* =====================================================
-   GLOBAL VARIABLES
+   GLOBAL STATE
 ===================================================== */
 
 let codingScore = 0;
@@ -7,8 +7,9 @@ let examSubmitted = false;
 let fullscreenWarningGiven = false;
 let tabWarningGiven = false;
 
+
 /* =====================================================
-   ENTER FULLSCREEN
+   FULLSCREEN FUNCTIONS
 ===================================================== */
 
 function enterFullscreen() {
@@ -24,13 +25,10 @@ function exitFullscreenSafe() {
     }
 }
 
-/* =====================================================
-   AUTO ENTER FULLSCREEN ON LOAD
-===================================================== */
-
 window.addEventListener("load", () => {
     enterFullscreen();
 });
+
 
 /* =====================================================
    RENDER QUESTIONS
@@ -47,83 +45,55 @@ selectedQuestions.forEach((q,index)=>{
 
 if(q.section && q.section !== currentSection){
 currentSection = q.section;
-
 container.innerHTML += `
 <div class="section-divider">
     <span>${currentSection}</span>
-</div>
-`;
+</div>`;
 }
 
-/* ===== MCQ ===== */
 if(q.type==="mcq"){
-
 container.innerHTML+=`
 <div class="question-card modern-card">
-    <div class="question-title">
-        Q${index+1}. ${q.q}
-    </div>
-
-    <div class="options-container">
-        ${q.options.map((opt,i)=>`
-        <label class="modern-option">
-            <input type="radio" name="q${index}" value="${i}">
-            <span>${opt}</span>
-        </label>
-        `).join("")}
-    </div>
+<div class="question-title">Q${index+1}. ${q.q}</div>
+<div class="options-container">
+${q.options.map((opt,i)=>`
+<label class="modern-option">
+<input type="radio" name="q${index}" value="${i}">
+<span>${opt}</span>
+</label>`).join("")}
 </div>
-`;
+</div>`;
 }
 
-/* ===== TEXT ===== */
 if(q.type==="text"){
-
 container.innerHTML+=`
 <div class="question-card modern-card">
-    <div class="question-title">
-        Q${index+1}. ${q.q}
-    </div>
-
-    ${q.image ? `
-    <div class="circuit-box">
-        <img src="${q.image}" class="circuit-img">
-    </div>
-    ` : ""}
-
-    <input type="text"
-           class="modern-input"
-           id="text${index}"
-           placeholder="Enter numeric answer only">
-</div>
-`;
+<div class="question-title">Q${index+1}. ${q.q}</div>
+${q.image ? `
+<div class="circuit-box">
+<img src="${q.image}" class="circuit-img">
+</div>` : ""}
+<input type="text"
+class="modern-input"
+id="text${index}"
+placeholder="Enter numeric answer only">
+</div>`;
 }
 
-/* ===== CODING ===== */
 if(q.type==="coding"){
-
 container.innerHTML+=`
 <div class="question-card coding-card">
-    <div class="coding-header">
-        C Programming Question (5 Marks)
-    </div>
-
-    <p class="coding-description">${q.description}</p>
-
-    <textarea id="codeArea"
-              class="code-editor"
-              rows="12"
-              placeholder="Write your C code here..."></textarea>
-
-    <button class="run-btn" onclick="runCode()">Run Code</button>
-
-    <pre id="outputBox" class="output-box"></pre>
-</div>
-`;
+<div class="coding-header">C Programming Question (5 Marks)</div>
+<p class="coding-description">${q.description}</p>
+<textarea id="codeArea" class="code-editor" rows="12"></textarea>
+<button class="run-btn" onclick="runCode()">Run Code</button>
+<pre id="outputBox" class="output-box"></pre>
+</div>`;
 }
 
 });
 }
+
 
 /* =====================================================
    RUN CODE
@@ -157,23 +127,24 @@ break;
 }
 }
 
-if(passedAll){
-codingScore = 5;
-document.getElementById("outputBox").innerText = "All test cases passed ✅";
-}else{
-codingScore = 0;
-document.getElementById("outputBox").innerText = "Test case failed ❌";
+codingScore = passedAll ? 5 : 0;
+document.getElementById("outputBox").innerText =
+passedAll ? "All test cases passed ✅" : "Test case failed ❌";
 }
-}
+
 
 /* =====================================================
-   SUBMIT TEST (SAFE VERSION)
+   SAFE SUBMIT FUNCTION (FINAL FIX)
 ===================================================== */
 
-function submitTest(){
+async function submitTest(){
 
 if(examSubmitted) return;
 examSubmitted = true;
+
+/* Remove listeners immediately to stop loops */
+document.removeEventListener("fullscreenchange", fullscreenHandler);
+document.removeEventListener("visibilitychange", visibilityHandler);
 
 let score = 0;
 
@@ -195,7 +166,6 @@ score += q.marks;
 }
 }
 }
-
 });
 
 score += codingScore;
@@ -203,17 +173,10 @@ score += codingScore;
 let passMark = parseInt(localStorage.getItem("passMark") || "0");
 let result = score >= passMark ? "PASS" : "FAIL";
 
-/* Prevent duplicate */
-if(localStorage.getItem("examSubmitted")){
-    window.location.href="result.html";
-    return;
-}
-
-localStorage.setItem("examSubmitted","true");
 localStorage.setItem("score",score);
 localStorage.setItem("result",result);
 
-/* Prepare data */
+/* Prepare FormData */
 const formData = new FormData();
 formData.append("type","RESULT");
 formData.append("name",localStorage.getItem("name"));
@@ -221,11 +184,11 @@ formData.append("phone",localStorage.getItem("phone"));
 formData.append("score",score);
 formData.append("result",result);
 
-/* 🔥 CRITICAL FIX — use sendBeacon */
+/* Use sendBeacon (SAFE + RELIABLE) */
 if(navigator.sendBeacon){
     navigator.sendBeacon(SCRIPT_URL, formData);
 }else{
-    fetch(SCRIPT_URL,{
+    await fetch(SCRIPT_URL,{
         method:"POST",
         body:formData,
         keepalive:true
@@ -234,59 +197,51 @@ if(navigator.sendBeacon){
 
 exitFullscreenSafe();
 
-/* Delay redirect slightly to ensure send */
+/* Give backend enough time */
 setTimeout(()=>{
     window.location.href="result.html";
-},300);
+},800);
 }
 
 
 /* =====================================================
-   ANTI CHEAT SYSTEM (STABLE)
+   ANTI CHEAT HANDLERS (NO LOOP VERSION)
 ===================================================== */
 
-/* Fullscreen Monitor */
-document.addEventListener("fullscreenchange", () => {
+function fullscreenHandler(){
 
 if(examSubmitted) return;
 
 if(!document.fullscreenElement){
 
-if(!fullscreenWarningGiven){
-
-fullscreenWarningGiven = true;
-
-const confirmReturn = confirm(
-"You exited fullscreen.\n\nPress OK to return.\nPress Cancel to submit exam."
+const choice = confirm(
+"You exited fullscreen.\n\nOK = Return to fullscreen\nCancel = Submit exam"
 );
 
-if(confirmReturn){
+if(choice){
 enterFullscreen();
 }else{
 submitTest();
 }
 }
 }
-});
 
-/* Tab Switch Monitor */
-document.addEventListener("visibilitychange", () => {
+function visibilityHandler(){
 
 if(examSubmitted) return;
 
 if(document.hidden){
 
-if(!tabWarningGiven){
-
-tabWarningGiven = true;
-
-const confirmReturn = confirm(
-"Tab switching detected.\n\nPress OK to continue.\nPress Cancel to submit exam."
+const choice = confirm(
+"Tab switch detected.\n\nOK = Continue exam\nCancel = Submit"
 );
 
-if(!confirmReturn){
+if(!choice){
 submitTest();
 }
 }
 }
-});
+
+/* Attach handlers */
+document.addEventListener("fullscreenchange", fullscreenHandler);
+document.addEventListener("visibilitychange", visibilityHandler);
