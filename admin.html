@@ -319,8 +319,9 @@ function updateLists(d){
   function renderEntry(c){
     const init = (c.name||'?')[0].toUpperCase();
     const cls = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
+    const avatarCls = c.result === 'PASS' ? 'avatar-pass' : 'avatar-fail';
     return `<div class="live-entry">
-      <div class="entry-avatar">${init}</div>
+      <div class="entry-avatar ${avatarCls}">${init}</div>
       <div>
         <div class="entry-name">${c.name}</div>
         <div class="entry-detail">${c.result === 'PASS' ? '✅ Passed' : '❌ Failed'}</div>

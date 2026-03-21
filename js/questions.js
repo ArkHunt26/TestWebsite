@@ -112,7 +112,7 @@ const hardwareText = [
   q:"Voltage Divider: Vin=12V, R1=4kΩ, R2=2kΩ. Calculate Vout across R2. (Enter numeric value only, no units e.g: 4)",
   image:"images/voltage_divider.png",
   answer:4,
-  marks:2.5,
+  marks:1.5,
   tolerance:0.2
 },
 {
@@ -121,7 +121,7 @@ const hardwareText = [
   q:"Voltage Divider: Vin=10V, R1=10kΩ, R2=10kΩ. Calculate Vout across R2. (Enter numeric value only, no units e.g: 5)",
   image:"images/voltage_divider.png",
   answer:5,
-  marks:2.5,
+  marks:1.5,
   tolerance:0.2
 }
 ];
@@ -131,7 +131,7 @@ const codingQuestions = [
 {
   section:"C Programming Question",
   type:"coding",
-  marks:5,
+  marks:4,
   description:`<strong>Reverse a Number</strong><br>
 Read one integer from stdin and print its reverse.<br><br>
 <strong>Rules:</strong><br>
@@ -148,7 +148,7 @@ Input: <code>90</code> → Output: <code>09</code>`,
 {
   section:"C Programming Question",
   type:"coding",
-  marks:5,
+  marks:4,
   description:`<strong>Prime Number Check</strong><br>
 Read one integer from stdin. Print <code>Prime</code> if it is prime, else print <code>Not Prime</code>.<br><br>
 <strong>Rules:</strong><br>
@@ -164,7 +164,7 @@ Input: <code>4</code> → Output: <code>Not Prime</code>`,
 {
   section:"C Programming Question",
   type:"coding",
-  marks:5,
+  marks:4,
   description:`<strong>Factorial</strong><br>
 Read one integer N from stdin and print N! (factorial).<br><br>
 <strong>Rules:</strong><br>
@@ -179,7 +179,7 @@ Input: <code>5</code> → Output: <code>120</code>`,
 {
   section:"C Programming Question",
   type:"coding",
-  marks:5,
+  marks:4,
   description:`<strong>Palindrome Check</strong><br>
 Read one integer from stdin. Print <code>Palindrome</code> if the number reads the same forwards and backwards, else print <code>Not Palindrome</code>.<br><br>
 <strong>Rules:</strong><br>
@@ -194,7 +194,7 @@ Input: <code>121</code> → Output: <code>Palindrome</code>`,
 {
   section:"C Programming Question",
   type:"coding",
-  marks:5,
+  marks:4,
   description:`<strong>Sum of Digits</strong><br>
 Read one integer from stdin and print the sum of its digits.<br><br>
 <strong>Rules:</strong><br>
@@ -209,7 +209,7 @@ Input: <code>123</code> → Output: <code>6</code>`,
 {
   section:"C Programming Question",
   type:"coding",
-  marks:5,
+  marks:4,
   description:`<strong>Fibonacci Series</strong><br>
 Read one integer N from stdin. Print the first N numbers of the Fibonacci sequence (starting from 0), separated by single spaces.<br><br>
 <strong>Rules:</strong><br>

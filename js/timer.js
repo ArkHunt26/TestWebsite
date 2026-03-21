@@ -35,7 +35,12 @@ function startCountdown(endTime){
       clearInterval(timerInterval);
       display.textContent = '00:00';
       display.className = 'timer-display danger';
-      if(!examSubmitted) submitTest(false);
+      if(!examSubmitted){
+        // Fix 5: set flag before submit so back-button guard on test.html fires
+        localStorage.setItem('examSubmittedFlag','1');
+        localStorage.removeItem('examEndTime');
+        submitTest(false);
+      }
       return;
     }
 

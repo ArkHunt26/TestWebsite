@@ -503,7 +503,7 @@ function renderR2Section(d){
     const init = (c.name||'?')[0].toUpperCase();
     const stars = '⭐'.repeat(Math.round(parseFloat(avgRating)));
     return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;">
-      <div class="entry-avatar" style="background:var(--accent);">${init}</div>
+      <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
       <div>
         <div class="entry-name">${c.name}</div>
         <div class="entry-detail">R1: ${c.score} pts • ${evals.length} evaluation(s)</div>

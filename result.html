@@ -147,8 +147,12 @@ body { background: var(--bg); }
 
 <script>
 // Fix 5: Replace entire history so Back from result goes to login, not test
+// Also clear the exam end time so test.html guard redirects back here if visited
+localStorage.setItem('examSubmittedFlag', '1');
+localStorage.removeItem('examEndTime'); // nullify end time so test.html guard fires
 history.replaceState({ page: 'result' }, '', 'result.html');
-// Intercept any popstate attempt — redirect to index
+history.pushState({ page: 'result' }, '', 'result.html'); // extra entry so one Back still stays here
+// Intercept any popstate attempt — redirect to index (never back to test)
 window.addEventListener('popstate', function(){
   window.location.replace('index.html');
 });
