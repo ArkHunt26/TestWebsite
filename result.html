@@ -144,6 +144,16 @@ body { background: var(--bg); }
   </div>
 </div>
 
+
+<script>
+// Fix 5: Replace entire history so Back from result goes to login, not test
+history.replaceState({ page: 'result' }, '', 'result.html');
+// Intercept any popstate attempt — redirect to index
+window.addEventListener('popstate', function(){
+  window.location.replace('index.html');
+});
+</script>
+
 <script>
 const quotes = [
   { text: "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.", author: "Steve Jobs" },

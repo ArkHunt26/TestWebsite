@@ -80,5 +80,53 @@ document.addEventListener('keydown', function(e){
   }
 });
 </script>
+
+<script>
+// ── Fix 5: Block back-button navigation to test after submission ──
+// Push a state so pressing Back goes to this pushed state first, not back to test
+history.pushState({ page: 'exam' }, '', '');
+window.addEventListener('popstate', function(e) {
+  if(!examSubmitted) {
+    // Candidate tried to go back during exam — push forward again
+    history.pushState({ page: 'exam' }, '', '');
+    cheatPopup('⚠️ Back navigation detected!');
+  }
+  // If exam is submitted, popstate is fine — they're on result page anyway
+});
+
+// ── Fix 6: Enforce fullscreen — re-request if user manages to exit ──
+let fsWarningShown = false;
+let fsRetryCount   = 0;
+
+function enforceFullscreen(){
+  if(examSubmitted) return;
+  if(!document.fullscreenElement){
+    fsRetryCount++;
+    if(fsRetryCount <= 3){
+      // Silently re-enter fullscreen (browsers need user gesture after 1st time)
+      document.documentElement.requestFullscreen().catch(() => {
+        // Can't force without user gesture — show prompt
+        if(!fsWarningShown && !cheatPopupActive){
+          fsWarningShown = true;
+          cheatPopup('⚠️ Fullscreen is required for this exam. Please stay in fullscreen mode.');
+          fsWarningShown = false;
+        }
+      });
+    }
+  }
+}
+
+// Poll every 3 seconds to ensure fullscreen stays active
+setInterval(enforceFullscreen, 3000);
+
+// Override Escape key to prevent accidental fullscreen exit
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape' && !examSubmitted){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}, true);
+</script>
+
 </body>
 </html>

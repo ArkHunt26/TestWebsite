@@ -184,5 +184,10 @@ function setupSheets() {
   config.getRange("A1:F1").setValues([["Duration","StartTime","Enabled","PassMark","SessionId","InvCode"]]);
   config.getRange("A2:F2").setValues([[60, "", false, 25, "EXAM2025", ""]]);
 
+  // Evaluations sheet (Round 2)
+  let evals = ss.getSheetByName("Evaluations");
+  if (!evals) evals = ss.insertSheet("Evaluations");
+  evals.getRange("A1:H1").setValues([["Timestamp","CandidateName","Invigilator","DateTime","Ratings","Remarks","CodingQuestion","InvCode"]]);
+
   SpreadsheetApp.getUi().alert("✅ Sheets set up successfully!");
 }

@@ -245,6 +245,18 @@ async function submitTest(fromCheat){
   localStorage.setItem('result', result);
   localStorage.setItem('sectionBreakdown', JSON.stringify(sectionBreakdown));
 
+  // Fix 2 (invigilator): save the coding question this candidate received
+  const codingQ = selectedQuestions.find(q => q.type === 'coding');
+  if(codingQ){
+    const candidateName = localStorage.getItem('name') || '';
+    // Strip HTML tags for clean display in invigilator modal
+    const div = document.createElement('div');
+    div.innerHTML = codingQ.description;
+    const plainDesc = div.textContent || div.innerText || codingQ.description;
+    const firstLine = plainDesc.split('\n')[0].trim();
+    localStorage.setItem('codingQ_' + candidateName.replace(/\s/g,'_'), firstLine);
+  }
+
   window.location.href = 'result.html';
 }
 

@@ -7,6 +7,17 @@
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+/* Fix 3 – smooth live update, no visible flicker */
+#r1TableWrap, #r2List {
+  transition: opacity 0.18s ease;
+}
+#r1TableWrap.updating, #r2List.updating {
+  opacity: 0;
+  pointer-events: none;
+}
+</style>
 </head>
 <body>
 
@@ -21,8 +32,8 @@
     <h2>Management View</h2>
     <p class="subtitle">Executive overview of all assessment rounds</p>
     <div class="form-field">
-      <label>Admin Password</label>
-      <input type="password" id="passInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')login()">
+      <label>HR/TA Password</label>
+      <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn-primary" onclick="login()">View Dashboard →</button>
   </div>
@@ -182,6 +193,7 @@
 <script src="js/config.js"></script>
 <script>
 let adminPassword = '';
+let _isAutoRefresh = false;
 let allData = {};
 let r1Chart = null;
 let secBarChart = null;
@@ -236,6 +248,7 @@ function login(){
 }
 
 function refresh(){
+  _isAutoRefresh = true;
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
     .then(r => r.json())
     .then(d => { if(!d.error) processData(d); });
@@ -246,8 +259,9 @@ function processData(d){
   updateTopStats(d);
   updateExamStatus(d);
   updateR1Charts(d);
-  renderR1Table();
+  renderR1Table(_isAutoRefresh);
   renderR2Section(d);
+  _isAutoRefresh = false;
 }
 
 function updateTopStats(d){
@@ -347,7 +361,7 @@ function updateR1Charts(d){
   }
 }
 
-function renderR1Table(){
+function renderR1Table(skipFade){
   const q = (document.getElementById('r1Search')?.value || '').toLowerCase();
   const filter = document.getElementById('r1Filter')?.value || 'all';
   const all = [
@@ -360,9 +374,14 @@ function renderR1Table(){
   });
 
   const wrap = document.getElementById('r1TableWrap');
-  if(!all.length){ wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates match</p></div>'; return; }
+  if(!wrap) return;
 
-  wrap.innerHTML = `<div style="overflow-x:auto;">
+  // Fix 3: build new HTML string first, then apply with fade only if content actually changed
+  let newHtml;
+  if(!all.length){
+    newHtml = '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates match</p></div>';
+  } else {
+    newHtml = `<div style="overflow-x:auto;">
     <table class="candidate-table">
       <thead><tr>
         <th>#</th><th>Candidate</th>
@@ -395,7 +414,24 @@ function renderR1Table(){
       </tbody>
     </table>
   </div>`;
+  }
+
+  // Only update DOM if content changed (avoids unnecessary reflows)
+  if(wrap.dataset.lastHash === newHtml.length + '' && skipFade) return;
+  wrap.dataset.lastHash = newHtml.length + '';
+
+  if(skipFade || !wrap.innerHTML || wrap.innerHTML.trim() === ''){
+    wrap.innerHTML = newHtml;
+    return;
+  }
+  // Fade out → swap → fade in
+  wrap.classList.add('updating');
+  setTimeout(() => {
+    wrap.innerHTML = newHtml;
+    wrap.classList.remove('updating');
+  }, 180);
 }
+
 
 function renderR2Section(d){
   const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];

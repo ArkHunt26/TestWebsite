@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard</title>
+<title>HR &amp; Talent Acquisition</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -18,11 +18,11 @@
   </button>
   <div class="auth-card">
     <div class="brand-icon">🛡️</div>
-    <h2>Admin Dashboard</h2>
-    <p class="subtitle">Enter admin credentials to continue</p>
+    <h2>HR &amp; Talent Acquisition</h2>
+    <p class="subtitle">Talent Acquisition &amp; HR access only</p>
     <div class="form-field">
-      <label>Admin Password</label>
-      <input type="password" id="passInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()">
+      <label>HR/TA Password</label>
+      <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn-primary" onclick="login()">Login →</button>
   </div>
@@ -34,8 +34,8 @@
   <nav class="topbar">
     <div class="topbar-brand">
       <span>🛡️</span>
-      <span>Admin Dashboard</span>
-      <span class="badge">ADMIN</span>
+      <span>HR &amp; Talent Acquisition</span>
+      <span class="badge">HR / TA</span>
     </div>
     <div class="topbar-actions">
       <div id="examStatusBadge" class="badge badge-pending">● Checking...</div>

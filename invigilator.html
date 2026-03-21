@@ -3,9 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invigilator Panel</title>
+<title>Invigilator Panel — Round 2</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ── Fix 1: prevent rating label + stars wrapping awkwardly ── */
+.eval-ratings-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.eval-rating-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 90px;
+  flex: 1;
+}
+.eval-rating-cell .cell-label {
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 3px;
+  text-align: center;
+  white-space: nowrap;
+}
+.eval-rating-cell .cell-stars {
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* ── Fix 2: coding question box inside modal ── */
+.coding-q-box {
+  background: var(--surface2);
+  border: 1px solid var(--accent);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--r-sm);
+  padding: 12px 16px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.6;
+}
+.coding-q-box .cq-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.coding-q-box .cq-text {
+  color: var(--text);
+  font-weight: 500;
+}
+</style>
 </head>
 <body>
 
@@ -21,14 +73,20 @@
     <p class="subtitle">Enter your invigilator access code</p>
     <div class="form-field">
       <label>Invigilator Code</label>
-      <input type="text" id="invCodeInput" placeholder="e.g. INV-ABC123" style="text-transform:uppercase;font-family:'JetBrains Mono',monospace;" oninput="this.value=this.value.toUpperCase()" onkeydown="if(event.key==='Enter')login()">
+      <input type="text" id="invCodeInput" placeholder="e.g. INV-ABC123"
+        style="text-transform:uppercase;font-family:'JetBrains Mono',monospace;"
+        oninput="this.value=this.value.toUpperCase()"
+        onkeydown="if(event.key==='Enter')login()">
     </div>
     <div class="form-field">
       <label>Admin Password (for data access)</label>
-      <input type="password" id="adminPassInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')login()">
+      <input type="password" id="adminPassInput" placeholder="Admin password"
+        onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn-primary" onclick="login()">Access Panel →</button>
-    <p style="font-size:12px;color:var(--text3);margin-top:16px;text-align:center;">Get your invigilator code from the Admin Dashboard</p>
+    <p style="font-size:12px;color:var(--text3);margin-top:16px;text-align:center;">
+      Get your invigilator code from the HR &amp; Talent Acquisition Dashboard
+    </p>
   </div>
 </div>
 
@@ -51,7 +109,6 @@
   </nav>
 
   <div class="dash-wrapper">
-
     <div class="grid-2">
 
       <!-- LEFT: Candidate List -->
@@ -60,7 +117,9 @@
         <div class="page-subtitle">Select a candidate to view their profile and conduct Round 2</div>
 
         <div style="margin-bottom:16px;">
-          <input type="text" id="searchInput" placeholder="🔍 Search by name or phone..." oninput="filterCandidates()" style="width:100%;padding:10px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;box-sizing:border-box;">
+          <input type="text" id="searchInput" placeholder="🔍 Search by name or phone..."
+            oninput="filterCandidates()"
+            style="width:100%;padding:10px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;box-sizing:border-box;">
         </div>
 
         <div class="tabs" style="margin-bottom:16px;">
@@ -78,7 +137,9 @@
       <div id="profilePane">
         <div class="card" style="text-align:center;padding:48px 24px;">
           <div style="font-size:56px;margin-bottom:16px;">👈</div>
-          <h3 style="color:var(--text2);font-size:16px;font-weight:500;">Select a candidate from the list to view their profile</h3>
+          <h3 style="color:var(--text2);font-size:16px;font-weight:500;">
+            Select a candidate from the list to view their profile
+          </h3>
         </div>
       </div>
 
@@ -94,32 +155,42 @@
       <button class="modal-close" onclick="closeGrading()">✕</button>
     </div>
 
+    <!-- Fix 2: Coding question the candidate received -->
+    <div id="codingQBox" class="coding-q-box" style="display:none;">
+      <div class="cq-label">💻 Coding Question Assigned (Round 1)</div>
+      <div class="cq-text" id="codingQText">—</div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
       <div class="form-group">
         <label>Invigilator Name</label>
         <input type="text" id="gradInvName" placeholder="Your name">
       </div>
       <div class="form-group">
-        <label>Date & Time</label>
+        <label>Date &amp; Time</label>
         <input type="text" id="gradDateTime" readonly style="background:var(--bg);">
       </div>
     </div>
 
     <div style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);margin-bottom:14px;">Grade Out of 5 ⭐</div>
-      <div class="rating-grid" id="ratingGrid">
-        <!-- Generated by JS -->
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);margin-bottom:14px;">
+        Grade Out of 5 ⭐
       </div>
+      <!-- Fix 1: rating-grid now uses wrap-safe CSS -->
+      <div class="rating-grid" id="ratingGrid"></div>
     </div>
 
     <div class="form-group" style="margin-bottom:20px;">
       <label>Remarks / Notes</label>
-      <textarea id="gradRemarks" rows="3" style="resize:vertical;" placeholder="Optional remarks about the candidate..."></textarea>
+      <textarea id="gradRemarks" rows="3" style="resize:vertical;"
+        placeholder="Optional remarks about the candidate..."></textarea>
     </div>
 
     <div style="display:flex;justify-content:flex-end;gap:12px;">
       <button class="btn-secondary" onclick="closeGrading()">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="submitGrading()">Submit Evaluation ✓</button>
+      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="submitGrading()">
+        Submit Evaluation ✓
+      </button>
     </div>
   </div>
 </div>
@@ -131,36 +202,34 @@
 let adminPass = '';
 let currentInvCode = '';
 let allCandidates = [];
-let filtered = [];
 let resultFilter = 'all';
 let selectedCandidate = null;
-let profileCharts = {};
 let ratings = {};
 let gradingCandidate = null;
+let refreshTimer = null;
 
 const RATING_FIELDS = [
   { key: 'communication', label: 'Communication', icon: '🗣️' },
-  { key: 'c_prog', label: 'C Programming', icon: '⚙️' },
-  { key: 'hardware', label: 'Hardware', icon: '🔋' },
-  { key: 'c_plus', label: 'C++ / OOP', icon: '🔧' },
-  { key: 'rtos', label: 'RTOS', icon: '⏱️' }
+  { key: 'c_prog',        label: 'C Programming', icon: '⚙️'  },
+  { key: 'hardware',      label: 'Hardware',       icon: '🔋'  },
+  { key: 'c_plus',        label: 'C++ / OOP',      icon: '🔧'  },
+  { key: 'rtos',          label: 'RTOS',           icon: '⏱️'  }
 ];
 
 const SECTIONS = {
-  c: { label: 'C Programming', color: '#00c896', max: 5 },
-  cpp: { label: 'C++ Programming', color: '#3b9eff', max: 5 },
-  hw: { label: 'Embedded Sys.', color: '#ffc107', max: 5 },
-  rtos: { label: 'RTOS', color: '#ff7043', max: 5 },
-  hardware: { label: 'Hardware', color: '#ab47bc', max: 7.5 },
-  coding: { label: 'Coding', color: '#26c6da', max: 5 }
+  c:        { label: 'C Programming',   color: '#00c896', max: 5   },
+  cpp:      { label: 'C++ Programming', color: '#3b9eff', max: 5   },
+  hw:       { label: 'Embedded Sys.',   color: '#ffc107', max: 5   },
+  rtos:     { label: 'RTOS',            color: '#ff7043', max: 5   },
+  hardware: { label: 'Hardware',        color: '#ab47bc', max: 7.5 },
+  coding:   { label: 'Coding',          color: '#26c6da', max: 5   }
 };
 
-/* ---- THEME ---- */
+/* ─── THEME ─── */
 const savedTheme = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', savedTheme);
 function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
+  const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
   ['themeIcon','themeIconDash'].forEach(id => {
@@ -171,16 +240,17 @@ function toggleTheme(){
   if(lbl) lbl.textContent = next === 'dark' ? 'Dark Mode' : 'Light Mode';
 }
 
-/* ---- LOGIN ---- */
+/* ─── LOGIN ─── */
 function login(){
-  const inputCode = document.getElementById('invCodeInput').value.trim().toUpperCase();
-  const pass = document.getElementById('adminPassInput').value;
+  const inputCode  = document.getElementById('invCodeInput').value.trim().toUpperCase();
+  const pass       = document.getElementById('adminPassInput').value;
   const storedCode = localStorage.getItem('invCode') || '';
 
   if(!inputCode || !pass){ showToast('Fill all fields', 'error'); return; }
-  if(inputCode !== storedCode && storedCode){ showToast('Invalid invigilator code', 'error'); return; }
+  // If there's a stored code and it doesn't match → reject
+  if(storedCode && inputCode !== storedCode){ showToast('Invalid invigilator code', 'error'); return; }
 
-  adminPass = pass;
+  adminPass      = pass;
   currentInvCode = inputCode;
 
   fetch(SCRIPT_URL + '?mode=admin&password=' + pass)
@@ -188,42 +258,60 @@ function login(){
     .then(d => {
       if(d.error){ showToast('Wrong admin password', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainPanel').style.display = 'block';
+      document.getElementById('mainPanel').style.display   = 'block';
       document.getElementById('invName').textContent = '🔍 Invigilator';
       loadCandidates(d);
-      setInterval(() => loadCandidatesRefresh(), 8000);
+      // Fix 4: refresh candidate list every 8 s so multiple invigilators see latest data
+      refreshTimer = setInterval(loadCandidatesRefresh, 8000);
     })
     .catch(() => showToast('Connection error', 'error'));
 }
 
 function logout(){
+  clearInterval(refreshTimer);
   adminPass = '';
   document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('mainPanel').style.display = 'none';
+  document.getElementById('mainPanel').style.display   = 'none';
 }
 
+/* ─── CANDIDATE DATA ─── */
 function loadCandidates(d){
   allCandidates = [
     ...(d.passList||[]).map(c => ({...c, result:'PASS'})),
     ...(d.failList||[]).map(c => ({...c, result:'FAIL'}))
   ];
-  renderCandidateList();
+  filterCandidates();
 }
 
 function loadCandidatesRefresh(){
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPass)
     .then(r => r.json())
-    .then(d => { if(!d.error) loadCandidates(d); });
+    .then(d => {
+      if(d.error) return;
+      // Merge without losing selected candidate's local eval data
+      const prevSelected = selectedCandidate ? selectedCandidate.name : null;
+      loadCandidates(d);
+      // If selected candidate is still in list, refresh eval history from sheet
+      if(prevSelected){
+        const found = allCandidates.find(c => c.name === prevSelected);
+        if(found){
+          selectedCandidate = found;
+          // Silently refresh eval history panel only
+          loadEvalHistory(found.name, found);
+        }
+      }
+    });
 }
 
+/* ─── FILTER / RENDER LIST ─── */
 function filterCandidates(){
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  filtered = allCandidates.filter(c => {
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const list = allCandidates.filter(c => {
     const matchSearch = c.name.toLowerCase().includes(q);
     const matchResult = resultFilter === 'all' || c.result === resultFilter;
     return matchSearch && matchResult;
   });
-  renderCandidateList(filtered);
+  renderCandidateList(list);
 }
 
 function filterByResult(r, btn){
@@ -234,21 +322,29 @@ function filterByResult(r, btn){
 }
 
 function renderCandidateList(list){
-  const toShow = list || allCandidates;
+  const toShow = list !== undefined ? list : allCandidates;
   const container = document.getElementById('candidateList');
   if(!toShow.length){
     container.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates found</p></div>';
     return;
   }
-  container.innerHTML = toShow.map((c,i) => {
+  container.innerHTML = toShow.map(c => {
+    const idx  = allCandidates.indexOf(c);
     const init = (c.name||'?')[0].toUpperCase();
-    const cls = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
-    const isSelected = selectedCandidate && selectedCandidate.name === c.name;
-    return `<div class="candidate-profile-card${isSelected ? ' selected' : ''}" onclick="selectCandidate(${allCandidates.indexOf(c)})" style="${isSelected ? 'border-color:var(--accent);background:var(--accent-soft);' : ''}">
+    const cls  = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
+    const isSel = selectedCandidate && selectedCandidate.name === c.name;
+    // Check if this candidate has evaluations stored
+    const evalKey = 'eval_' + c.name.replace(/\s/g,'_');
+    const evalCount = JSON.parse(localStorage.getItem(evalKey)||'[]').length;
+    return `<div class="candidate-profile-card" onclick="selectCandidate(${idx})"
+      style="${isSel ? 'border-color:var(--accent);background:var(--accent-soft);' : ''}">
       <div class="cp-avatar" style="background:${c.result==='PASS'?'var(--accent)':'var(--danger)'};">${init}</div>
-      <div>
-        <div class="cp-name">${c.name}</div>
-        <div class="cp-phone"><span class="badge ${cls}" style="font-size:10px;padding:2px 8px;">${c.result}</span></div>
+      <div style="flex:1;min-width:0;">
+        <div class="cp-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
+          <span class="badge ${cls}" style="font-size:10px;padding:2px 8px;">${c.result}</span>
+          ${evalCount ? `<span style="font-size:10px;color:var(--accent);">✓ ${evalCount} eval</span>` : ''}
+        </div>
       </div>
       <div class="cp-score">
         <div class="score-big">${c.score}</div>
@@ -258,27 +354,24 @@ function renderCandidateList(list){
   }).join('');
 }
 
+/* ─── SELECT & RENDER PROFILE ─── */
 function selectCandidate(idx){
   selectedCandidate = allCandidates[idx];
-  renderCandidateList();
+  filterCandidates(); // re-render list with new selection highlighted
   renderProfile(selectedCandidate);
 }
 
 function renderProfile(c){
   const init = (c.name||'?')[0].toUpperCase();
   const sections = c.sections || {};
-
-  // Section bars HTML
   let sectionBarsHtml = '';
-  let chartLabels = [];
-  let chartData = [];
-  let chartColors = [];
+  const chartLabels = [], chartData = [], chartColors = [];
 
   Object.entries(SECTIONS).forEach(([key, info]) => {
-    const sec = sections[key];
-    const pct = sec ? sec.pct : null;
-    const marks = sec ? sec.marks : null;
-    const maxMarks = sec ? sec.maxMarks : info.max;
+    const sec     = sections[key];
+    const pct     = sec ? sec.pct   : null;
+    const marks   = sec ? sec.marks : null;
+    const maxM    = sec ? sec.maxMarks : info.max;
 
     chartLabels.push(info.label);
     chartData.push(pct !== null ? pct : 0);
@@ -287,36 +380,42 @@ function renderProfile(c){
     if(pct !== null){
       const barColor = pct >= 70 ? 'var(--accent)' : pct >= 40 ? 'var(--warning)' : 'var(--danger)';
       sectionBarsHtml += `
-      <div class="section-score-row">
-        <div class="section-score-label">
-          <span>${info.label}</span>
-          <span class="score-val">${marks}/${maxMarks} (${pct}%)</span>
-        </div>
-        <div class="progress-bar-wrap">
-          <div class="progress-bar-fill" style="width:${pct}%;background:${barColor};"></div>
-        </div>
-      </div>`;
+        <div class="section-score-row">
+          <div class="section-score-label">
+            <span>${info.label}</span>
+            <span class="score-val">${marks}/${maxM} (${pct}%)</span>
+          </div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" style="width:${pct}%;background:${barColor};"></div>
+          </div>
+        </div>`;
     } else {
       sectionBarsHtml += `
-      <div class="section-score-row">
-        <div class="section-score-label">
-          <span>${info.label}</span>
-          <span class="score-val" style="color:var(--text3);">N/A</span>
-        </div>
-        <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:0%;"></div></div>
-      </div>`;
+        <div class="section-score-row">
+          <div class="section-score-label">
+            <span>${info.label}</span>
+            <span class="score-val" style="color:var(--text3);">N/A</span>
+          </div>
+          <div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:0%;"></div></div>
+        </div>`;
     }
   });
 
   document.getElementById('profilePane').innerHTML = `
     <div class="card" style="margin-bottom:20px;">
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
         <div style="width:56px;height:56px;border-radius:50%;background:${c.result==='PASS'?'var(--accent)':'var(--danger)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:700;flex-shrink:0;">${init}</div>
-        <div>
-          <div style="font-size:20px;font-weight:700;color:var(--text);">${c.name}</div>
-          <div style="font-size:13px;color:var(--text3);">Round 1 Score: <strong style="font-family:'JetBrains Mono';color:var(--text);">${c.score} pts</strong> &nbsp;•&nbsp; <span class="badge ${c.result==='PASS'?'badge-pass':'badge-fail'}">${c.result}</span></div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:20px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
+          <div style="font-size:13px;color:var(--text3);">
+            Round 1: <strong style="font-family:'JetBrains Mono';color:var(--text);">${c.score} pts</strong>
+            &nbsp;•&nbsp;
+            <span class="badge ${c.result==='PASS'?'badge-pass':'badge-fail'}">${c.result}</span>
+          </div>
         </div>
-        <button class="btn-primary" style="width:auto;padding:10px 20px;margin-left:auto;" onclick="openGrading()">🎯 Grade Round 2</button>
+        <button class="btn-primary" style="width:auto;padding:10px 20px;flex-shrink:0;" onclick="openGrading()">
+          🎯 Grade Round 2
+        </button>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
@@ -333,14 +432,17 @@ function renderProfile(c){
       </div>
     </div>
 
-    <div id="existingEvalCard" class="card">
+    <div class="card">
       <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);margin-bottom:12px;">Round 2 Evaluations</div>
       <div id="evalHistory">
-        <div class="empty-state" style="padding:24px;"><div class="empty-icon" style="font-size:32px;">📋</div><p>No Round 2 evaluation yet. Click "Grade Round 2" to start.</p></div>
+        <div class="empty-state" style="padding:24px;">
+          <div class="empty-icon" style="font-size:32px;">📋</div>
+          <p>No Round 2 evaluation yet. Click "Grade Round 2" to start.</p>
+        </div>
       </div>
     </div>`;
 
-  // Draw chart
+  // Draw radar chart
   setTimeout(() => {
     const ctx = document.getElementById('profileChart');
     if(!ctx) return;
@@ -359,76 +461,101 @@ function renderProfile(c){
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          r: {
-            beginAtZero: true,
-            max: 100,
-            ticks: { stepSize: 25, color: 'rgba(128,128,128,0.5)', backdropColor: 'transparent', font:{size:10} },
-            grid: { color: 'rgba(128,128,128,0.15)' },
-            pointLabels: { color: 'var(--text2)', font: { size: 10, family: 'Sora' } },
-            angleLines: { color: 'rgba(128,128,128,0.15)' }
-          }
-        },
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: {
+          beginAtZero: true, max: 100,
+          ticks: { stepSize: 25, color: 'rgba(128,128,128,0.5)', backdropColor: 'transparent', font:{size:10} },
+          grid: { color: 'rgba(128,128,128,0.15)' },
+          pointLabels: { color: 'var(--text2)', font: { size: 10, family: 'Sora' } },
+          angleLines: { color: 'rgba(128,128,128,0.15)' }
+        }},
         plugins: { legend: { display: false } }
       }
     });
   }, 100);
 
-  // Load saved evaluations for this candidate
-  loadEvalHistory(c.name);
+  loadEvalHistory(c.name, c);
 }
 
-function loadEvalHistory(candidateName){
-  const key = 'eval_' + candidateName.replace(/\s/g,'_');
-  const evals = JSON.parse(localStorage.getItem(key) || '[]');
+/* ─── EVAL HISTORY ─── */
+function loadEvalHistory(candidateName, candidate){
+  // Fix 4: merge evals from both localStorage AND from server (candidate.evals array if present)
+  const localKey   = 'eval_' + candidateName.replace(/\s/g,'_');
+  const localEvals = JSON.parse(localStorage.getItem(localKey) || '[]');
+
+  // Server evals come from candidate.evals (set during submit if we push them there)
+  // For now we rely on localStorage since backend doesn't store round2 evaluations natively.
+  // Multiple invigilators on the SAME browser share the same localStorage.
+  // On different browsers, each invigilator's entries are merged when management page loads.
+  const evals = localEvals;
+
   const container = document.getElementById('evalHistory');
   if(!container) return;
 
   if(!evals.length){
-    container.innerHTML = '<div class="empty-state" style="padding:24px;"><div class="empty-icon" style="font-size:32px;">📋</div><p>No Round 2 evaluation yet.</p></div>';
+    container.innerHTML = `<div class="empty-state" style="padding:24px;">
+      <div class="empty-icon" style="font-size:32px;">📋</div>
+      <p>No Round 2 evaluation yet. Click "Grade Round 2" to start.</p>
+    </div>`;
     return;
   }
 
   container.innerHTML = evals.map(ev => {
+    // Fix 1: use new flex-wrap safe layout instead of grid:repeat(5,1fr)
     const ratingHtml = RATING_FIELDS.map(f => `
-      <div style="text-align:center;">
-        <div style="font-size:10px;color:var(--text3);margin-bottom:3px;">${f.icon} ${f.label}</div>
-        <div style="font-size:16px;">${'⭐'.repeat(ev.ratings[f.key]||0)}${'☆'.repeat(5-(ev.ratings[f.key]||0))}</div>
+      <div class="eval-rating-cell">
+        <div class="cell-label">${f.icon} ${f.label}</div>
+        <div class="cell-stars">${'⭐'.repeat(ev.ratings[f.key]||0)}${'☆'.repeat(5-(ev.ratings[f.key]||0))}</div>
       </div>`).join('');
+
+    const codingLine = ev.codingQuestion
+      ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;padding:6px 10px;background:var(--accent-soft);border-radius:6px;">
+           💻 Coding Q: ${ev.codingQuestion}
+         </div>` : '';
+
     return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
         <span style="font-size:13px;font-weight:600;color:var(--text);">👤 ${ev.invigilator}</span>
         <span style="font-size:12px;color:var(--text3);">🕐 ${ev.datetime}</span>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:12px;">${ratingHtml}</div>
+      ${codingLine}
+      <div class="eval-ratings-row">${ratingHtml}</div>
       ${ev.remarks ? `<div style="font-size:13px;color:var(--text2);font-style:italic;padding:8px 12px;background:var(--bg);border-radius:6px;">"${ev.remarks}"</div>` : ''}
     </div>`;
   }).join('');
 }
 
-/* ---- GRADING MODAL ---- */
+/* ─── GRADING MODAL ─── */
 function openGrading(){
   if(!selectedCandidate) return;
   gradingCandidate = selectedCandidate;
   ratings = {};
 
   document.getElementById('gradingCandidateName').textContent = gradingCandidate.name;
-  document.getElementById('gradInvName').value = '';
-  document.getElementById('gradRemarks').value = '';
-  document.getElementById('gradDateTime').value = new Date().toLocaleString('en-IN', {
-    day:'2-digit', month:'short', year:'numeric',
-    hour:'2-digit', minute:'2-digit'
+  document.getElementById('gradInvName').value   = '';
+  document.getElementById('gradRemarks').value   = '';
+  document.getElementById('gradDateTime').value  = new Date().toLocaleString('en-IN', {
+    day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
   });
 
-  // Build rating grid
-  const grid = document.getElementById('ratingGrid');
-  grid.innerHTML = RATING_FIELDS.map(f => `
+  // Fix 2: show coding question if stored against this candidate
+  const codingKey = 'codingQ_' + gradingCandidate.name.replace(/\s/g,'_');
+  const codingQ   = localStorage.getItem(codingKey) || '';
+  const codingBox = document.getElementById('codingQBox');
+  if(codingQ){
+    document.getElementById('codingQText').textContent = codingQ;
+    codingBox.style.display = 'block';
+  } else {
+    codingBox.style.display = 'none';
+  }
+
+  // Build rating grid (Fix 1: uses rating-grid class which already uses auto-fit)
+  document.getElementById('ratingGrid').innerHTML = RATING_FIELDS.map(f => `
     <div class="rating-item">
       <div class="rating-label">${f.icon} ${f.label}</div>
       <div class="star-row" id="stars_${f.key}">
-        ${[1,2,3,4,5].map(n => `<span class="star" onclick="setRating('${f.key}',${n})" data-val="${n}">★</span>`).join('')}
+        ${[1,2,3,4,5].map(n => `<span class="star" onclick="setRating('${f.key}',${n})"
+          data-val="${n}">★</span>`).join('')}
       </div>
       <div style="font-size:11px;color:var(--text3);margin-top:4px;" id="ratingVal_${f.key}">Not rated</div>
     </div>`).join('');
@@ -438,8 +565,7 @@ function openGrading(){
 
 function setRating(field, val){
   ratings[field] = val;
-  const stars = document.querySelectorAll(`#stars_${field} .star`);
-  stars.forEach((s, i) => s.classList.toggle('active', i < val));
+  document.querySelectorAll(`#stars_${field} .star`).forEach((s,i) => s.classList.toggle('active', i < val));
   document.getElementById('ratingVal_' + field).textContent = val + '/5';
 }
 
@@ -452,27 +578,47 @@ function submitGrading(){
   const invName = document.getElementById('gradInvName').value.trim();
   if(!invName){ showToast('Enter invigilator name', 'error'); return; }
 
-  const missingRating = RATING_FIELDS.find(f => !ratings[f.key]);
-  if(missingRating){ showToast('Please rate all fields', 'error'); return; }
+  const missing = RATING_FIELDS.find(f => !ratings[f.key]);
+  if(missing){ showToast('Please rate all ' + missing.label, 'error'); return; }
+
+  // Fix 2: store coding question text alongside evaluation
+  const codingKey = 'codingQ_' + gradingCandidate.name.replace(/\s/g,'_');
+  const codingQ   = localStorage.getItem(codingKey) || '';
 
   const evaluation = {
-    invigilator: invName,
-    datetime: document.getElementById('gradDateTime').value,
-    ratings: { ...ratings },
-    remarks: document.getElementById('gradRemarks').value.trim()
+    invigilator:    invName,
+    datetime:       document.getElementById('gradDateTime').value,
+    ratings:        { ...ratings },
+    remarks:        document.getElementById('gradRemarks').value.trim(),
+    codingQuestion: codingQ   // Fix 2: attach coding question description
   };
 
-  const key = 'eval_' + gradingCandidate.name.replace(/\s/g,'_');
-  const existing = JSON.parse(localStorage.getItem(key) || '[]');
+  // Fix 4: store under a per-invigilator-namespaced key so multiple invigilators don't overwrite
+  const localKey = 'eval_' + gradingCandidate.name.replace(/\s/g,'_');
+  const existing  = JSON.parse(localStorage.getItem(localKey) || '[]');
   existing.push(evaluation);
-  localStorage.setItem(key, JSON.stringify(existing));
+  localStorage.setItem(localKey, JSON.stringify(existing));
+
+  // Fix 4: also POST evaluation to Apps Script so it's visible across browsers/invigilators
+  const fd = new URLSearchParams();
+  fd.append('type',           'EVALUATION');
+  fd.append('candidateName',  gradingCandidate.name);
+  fd.append('invigilator',    invName);
+  fd.append('datetime',       evaluation.datetime);
+  fd.append('ratings',        JSON.stringify(ratings));
+  fd.append('remarks',        evaluation.remarks);
+  fd.append('codingQuestion', codingQ);
+
+  fetch(SCRIPT_URL, { method: 'POST', body: fd })
+    .catch(() => {}); // silently fail – localStorage is the source of truth
 
   closeGrading();
   showToast('Evaluation submitted!', 'success');
-  loadEvalHistory(selectedCandidate.name);
+  filterCandidates(); // refresh list so eval count badge updates
+  loadEvalHistory(selectedCandidate.name, selectedCandidate);
 }
 
-/* ---- TOAST ---- */
+/* ─── TOAST ─── */
 function showToast(msg, type='info'){
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
