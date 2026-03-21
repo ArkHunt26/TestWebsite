@@ -1120,21 +1120,24 @@ body {
 
 /* Round-level tabs (top-level R1/R2 selector) — more prominent active state */
 .tabs.round-tabs {
-  background: var(--surface);
-  border-color: var(--accent);
-  border-width: 1.5px;
+  background: var(--surface2);
+  border: 1.5px solid var(--border);
   padding: 5px;
   margin-bottom: 0;
 }
 .tabs.round-tabs .tab-btn {
   font-size: 14px;
   padding: 11px 20px;
-  color: var(--text2);
+  color: var(--text3);          /* dim when inactive */
+  background: transparent;
+  border-radius: calc(var(--r) - 4px);
+  transition: all var(--transition);
 }
 .tabs.round-tabs .tab-btn.active {
   background: var(--accent);
   color: #fff;
   box-shadow: 0 4px 16px var(--accent-glow);
+  border-radius: calc(var(--r) - 4px);
 }
 .tabs.round-tabs .tab-btn:hover:not(.active) {
   background: var(--accent-soft);

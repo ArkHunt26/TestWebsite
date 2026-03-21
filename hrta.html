@@ -165,7 +165,7 @@
     </div>
 
     <!-- ROUNDS TABS: Fix 9 -->
-    <div class="tabs round-tabs" style="margin-bottom:0;">
+    <div class="tabs round-tabs" id="adminRoundTabs" style="margin-bottom:0;">
       <button class="tab-btn active" onclick="switchRoundTab('r1',this)">📋 Round 1 — Technical Test</button>
       <button class="tab-btn" onclick="switchRoundTab('r2',this)">🎯 Round 2 — F2F Evaluation</button>
     </div>
@@ -497,7 +497,8 @@ function renderAdminR2(d){
 
 /* ---- TABS ---- */
 function switchRoundTab(tab, btn){
-  document.querySelectorAll('.tabs:first-of-type .tab-btn').forEach(b => b.classList.remove('active'));
+  // Use the specific ID so inner candidate tabs are never affected
+  document.querySelectorAll('#adminRoundTabs .tab-btn').forEach(b => b.classList.remove('active'));
   if(btn) btn.classList.add('active');
   document.getElementById('adminR1Panel').classList.toggle('active', tab === 'r1');
   document.getElementById('adminR2Panel').classList.toggle('active', tab === 'r2');

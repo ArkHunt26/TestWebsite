@@ -232,6 +232,14 @@ async function startExam(){
       return;
     }
 
+    // Fix 1: wipe ALL stale exam state so a fresh candidate (or same browser re-login)
+    // never gets redirected to result.html by the test.html guard
+    localStorage.removeItem('examSubmittedFlag');
+    localStorage.removeItem('examEndTime');
+    localStorage.removeItem('score');
+    localStorage.removeItem('result');
+    localStorage.removeItem('sectionBreakdown');
+
     localStorage.setItem('name', name);
     localStorage.setItem('phone', phone);
     localStorage.setItem('passMark', config.passMark);
