@@ -165,7 +165,7 @@
     </div>
 
     <!-- ROUNDS TABS: Fix 9 -->
-    <div class="tabs" style="margin-bottom:0;">
+    <div class="tabs round-tabs" style="margin-bottom:0;">
       <button class="tab-btn active" onclick="switchRoundTab('r1',this)">📋 Round 1 — Technical Test</button>
       <button class="tab-btn" onclick="switchRoundTab('r2',this)">🎯 Round 2 — F2F Evaluation</button>
     </div>
@@ -369,7 +369,8 @@ function updateChart(d){
 let _listHashes = { allList: '', passList: '', failList: '' };
 
 function updateLists(d){
-  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))]
+    .sort((a,b) => Number(b.score) - Number(a.score));
 
   function renderEntry(c){
     const init = (c.name||'?')[0].toUpperCase();
@@ -416,7 +417,8 @@ function updateLists(d){
 
 /* ---- FIX 9: Render R2 panel in admin ---- */
 function renderAdminR2(d){
-  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))]
+    .sort((a,b) => Number(b.score) - Number(a.score));
   const RATING_FIELDS_ADM = [
     { key:'communication', label:'Communication', icon:'🗣️' },
     { key:'c_prog',        label:'C Programming', icon:'⚙️'  },

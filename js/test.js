@@ -229,6 +229,20 @@ async function submitTest(fromCheat){
     };
   });
 
+  // Fix 3: embed coding question title in sectionBreakdown so it reaches the server
+  // and is readable by invigilators on any device (not just same-browser localStorage)
+  const codingQObj = selectedQuestions.find(q => q.type === 'coding');
+  if(codingQObj){
+    const div = document.createElement('div');
+    div.innerHTML = codingQObj.description;
+    const plainDesc = div.textContent || div.innerText || '';
+    const firstLine = plainDesc.split('\n')[0].trim();
+    sectionBreakdown._codingQuestion = firstLine;
+    // Also store locally as fallback for same-browser invigilator
+    const candidateName = localStorage.getItem('name') || '';
+    localStorage.setItem('codingQ_' + candidateName.replace(/\s/g,'_'), firstLine);
+  }
+
   const formData = new URLSearchParams();
   formData.append('type', 'RESULT');
   formData.append('name', localStorage.getItem('name'));
@@ -244,18 +258,6 @@ async function submitTest(fromCheat){
   localStorage.setItem('score', totalScore);
   localStorage.setItem('result', result);
   localStorage.setItem('sectionBreakdown', JSON.stringify(sectionBreakdown));
-
-  // Fix 2 (invigilator): save the coding question this candidate received
-  const codingQ = selectedQuestions.find(q => q.type === 'coding');
-  if(codingQ){
-    const candidateName = localStorage.getItem('name') || '';
-    // Strip HTML tags for clean display in invigilator modal
-    const div = document.createElement('div');
-    div.innerHTML = codingQ.description;
-    const plainDesc = div.textContent || div.innerText || codingQ.description;
-    const firstLine = plainDesc.split('\n')[0].trim();
-    localStorage.setItem('codingQ_' + candidateName.replace(/\s/g,'_'), firstLine);
-  }
 
   window.location.href = 'result.html';
 }

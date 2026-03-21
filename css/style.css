@@ -896,12 +896,7 @@ body {
 .live-feed {
   max-height: 360px;
   overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--accent) var(--surface2);
 }
-.live-feed::-webkit-scrollbar { width: 4px; }
-.live-feed::-webkit-scrollbar-track { background: var(--surface2); }
-.live-feed::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
 
 .live-entry {
   display: flex;
@@ -1060,12 +1055,33 @@ body {
 }
 
 /* ==========================================
-   SCROLLBAR
+   SCROLLBAR — unified accent style for all elements
    ========================================== */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent) transparent;
+}
+/* WebKit / Blink (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent);
+  border-radius: 10px;
+  opacity: 0.8;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+::-webkit-scrollbar-corner { background: transparent; }
 
 /* ==========================================
    SECTION TABS
@@ -1101,6 +1117,29 @@ body {
   box-shadow: var(--shadow);
 }
 .tab-btn:hover:not(.active) { color: var(--text); background: var(--border); }
+
+/* Round-level tabs (top-level R1/R2 selector) — more prominent active state */
+.tabs.round-tabs {
+  background: var(--surface);
+  border-color: var(--accent);
+  border-width: 1.5px;
+  padding: 5px;
+  margin-bottom: 0;
+}
+.tabs.round-tabs .tab-btn {
+  font-size: 14px;
+  padding: 11px 20px;
+  color: var(--text2);
+}
+.tabs.round-tabs .tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+.tabs.round-tabs .tab-btn:hover:not(.active) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
 
 .tab-panel { display: none; animation: fadeIn 0.3s ease; }
 .tab-panel.active { display: block; }

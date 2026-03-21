@@ -94,7 +94,7 @@
     </div>
 
     <!-- TABS: Round 1 | Round 2 -->
-    <div class="tabs">
+    <div class="tabs round-tabs">
       <button class="tab-btn active" onclick="switchTab('r1',this)">📋 Round 1 — Technical Test</button>
       <button class="tab-btn" onclick="switchTab('r2',this)">🎯 Round 2 — Face to Face</button>
     </div>
@@ -371,7 +371,7 @@ function renderR1Table(skipFade){
     const matchQ = c.name.toLowerCase().includes(q);
     const matchF = filter === 'all' || c.result === filter;
     return matchQ && matchF;
-  });
+  }).sort((a, b) => Number(b.score) - Number(a.score)); // Fix 2: highest score first
 
   const wrap = document.getElementById('r1TableWrap');
   if(!wrap) return;
