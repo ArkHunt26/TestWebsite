@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Management Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="loginScreen" class="auth-screen">
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span class="icon" id="themeIcon">🌙</span>
+    <span id="themeLabel">Dark Mode</span>
+  </button>
+  <div class="auth-card">
+    <div class="brand-icon">📊</div>
+    <h2>Management View</h2>
+    <p class="subtitle">Executive overview of all assessment rounds</p>
+    <div class="form-field">
+      <label>Admin Password</label>
+      <input type="password" id="passInput" placeholder="Enter admin password" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn-primary" onclick="login()">View Dashboard →</button>
+  </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="dashboard" style="display:none;">
+
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <span>📊</span>
+      <span>Management Dashboard</span>
+      <span class="badge">MGMT</span>
+    </div>
+    <div class="topbar-actions">
+      <div id="examLiveBadge" class="badge badge-pending">● Loading...</div>
+      <button class="download-btn" onclick="downloadExcel()">⬇ Export Report</button>
+      <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
+        <span id="themeIconDash">🌙</span> Theme
+      </button>
+    </div>
+  </nav>
+
+  <div class="dash-wrapper">
+
+    <!-- SUMMARY STATS -->
+    <div style="margin-bottom:8px;">
+      <div class="page-title">Assessment Overview</div>
+      <div class="page-subtitle">Real-time monitoring across both interview rounds</div>
+    </div>
+
+    <div class="stats-row" style="margin-bottom:32px;">
+      <div class="stat-card" style="--card-accent:#3b9eff;">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="sTotal">0</div>
+        <div class="stat-label">Total Candidates</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#00c896;">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="sPassed">0</div>
+        <div class="stat-label">R1 Passed</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#ff4d6d;">
+        <div class="stat-icon">❌</div>
+        <div class="stat-value" id="sFailed">0</div>
+        <div class="stat-label">R1 Failed</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#ffc107;">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" id="sPassRate">0%</div>
+        <div class="stat-label">Pass Rate</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#ab47bc;">
+        <div class="stat-icon">🎯</div>
+        <div class="stat-value" id="sR2Count">0</div>
+        <div class="stat-label">R2 Evaluated</div>
+      </div>
+    </div>
+
+    <!-- TABS: Round 1 | Round 2 -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('r1',this)">📋 Round 1 — Technical Test</button>
+      <button class="tab-btn" onclick="switchTab('r2',this)">🎯 Round 2 — Face to Face</button>
+    </div>
+
+    <!-- ROUND 1 TAB -->
+    <div id="panelR1" class="tab-panel active">
+
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Results Distribution</div>
+              <div class="card-subtitle">Pass vs Fail breakdown</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);">
+              <span class="status-dot active" id="liveStatusDot"></span>
+              <span id="examStatusLabel">Live</span>
+            </div>
+          </div>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="r1PieChart"></canvas>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Section Avg. Performance</div>
+          </div>
+          <div class="chart-container" style="height:220px;">
+            <canvas id="sectionBarChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Score Feed -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Live Candidate Scores</div>
+            <div class="card-subtitle">All candidates • auto-refreshes every 5 seconds</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);">
+            <span class="status-dot active"></span> Live Feed
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+          <input type="text" id="r1Search" placeholder="🔍 Search candidate..." oninput="renderR1Table()" style="padding:9px 14px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora';font-size:13px;outline:none;">
+          <select id="r1Filter" onchange="renderR1Table()" style="padding:9px 14px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora';font-size:13px;outline:none;">
+            <option value="all">All Results</option>
+            <option value="PASS">Pass Only</option>
+            <option value="FAIL">Fail Only</option>
+          </select>
+        </div>
+
+        <div id="r1TableWrap">
+          <div class="empty-state"><div class="spinner"></div><p>Loading...</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROUND 2 TAB -->
+    <div id="panelR2" class="tab-panel">
+
+      <div class="card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <div class="card-title">Round 2 — F2F Evaluation Summary</div>
+          <div class="card-subtitle">Invigilator ratings across all evaluated candidates</div>
+        </div>
+
+        <div id="r2SummaryGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
+          <!-- Filled by JS -->
+        </div>
+
+        <div style="height:240px;">
+          <canvas id="r2RadarChart"></canvas>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Candidate Evaluations</div>
+          <div class="card-subtitle">All Round 2 rated candidates</div>
+        </div>
+        <div id="r2List">
+          <div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet. Invigilators will grade candidates in the Invigilator Panel.</p></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/config.js"></script>
+<script>
+let adminPassword = '';
+let allData = {};
+let r1Chart = null;
+let secBarChart = null;
+let r2Radar = null;
+
+const SECTION_META = {
+  c: { label: 'C Prog.', color: '#00c896' },
+  cpp: { label: 'C++', color: '#3b9eff' },
+  hw: { label: 'Embedded', color: '#ffc107' },
+  rtos: { label: 'RTOS', color: '#ff7043' },
+  hardware: { label: 'Hardware', color: '#ab47bc' },
+  coding: { label: 'Coding', color: '#26c6da' }
+};
+
+const RATING_FIELDS = [
+  { key: 'communication', label: 'Communication' },
+  { key: 'c_prog', label: 'C Programming' },
+  { key: 'hardware', label: 'Hardware' },
+  { key: 'c_plus', label: 'C++ / OOP' },
+  { key: 'rtos', label: 'RTOS' }
+];
+
+/* ---- THEME ---- */
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  ['themeIcon','themeIconDash'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = next === 'dark' ? '🌙' : '☀️';
+  });
+  const lbl = document.getElementById('themeLabel');
+  if(lbl) lbl.textContent = next === 'dark' ? 'Dark Mode' : 'Light Mode';
+}
+
+/* ---- LOGIN ---- */
+function login(){
+  adminPassword = document.getElementById('passInput').value;
+  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast('Wrong password', 'error'); return; }
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      processData(d);
+      setInterval(() => refresh(), 5000);
+    })
+    .catch(() => showToast('Connection error', 'error'));
+}
+
+function refresh(){
+  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => { if(!d.error) processData(d); });
+}
+
+function processData(d){
+  allData = d;
+  updateTopStats(d);
+  updateExamStatus(d);
+  updateR1Charts(d);
+  renderR1Table();
+  renderR2Section(d);
+}
+
+function updateTopStats(d){
+  document.getElementById('sTotal').textContent = d.totalCandidates || 0;
+  document.getElementById('sPassed').textContent = d.passedCount || 0;
+  document.getElementById('sFailed').textContent = d.failedCount || 0;
+  const rate = d.totalCandidates > 0 ? Math.round((d.passedCount/d.totalCandidates)*100) : 0;
+  document.getElementById('sPassRate').textContent = rate + '%';
+
+  // Count R2 evaluations
+  const all = [...(d.passList||[]), ...(d.failList||[])];
+  let r2Count = 0;
+  all.forEach(c => {
+    const key = 'eval_' + c.name.replace(/\s/g,'_');
+    const evals = JSON.parse(localStorage.getItem(key) || '[]');
+    if(evals.length) r2Count++;
+  });
+  document.getElementById('sR2Count').textContent = r2Count;
+}
+
+function updateExamStatus(d){
+  const badge = document.getElementById('examLiveBadge');
+  const dot = document.getElementById('liveStatusDot');
+  const label = document.getElementById('examStatusLabel');
+
+  if(!d.enabled || !d.startTime || !d.duration){
+    badge.className = 'badge badge-pending'; badge.textContent = '● Not Active';
+    if(dot) { dot.className = 'status-dot inactive'; }
+    if(label) label.textContent = 'Not Active';
+    return;
+  }
+  const now = new Date(), start = new Date(d.startTime);
+  const end = new Date(start.getTime() + d.duration*60000);
+  if(now < start){
+    badge.className = 'badge badge-info'; badge.textContent = '● Scheduled';
+    if(label) label.textContent = 'Scheduled';
+  } else if(now <= end){
+    badge.className = 'badge badge-pass'; badge.textContent = '● LIVE';
+    if(dot) dot.className = 'status-dot active';
+    if(label) label.textContent = 'LIVE';
+  } else {
+    badge.className = 'badge badge-fail'; badge.textContent = '● Ended';
+    if(dot) dot.className = 'status-dot ended';
+    if(label) label.textContent = 'Ended';
+  }
+}
+
+function updateR1Charts(d){
+  const pass = d.passedCount || 0;
+  const fail = d.failedCount || 0;
+
+  // Pie
+  if(r1Chart){
+    r1Chart.data.datasets[0].data = [pass, fail];
+    r1Chart.update();
+  } else {
+    const ctx = document.getElementById('r1PieChart');
+    if(ctx) r1Chart = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels: ['Pass','Fail'], datasets: [{ data:[pass,fail], backgroundColor:['#00c896','#ff4d6d'], borderWidth:0, hoverOffset:8 }] },
+      options: { responsive:true, maintainAspectRatio:false, cutout:'60%',
+        plugins: { legend:{ position:'bottom', labels:{ color:'rgba(128,128,128,0.8)', padding:12, font:{family:'Sora',size:12} } } } }
+    });
+  }
+
+  // Section bar chart — compute avg from all candidates
+  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  const secTotals = {};
+  const secCounts = {};
+  all.forEach(c => {
+    if(!c.sections) return;
+    Object.entries(c.sections).forEach(([k,v]) => {
+      if(!secTotals[k]) { secTotals[k]=0; secCounts[k]=0; }
+      secTotals[k] += v.pct || 0;
+      secCounts[k]++;
+    });
+  });
+
+  const secLabels = Object.keys(SECTION_META).map(k => SECTION_META[k].label);
+  const secAvgs = Object.keys(SECTION_META).map(k => secCounts[k] ? Math.round(secTotals[k]/secCounts[k]) : 0);
+  const secColors = Object.keys(SECTION_META).map(k => SECTION_META[k].color);
+
+  if(secBarChart){
+    secBarChart.data.datasets[0].data = secAvgs;
+    secBarChart.update();
+  } else {
+    const ctx2 = document.getElementById('sectionBarChart');
+    if(ctx2) secBarChart = new Chart(ctx2, {
+      type: 'bar',
+      data: { labels: secLabels, datasets: [{ label:'Avg %', data: secAvgs, backgroundColor: secColors, borderRadius: 6, borderSkipped: false }] },
+      options: { responsive:true, maintainAspectRatio:false,
+        scales: { y:{ beginAtZero:true, max:100, ticks:{color:'rgba(128,128,128,0.7)', font:{family:'Sora',size:10}}, grid:{color:'rgba(128,128,128,0.1)'}},
+          x:{ ticks:{color:'rgba(128,128,128,0.7)', font:{family:'Sora',size:10}}, grid:{display:false} } },
+        plugins:{ legend:{display:false} }
+      }
+    });
+  }
+}
+
+function renderR1Table(){
+  const q = (document.getElementById('r1Search')?.value || '').toLowerCase();
+  const filter = document.getElementById('r1Filter')?.value || 'all';
+  const all = [
+    ...(allData.passList||[]).map(c=>({...c,result:'PASS'})),
+    ...(allData.failList||[]).map(c=>({...c,result:'FAIL'}))
+  ].filter(c => {
+    const matchQ = c.name.toLowerCase().includes(q);
+    const matchF = filter === 'all' || c.result === filter;
+    return matchQ && matchF;
+  });
+
+  const wrap = document.getElementById('r1TableWrap');
+  if(!all.length){ wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates match</p></div>'; return; }
+
+  wrap.innerHTML = `<div style="overflow-x:auto;">
+    <table class="candidate-table">
+      <thead><tr>
+        <th>#</th><th>Candidate</th>
+        ${Object.values(SECTION_META).map(s=>`<th>${s.label}</th>`).join('')}
+        <th>Score</th><th>Result</th>
+      </tr></thead>
+      <tbody>
+        ${all.map((c,i) => {
+          const secs = c.sections || {};
+          const secCells = Object.keys(SECTION_META).map(k => {
+            const s = secs[k];
+            if(!s) return `<td style="color:var(--text3);font-size:12px;">—</td>`;
+            const color = s.pct >= 70 ? 'var(--pass)' : s.pct >= 40 ? 'var(--warning)' : 'var(--fail)';
+            return `<td style="font-family:'JetBrains Mono';font-size:13px;color:${color};">${s.pct}%</td>`;
+          }).join('');
+          const init = (c.name||'?')[0].toUpperCase();
+          return `<tr>
+            <td style="color:var(--text3);font-size:13px;">${i+1}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div style="width:32px;height:32px;border-radius:50%;background:${c.result==='PASS'?'var(--accent)':'var(--danger)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${init}</div>
+                <span style="font-weight:600;">${c.name}</span>
+              </div>
+            </td>
+            ${secCells}
+            <td style="font-family:'JetBrains Mono';font-weight:700;">${c.score}</td>
+            <td><span class="badge ${c.result==='PASS'?'badge-pass':'badge-fail'}">${c.result}</span></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+function renderR2Section(d){
+  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  const evaluated = [];
+
+  all.forEach(c => {
+    const key = 'eval_' + c.name.replace(/\s/g,'_');
+    const evals = JSON.parse(localStorage.getItem(key) || '[]');
+    if(evals.length) evaluated.push({ candidate: c, evals });
+  });
+
+  // Average ratings across all evaluated candidates per field
+  const fieldTotals = {};
+  let totalCount = 0;
+  RATING_FIELDS.forEach(f => fieldTotals[f.key] = 0);
+  evaluated.forEach(({evals}) => {
+    evals.forEach(ev => {
+      RATING_FIELDS.forEach(f => fieldTotals[f.key] += (ev.ratings[f.key]||0));
+      totalCount++;
+    });
+  });
+
+  // Summary boxes
+  const summaryGrid = document.getElementById('r2SummaryGrid');
+  if(summaryGrid){
+    summaryGrid.innerHTML = RATING_FIELDS.map(f => {
+      const avg = totalCount > 0 ? (fieldTotals[f.key]/totalCount).toFixed(1) : '—';
+      return `<div class="stat-card" style="--card-accent:#ab47bc;">
+        <div class="stat-icon">${['🗣️','⚙️','🔋','🔧','⏱️'][RATING_FIELDS.indexOf(f)]}</div>
+        <div class="stat-value" style="font-size:24px;">${avg}</div>
+        <div class="stat-label">${f.label}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Radar chart for avg ratings
+  const radarLabels = RATING_FIELDS.map(f => f.label);
+  const radarData = RATING_FIELDS.map(f => totalCount > 0 ? (fieldTotals[f.key]/totalCount) : 0);
+
+  if(r2Radar){
+    r2Radar.data.datasets[0].data = radarData;
+    r2Radar.update();
+  } else {
+    const ctx = document.getElementById('r2RadarChart');
+    if(ctx) r2Radar = new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: radarLabels,
+        datasets: [{ label:'Avg Rating', data: radarData, backgroundColor:'rgba(171,71,188,0.1)', borderColor:'#ab47bc', borderWidth:2, pointBackgroundColor:'#ab47bc', pointRadius:5 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        scales: { r: { beginAtZero:true, max:5, ticks:{stepSize:1,color:'rgba(128,128,128,0.5)',backdropColor:'transparent',font:{size:10}},
+          grid:{color:'rgba(128,128,128,0.15)'}, pointLabels:{color:'rgba(128,128,128,0.8)',font:{size:11,family:'Sora'}}, angleLines:{color:'rgba(128,128,128,0.15)'} }},
+        plugins:{ legend:{display:false} }
+      }
+    });
+  }
+
+  // List
+  const list = document.getElementById('r2List');
+  if(!evaluated.length){
+    list.innerHTML = '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
+    return;
+  }
+  list.innerHTML = evaluated.map(({candidate:c, evals}) => {
+    const latestEval = evals[evals.length-1];
+    const avgRating = (RATING_FIELDS.reduce((sum,f) => sum+(latestEval.ratings[f.key]||0), 0)/RATING_FIELDS.length).toFixed(1);
+    const init = (c.name||'?')[0].toUpperCase();
+    const stars = '⭐'.repeat(Math.round(parseFloat(avgRating)));
+    return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;">
+      <div class="entry-avatar" style="background:var(--accent);">${init}</div>
+      <div>
+        <div class="entry-name">${c.name}</div>
+        <div class="entry-detail">R1: ${c.score} pts • ${evals.length} evaluation(s)</div>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:16px;">${stars}</div>
+        <div style="font-size:12px;color:var(--text3);">Avg ${avgRating}/5</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ---- TABS ---- */
+function switchTab(tab, btn){
+  document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  ['panelR1','panelR2'].forEach(id => {
+    document.getElementById(id).classList.toggle('active', id === 'panel' + tab.toUpperCase());
+  });
+  if(tab === 'r2') renderR2Section(allData);
+}
+
+/* ---- DOWNLOAD ---- */
+function downloadExcel(){
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Round 1
+  const r1Rows = [['Name','Score','Result','C%','C++%','Embedded%','RTOS%','Hardware%','Coding%']];
+  const all = [...(allData.passList||[]).map(c=>({...c,result:'PASS'})), ...(allData.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  all.forEach(c => {
+    const s = c.sections || {};
+    r1Rows.push([c.name, c.score, c.result,
+      s.c?.pct||'', s.cpp?.pct||'', s.hw?.pct||'', s.rtos?.pct||'', s.hardware?.pct||'', s.coding?.pct||''
+    ]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(r1Rows);
+  ws1['!cols'] = [{wch:28},{wch:8},{wch:8},{wch:8},{wch:8},{wch:10},{wch:8},{wch:10},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Round 1 Results');
+
+  // Sheet 2: Round 2
+  const r2Rows = [['Name','R1 Score','Invigilator','Date','Communication','C Prog','Hardware','C++','RTOS','Remarks']];
+  all.forEach(c => {
+    const key = 'eval_' + c.name.replace(/\s/g,'_');
+    const evals = JSON.parse(localStorage.getItem(key)||'[]');
+    evals.forEach(ev => {
+      r2Rows.push([c.name, c.score, ev.invigilator, ev.datetime,
+        ev.ratings.communication||'', ev.ratings.c_prog||'', ev.ratings.hardware||'', ev.ratings.c_plus||'', ev.ratings.rtos||'', ev.remarks||'']);
+    });
+  });
+  const ws2 = XLSX.utils.aoa_to_sheet(r2Rows);
+  ws2['!cols'] = [{wch:28},{wch:10},{wch:20},{wch:18},{wch:14},{wch:12},{wch:12},{wch:8},{wch:8},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Round 2 Evaluations');
+
+  XLSX.writeFile(wb, 'assessment_report_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+function showToast(msg, type='info'){
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
+});
+</script>
+</body>
+</html>

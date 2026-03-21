@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exam Completed</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+body { background: var(--bg); }
+.result-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: linear-gradient(135deg, #0f2942 0%, #1a3a5c 50%, #0d1f30 100%);
+  position: relative;
+  overflow: hidden;
+}
+.result-bg::before {
+  content: '';
+  position: absolute;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(0,200,150,0.1) 0%, transparent 70%);
+  top: -80px; right: -80px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.result-card {
+  background: rgba(28,35,51,0.96);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 28px;
+  padding: 52px 44px;
+  width: 100%;
+  max-width: 500px;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  animation: fadeUp 0.7s cubic-bezier(0.4,0,0.2,1);
+  z-index: 1;
+}
+.confetti-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+  animation: bounceIn 0.8s 0.3s both;
+}
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.1); }
+  80% { transform: scale(0.95); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.completed-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #e6edf3;
+  margin-bottom: 6px;
+}
+.completed-sub {
+  font-size: 14px;
+  color: #6e7681;
+  margin-bottom: 36px;
+}
+.quote-card {
+  background: rgba(0,200,150,0.08);
+  border: 1px solid rgba(0,200,150,0.2);
+  border-radius: 16px;
+  padding: 28px 24px;
+  margin-bottom: 32px;
+  animation: fadeUp 0.6s 0.5s both;
+}
+.quote-mark {
+  font-size: 48px;
+  line-height: 1;
+  color: #00c896;
+  opacity: 0.4;
+  font-family: Georgia, serif;
+  margin-bottom: -8px;
+  display: block;
+  text-align: left;
+}
+.quote-text {
+  font-size: 17px;
+  font-weight: 500;
+  color: #e6edf3;
+  line-height: 1.7;
+  margin-bottom: 14px;
+  font-style: italic;
+}
+.quote-author {
+  font-size: 13px;
+  color: #8b949e;
+  text-align: right;
+}
+.candidate-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 30px;
+  padding: 8px 20px;
+  font-size: 15px;
+  color: #e6edf3;
+  margin-bottom: 24px;
+  animation: fadeUp 0.5s 0.7s both;
+}
+.what-next {
+  font-size: 13px;
+  color: #6e7681;
+  line-height: 1.8;
+  animation: fadeUp 0.5s 0.9s both;
+  padding: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.what-next strong { color: #00c896; }
+</style>
+</head>
+<body>
+
+<div class="result-bg">
+  <div class="result-card">
+    <div class="confetti-icon">🎉</div>
+    <div class="completed-title">Exam Completed!</div>
+    <div class="completed-sub">Thank you for participating in the assessment</div>
+
+    <div class="candidate-tag">
+      <span>👤</span>
+      <span id="candidateName">Candidate</span>
+    </div>
+
+    <div class="quote-card">
+      <span class="quote-mark">"</span>
+      <div class="quote-text" id="quoteText">Loading...</div>
+      <div class="quote-author" id="quoteAuthor">— Author</div>
+    </div>
+
+    <div class="what-next">
+      Your responses have been <strong>successfully recorded</strong>.<br>
+      Our team will review and reach out to you with the <strong>next steps</strong> shortly.
+    </div>
+  </div>
+</div>
+
+<script>
+const quotes = [
+  { text: "The only way to do great work is to love what you do. If you haven't found it yet, keep looking. Don't settle.", author: "Steve Jobs" },
+  { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+  { text: "Every expert was once a beginner. Every pro was once an amateur. Every champion was once a contender.", author: "Robin Sharma" },
+  { text: "The secret of getting ahead is getting started. The secret of getting started is breaking your complex, overwhelming tasks into small manageable ones.", author: "Mark Twain" },
+  { text: "Believe you can and you're halfway there. Hard work beats talent when talent doesn't work hard.", author: "Theodore Roosevelt" },
+  { text: "Engineering is not just about solving problems — it's about solving them elegantly.", author: "Unknown" },
+  { text: "The best time to plant a tree was 20 years ago. The second best time is now. Your effort today plants seeds for tomorrow.", author: "Chinese Proverb" },
+  { text: "It does not matter how slowly you go, as long as you do not stop. Every line of code you write is a step forward.", author: "Confucius" },
+  { text: "Great things are not done by impulse, but by a series of small things brought together. Keep building, keep learning.", author: "George Eliot" },
+  { text: "The journey of a thousand miles begins with a single step. Your assessment today is one bold step forward.", author: "Lao Tzu" }
+];
+
+const q = quotes[Math.floor(Math.random() * quotes.length)];
+document.getElementById('quoteText').textContent = q.text;
+document.getElementById('quoteAuthor').textContent = '— ' + q.author;
+document.getElementById('candidateName').textContent = localStorage.getItem('name') || 'Candidate';
+</script>
+</body>
+</html>

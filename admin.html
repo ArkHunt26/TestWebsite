@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="loginScreen" class="auth-screen">
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span class="icon" id="themeIcon">🌙</span>
+    <span id="themeLabel">Dark Mode</span>
+  </button>
+  <div class="auth-card">
+    <div class="brand-icon">🛡️</div>
+    <h2>Admin Dashboard</h2>
+    <p class="subtitle">Enter admin credentials to continue</p>
+    <div class="form-field">
+      <label>Admin Password</label>
+      <input type="password" id="passInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn-primary" onclick="login()">Login →</button>
+  </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="dashboard" style="display:none;">
+
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <span>🛡️</span>
+      <span>Admin Dashboard</span>
+      <span class="badge">ADMIN</span>
+    </div>
+    <div class="topbar-actions">
+      <div id="examStatusBadge" class="badge badge-pending">● Checking...</div>
+      <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
+        <span id="themeIconDash">🌙</span> Theme
+      </button>
+      <button class="btn-danger" onclick="logout()" style="padding:8px 16px;font-size:13px;">Logout</button>
+    </div>
+  </nav>
+
+  <div class="dash-wrapper">
+
+    <!-- STAT CARDS -->
+    <div class="stats-row">
+      <div class="stat-card" style="--card-accent:#00c896;">
+        <div class="stat-icon">👥</div>
+        <div class="stat-value" id="statTotal">0</div>
+        <div class="stat-label">Total Candidates</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#00c896;">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="statPassed">0</div>
+        <div class="stat-label">Passed</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#ff4d6d;">
+        <div class="stat-icon">❌</div>
+        <div class="stat-value" id="statFailed">0</div>
+        <div class="stat-label">Failed</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#3b9eff;">
+        <div class="stat-icon">📊</div>
+        <div class="stat-value" id="statPassRate">0%</div>
+        <div class="stat-label">Pass Rate</div>
+      </div>
+    </div>
+
+    <!-- GRID: Chart + Settings -->
+    <div class="grid-2" style="margin-bottom:28px;">
+
+      <!-- Chart Card -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Results Overview</div>
+            <div class="card-subtitle">Pass / Fail distribution</div>
+          </div>
+          <button class="download-btn" onclick="downloadExcel()">⬇ Export Excel</button>
+        </div>
+        <div class="chart-container" style="height:240px;">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Exam Settings -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Exam Configuration</div>
+            <div class="card-subtitle">Manage exam settings</div>
+          </div>
+          <div id="statusLight" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);">
+            <span class="status-dot inactive" id="statusDot"></span>
+            <span id="statusText">Inactive</span>
+          </div>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Start Time</label>
+            <input type="datetime-local" id="startTime">
+          </div>
+          <div class="form-group">
+            <label>Duration (minutes)</label>
+            <input type="number" id="duration" min="1" placeholder="60">
+          </div>
+          <div class="form-group">
+            <label>Pass Mark</label>
+            <input type="number" id="passMark" min="0" placeholder="25">
+          </div>
+          <div class="form-group">
+            <label>Session ID</label>
+            <input type="text" id="sessionId" placeholder="e.g. EXAM2025">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:12px;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="enabled">
+            Enable Exam (candidates can log in)
+          </label>
+        </div>
+
+        <div style="margin-top:16px;padding:14px;background:var(--surface2);border-radius:var(--r-sm);border:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:10px;">Security Codes</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Session ID (for candidates)</div>
+              <div style="display:flex;gap:6px;">
+                <input type="text" id="sessionIdDisplay" readonly style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);flex:1;" placeholder="(set above)">
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Invigilator Code</div>
+              <div style="display:flex;gap:6px;">
+                <input type="text" id="invigilatorCode" readonly style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);flex:1;" placeholder="—">
+                <button class="btn-secondary" style="padding:7px 10px;font-size:12px;" onclick="generateInvCode()">Gen</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="updateConfig()" style="margin-top:16px;">Update Settings</button>
+      </div>
+    </div>
+
+    <!-- LIVE RESULTS -->
+    <div class="card" style="margin-bottom:28px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Live Results</div>
+          <div class="card-subtitle">Auto-refreshes every 5 seconds</div>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);">
+            <span class="status-dot active"></span> Live
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('all')">All Candidates</button>
+        <button class="tab-btn" onclick="switchTab('pass')">✅ Passed</button>
+        <button class="tab-btn" onclick="switchTab('fail')">❌ Failed</button>
+      </div>
+
+      <div id="tabAll" class="tab-panel active">
+        <div class="live-feed" id="allList"><div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div></div>
+      </div>
+      <div id="tabPass" class="tab-panel">
+        <div class="live-feed" id="passList"><div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div></div>
+      </div>
+      <div id="tabFail" class="tab-panel">
+        <div class="live-feed" id="failList"><div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates yet</p></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/config.js"></script>
+<script>
+let adminPassword = '';
+let chartInst = null;
+let refreshTimer = null;
+let settingsLoaded = false;
+let allData = [];
+let invCode = localStorage.getItem('invCode') || '';
+
+/* ---- THEME ---- */
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  ['themeIcon','themeIconDash'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = next === 'dark' ? '🌙' : '☀️';
+  });
+  const lbl = document.getElementById('themeLabel');
+  if(lbl) lbl.textContent = next === 'dark' ? 'Dark Mode' : 'Light Mode';
+}
+
+/* ---- LOGIN ---- */
+function login(){
+  adminPassword = document.getElementById('passInput').value;
+  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast('Wrong password', 'error'); return; }
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      loadData();
+      refreshTimer = setInterval(loadData, 5000);
+    })
+    .catch(() => showToast('Connection error', 'error'));
+}
+
+function logout(){
+  clearInterval(refreshTimer);
+  adminPassword = '';
+  settingsLoaded = false;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('passInput').value = '';
+}
+
+/* ---- LOAD DATA ---- */
+function loadData(){
+  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ clearInterval(refreshTimer); return; }
+      allData = d;
+      updateStats(d);
+      updateChart(d);
+      updateLists(d);
+      updateStatus(d);
+      if(!settingsLoaded) loadSettings(d);
+      // Sync session ID display
+      document.getElementById('sessionIdDisplay').value = d.sessionId || '';
+      if(invCode) document.getElementById('invigilatorCode').value = invCode;
+    });
+}
+
+function loadSettings(d){
+  document.getElementById('duration').value = d.duration || '';
+  document.getElementById('passMark').value = d.passMark || '';
+  document.getElementById('sessionId').value = d.sessionId || '';
+  document.getElementById('enabled').checked = d.enabled === true;
+  if(d.startTime){
+    const dt = new Date(d.startTime);
+    if(!isNaN(dt)){
+      const offset = dt.getTimezoneOffset();
+      const local = new Date(dt.getTime() - offset * 60000);
+      document.getElementById('startTime').value = local.toISOString().slice(0,16);
+    }
+  }
+  if(invCode) document.getElementById('invigilatorCode').value = invCode;
+  settingsLoaded = true;
+}
+
+function updateStats(d){
+  document.getElementById('statTotal').textContent = d.totalCandidates || 0;
+  document.getElementById('statPassed').textContent = d.passedCount || 0;
+  document.getElementById('statFailed').textContent = d.failedCount || 0;
+  const rate = d.totalCandidates > 0 ? Math.round((d.passedCount/d.totalCandidates)*100) : 0;
+  document.getElementById('statPassRate').textContent = rate + '%';
+}
+
+function updateChart(d){
+  const pass = d.passedCount || 0;
+  const fail = d.failedCount || 0;
+  if(chartInst){
+    chartInst.data.datasets[0].data = [pass, fail];
+    chartInst.update();
+  } else {
+    chartInst = new Chart(document.getElementById('pieChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Pass', 'Fail'],
+        datasets: [{
+          data: [pass, fail],
+          backgroundColor: ['#00c896','#ff4d6d'],
+          borderWidth: 0,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '65%',
+        plugins: {
+          legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(), padding: 16, font: { family: 'Sora', size: 13 } } },
+          tooltip: { callbacks: { label: ctx => {
+            const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+            return ctx.label + ': ' + ctx.raw + ' (' + (total ? ((ctx.raw/total)*100).toFixed(1) : 0) + '%)';
+          }}}
+        }
+      }
+    });
+  }
+}
+
+function updateLists(d){
+  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+
+  function renderEntry(c){
+    const init = (c.name||'?')[0].toUpperCase();
+    const cls = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
+    return `<div class="live-entry">
+      <div class="entry-avatar">${init}</div>
+      <div>
+        <div class="entry-name">${c.name}</div>
+        <div class="entry-detail">${c.result === 'PASS' ? '✅ Passed' : '❌ Failed'}</div>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+        <span class="badge ${cls}">${c.result}</span>
+        <span class="entry-score" style="font-family:'JetBrains Mono'">${c.score}</span>
+      </div>
+    </div>`;
+  }
+
+  document.getElementById('allList').innerHTML = all.length ? all.map(renderEntry).join('') : '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div>';
+  document.getElementById('passList').innerHTML = (d.passList||[]).length ? d.passList.map(c=>renderEntry({...c,result:'PASS'})).join('') : '<div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div>';
+  document.getElementById('failList').innerHTML = (d.failList||[]).length ? d.failList.map(c=>renderEntry({...c,result:'FAIL'})).join('') : '<div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div>';
+}
+
+function updateStatus(d){
+  const dot = document.getElementById('statusDot');
+  const txt = document.getElementById('statusText');
+  const badge = document.getElementById('examStatusBadge');
+
+  if(!d.enabled || !d.startTime || !d.duration){
+    dot.className = 'status-dot inactive';
+    txt.textContent = 'Not configured';
+    badge.className = 'badge badge-pending';
+    badge.textContent = '● Not Active';
+    return;
+  }
+  const now = new Date();
+  const start = new Date(d.startTime);
+  const end = new Date(start.getTime() + d.duration * 60000);
+
+  if(now < start){
+    dot.className = 'status-dot inactive';
+    txt.textContent = 'Scheduled';
+    badge.className = 'badge badge-info';
+    badge.textContent = '● Scheduled';
+  } else if(now <= end){
+    dot.className = 'status-dot active';
+    txt.textContent = 'Live';
+    badge.className = 'badge badge-pass';
+    badge.textContent = '● LIVE';
+  } else {
+    dot.className = 'status-dot ended';
+    txt.textContent = 'Ended';
+    badge.className = 'badge badge-fail';
+    badge.textContent = '● Ended';
+  }
+}
+
+/* ---- UPDATE CONFIG ---- */
+function updateConfig(){
+  const fd = new URLSearchParams();
+  fd.append('type','UPDATE_CONFIG');
+  fd.append('password', adminPassword);
+  fd.append('duration', document.getElementById('duration').value);
+  fd.append('startTime', document.getElementById('startTime').value);
+  fd.append('enabled', document.getElementById('enabled').checked);
+  fd.append('passMark', document.getElementById('passMark').value);
+  fd.append('sessionId', document.getElementById('sessionId').value);
+
+  if(invCode) fd.append('invCode', invCode);
+
+  fetch(SCRIPT_URL, { method: 'POST', body: fd })
+    .then(() => {
+      settingsLoaded = false;
+      loadData();
+      showToast('Settings updated successfully!', 'success');
+      document.getElementById('sessionIdDisplay').value = document.getElementById('sessionId').value;
+    })
+    .catch(() => showToast('Update failed', 'error'));
+}
+
+/* ---- INVIGILATOR CODE ---- */
+function generateInvCode(){
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'INV-';
+  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
+  invCode = code;
+  localStorage.setItem('invCode', code);
+  document.getElementById('invigilatorCode').value = code;
+  showToast('Invigilator code generated: ' + code, 'success');
+}
+
+/* ---- TABS ---- */
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    const tabs = ['all','pass','fail'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  ['tabAll','tabPass','tabFail'].forEach(id => {
+    document.getElementById(id).classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  });
+}
+
+/* ---- DOWNLOAD EXCEL ---- */
+function downloadExcel(){
+  const d = allData;
+  if(!d || !d.passList) { showToast('No data to download', 'error'); return; }
+
+  const rows = [['Name','Score','Result']];
+  (d.passList||[]).forEach(c => rows.push([c.name, c.score, 'PASS']));
+  (d.failList||[]).forEach(c => rows.push([c.name, c.score, 'FAIL']));
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:30},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Results');
+  XLSX.writeFile(wb, 'exam_results_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+/* ---- TOAST ---- */
+function showToast(msg, type='info'){
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
+});
+</script>
+</body>
+</html>
