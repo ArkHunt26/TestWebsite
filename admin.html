@@ -3,10 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR &amp; Talent Acquisition</title>
+<title>HR &amp; TA</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* Fix 9: seamless round-tab → card connection */
+#adminR1Panel .card,
+#adminR2Panel .card {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  margin-top: 0;
+  border-top: none;
+}
+#adminR1Panel, #adminR2Panel {
+  margin-bottom: 28px;
+}
+</style>
 </head>
 <body>
 
@@ -18,8 +31,8 @@
   </button>
   <div class="auth-card">
     <div class="brand-icon">🛡️</div>
-    <h2>HR &amp; Talent Acquisition</h2>
-    <p class="subtitle">Talent Acquisition &amp; HR access only</p>
+    <h2>HR &amp; TA</h2>
+    <p class="subtitle">HR &amp; TA access only</p>
     <div class="form-field">
       <label>HR/TA Password</label>
       <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
@@ -34,7 +47,7 @@
   <nav class="topbar">
     <div class="topbar-brand">
       <span>🛡️</span>
-      <span>HR &amp; Talent Acquisition</span>
+      <span>HR &amp; TA</span>
       <span class="badge">HR / TA</span>
     </div>
     <div class="topbar-actions">
@@ -104,7 +117,7 @@
 
         <div class="form-grid">
           <div class="form-group">
-            <label>Start Time</label>
+            <label>Start Time <span style="font-size:10px;color:var(--accent);font-weight:400;text-transform:none;letter-spacing:0;">(cannot set past time)</span></label>
             <input type="datetime-local" id="startTime">
           </div>
           <div class="form-group">
@@ -151,34 +164,62 @@
       </div>
     </div>
 
-    <!-- LIVE RESULTS -->
-    <div class="card" style="margin-bottom:28px;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Live Results</div>
-          <div class="card-subtitle">Auto-refreshes every 5 seconds</div>
-        </div>
-        <div style="display:flex;gap:10px;">
+    <!-- ROUNDS TABS: Fix 9 -->
+    <div class="tabs" style="margin-bottom:0;">
+      <button class="tab-btn active" onclick="switchRoundTab('r1',this)">📋 Round 1 — Technical Test</button>
+      <button class="tab-btn" onclick="switchRoundTab('r2',this)">🎯 Round 2 — F2F Evaluation</button>
+    </div>
+
+    <!-- ROUND 1 PANEL -->
+    <div id="adminR1Panel" class="tab-panel active" style="margin-bottom:28px;">
+      <div class="card" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Live Results — Round 1</div>
+            <div class="card-subtitle">Auto-refreshes every 5 seconds</div>
+          </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);">
             <span class="status-dot active"></span> Live
           </div>
         </div>
+        <div class="tabs" style="margin-bottom:16px;">
+          <button class="tab-btn active" onclick="switchCandTab('all',this)">All</button>
+          <button class="tab-btn" onclick="switchCandTab('pass',this)">✅ Passed</button>
+          <button class="tab-btn" onclick="switchCandTab('fail',this)">❌ Failed</button>
+        </div>
+        <div id="tabAll" class="tab-panel active">
+          <div class="live-feed" id="allList"><div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div></div>
+        </div>
+        <div id="tabPass" class="tab-panel">
+          <div class="live-feed" id="passList"><div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div></div>
+        </div>
+        <div id="tabFail" class="tab-panel">
+          <div class="live-feed" id="failList"><div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div></div>
+        </div>
       </div>
+    </div>
 
-      <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('all')">All Candidates</button>
-        <button class="tab-btn" onclick="switchTab('pass')">✅ Passed</button>
-        <button class="tab-btn" onclick="switchTab('fail')">❌ Failed</button>
-      </div>
+    <!-- ROUND 2 PANEL: Fix 9 -->
+    <div id="adminR2Panel" class="tab-panel" style="margin-bottom:28px;">
+      <div class="card" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0;">
+        <div class="card-header">
+          <div>
+            <div class="card-title">Round 2 — F2F Evaluations</div>
+            <div class="card-subtitle">Invigilator ratings &amp; verdicts</div>
+          </div>
+          <div id="r2EvalCount" style="font-size:13px;color:var(--text3);">0 evaluated</div>
+        </div>
 
-      <div id="tabAll" class="tab-panel active">
-        <div class="live-feed" id="allList"><div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div></div>
-      </div>
-      <div id="tabPass" class="tab-panel">
-        <div class="live-feed" id="passList"><div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div></div>
-      </div>
-      <div id="tabFail" class="tab-panel">
-        <div class="live-feed" id="failList"><div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates yet</p></div></div>
+        <!-- R2 summary stats -->
+        <div id="adminR2Stats" class="stats-row" style="margin-bottom:20px;"></div>
+
+        <!-- R2 candidate list -->
+        <div id="adminR2List">
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <p>No Round 2 evaluations yet. Invigilators evaluate candidates in the Invigilator Panel.</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -213,6 +254,17 @@ function toggleTheme(){
 }
 
 /* ---- LOGIN ---- */
+function setStartTimeMin(){
+  const el = document.getElementById('startTime');
+  if(!el) return;
+  const now = new Date();
+  const offset = now.getTimezoneOffset();
+  const local = new Date(now.getTime() - offset * 60000);
+  el.min = local.toISOString().slice(0,16);
+}
+setStartTimeMin();
+setInterval(setStartTimeMin, 60000); // refresh every minute
+
 function login(){
   adminPassword = document.getElementById('passInput').value;
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
@@ -313,12 +365,15 @@ function updateChart(d){
   }
 }
 
+/* ---- FIX 10: Anti-flicker updateLists ---- */
+let _listHashes = { allList: '', passList: '', failList: '' };
+
 function updateLists(d){
   const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
 
   function renderEntry(c){
     const init = (c.name||'?')[0].toUpperCase();
-    const cls = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
+    const cls  = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
     const avatarCls = c.result === 'PASS' ? 'avatar-pass' : 'avatar-fail';
     return `<div class="live-entry">
       <div class="entry-avatar ${avatarCls}">${init}</div>
@@ -333,45 +388,131 @@ function updateLists(d){
     </div>`;
   }
 
-  document.getElementById('allList').innerHTML = all.length ? all.map(renderEntry).join('') : '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div>';
-  document.getElementById('passList').innerHTML = (d.passList||[]).length ? d.passList.map(c=>renderEntry({...c,result:'PASS'})).join('') : '<div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div>';
-  document.getElementById('failList').innerHTML = (d.failList||[]).length ? d.failList.map(c=>renderEntry({...c,result:'FAIL'})).join('') : '<div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div>';
+  const sets = {
+    allList:  { items: all,           empty: '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div>' },
+    passList: { items: (d.passList||[]).map(c=>({...c,result:'PASS'})), empty: '<div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div>' },
+    failList: { items: (d.failList||[]).map(c=>({...c,result:'FAIL'})), empty: '<div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div>' }
+  };
+
+  Object.entries(sets).forEach(([id, {items, empty}]) => {
+    const newHtml = items.length ? items.map(renderEntry).join('') : empty;
+    const newHash = String(items.length) + items.map(c=>c.name+c.score).join('');
+    if(_listHashes[id] === newHash) return; // nothing changed — skip DOM update entirely
+    _listHashes[id] = newHash;
+    const el = document.getElementById(id);
+    if(!el) return;
+    // Fade out → swap → fade in
+    el.style.transition = 'opacity 0.15s ease';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      el.innerHTML = newHtml;
+      el.style.opacity = '1';
+    }, 150);
+  });
+
+  // Fix 9: also refresh R2 panel
+  renderAdminR2(d);
 }
 
-function updateStatus(d){
-  const dot = document.getElementById('statusDot');
-  const txt = document.getElementById('statusText');
-  const badge = document.getElementById('examStatusBadge');
+/* ---- FIX 9: Render R2 panel in admin ---- */
+function renderAdminR2(d){
+  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  const RATING_FIELDS_ADM = [
+    { key:'communication', label:'Communication', icon:'🗣️' },
+    { key:'c_prog',        label:'C Programming', icon:'⚙️'  },
+    { key:'hardware',      label:'Hardware',       icon:'🔋'  },
+    { key:'c_plus',        label:'C++ / OOP',      icon:'🔧'  },
+    { key:'rtos',          label:'RTOS',           icon:'⏱️'  }
+  ];
+  const evaluated = [];
+  all.forEach(c => {
+    const key = 'eval_' + c.name.replace(/\s/g,'_');
+    const evals = JSON.parse(localStorage.getItem(key)||'[]');
+    if(evals.length) evaluated.push({ candidate:c, evals });
+  });
 
-  if(!d.enabled || !d.startTime || !d.duration){
-    dot.className = 'status-dot inactive';
-    txt.textContent = 'Not configured';
-    badge.className = 'badge badge-pending';
-    badge.textContent = '● Not Active';
+  document.getElementById('r2EvalCount').textContent = evaluated.length + ' evaluated';
+
+  // Stats row
+  const statsEl = document.getElementById('adminR2Stats');
+  if(statsEl){
+    const verdictCounts = { Selected:0, Hold:0, 'Not Selected':0, Pending:0 };
+    evaluated.forEach(({evals}) => {
+      const v = evals[evals.length-1]?.verdict;
+      if(v && verdictCounts[v] !== undefined) verdictCounts[v]++;
+      else verdictCounts.Pending++;
+    });
+    statsEl.innerHTML = [
+      { label:'Selected',     val: verdictCounts['Selected'],     color:'#00c896', icon:'✅' },
+      { label:'Hold',         val: verdictCounts['Hold'],         color:'#ffc107', icon:'⏸️' },
+      { label:'Not Selected', val: verdictCounts['Not Selected'], color:'#ff4d6d', icon:'❌' },
+      { label:'Pending R2',   val: verdictCounts['Pending'],      color:'#8b949e', icon:'⏳' }
+    ].map(s => `<div class="stat-card" style="--card-accent:${s.color};">
+      <div class="stat-icon">${s.icon}</div>
+      <div class="stat-value" style="font-size:24px;">${s.val}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>`).join('');
+  }
+
+  // List
+  const listEl = document.getElementById('adminR2List');
+  if(!listEl) return;
+  if(!evaluated.length){
+    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
     return;
   }
-  const now = new Date();
-  const start = new Date(d.startTime);
-  const end = new Date(start.getTime() + d.duration * 60000);
+  const verdictMap  = { 'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected' };
+  const verdictIcon = { 'Selected':'✅','Hold':'⏸️','Not Selected':'❌' };
+  const newHtml = evaluated.map(({candidate:c, evals}) => {
+    const latest = evals[evals.length-1];
+    const avgRating = (RATING_FIELDS_ADM.reduce((s,f)=>s+(latest.ratings[f.key]||0),0)/RATING_FIELDS_ADM.length).toFixed(1);
+    const stars = '⭐'.repeat(Math.round(parseFloat(avgRating)));
+    const vBadge = latest.verdict
+      ? `<span class="verdict-badge ${verdictMap[latest.verdict]||''}">${verdictIcon[latest.verdict]||''} ${latest.verdict}</span>` : '';
+    const init = (c.name||'?')[0].toUpperCase();
+    return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;">
+      <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="entry-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          ${c.name} ${vBadge}
+        </div>
+        <div class="entry-detail">R1: ${c.score} pts • By: ${latest.invigilator}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:14px;">${stars}</div>
+        <div style="font-size:11px;color:var(--text3);">Avg ${avgRating}/5</div>
+      </div>
+    </div>`;
+  }).join('');
 
-  if(now < start){
-    dot.className = 'status-dot inactive';
-    txt.textContent = 'Scheduled';
-    badge.className = 'badge badge-info';
-    badge.textContent = '● Scheduled';
-  } else if(now <= end){
-    dot.className = 'status-dot active';
-    txt.textContent = 'Live';
-    badge.className = 'badge badge-pass';
-    badge.textContent = '● LIVE';
-  } else {
-    dot.className = 'status-dot ended';
-    txt.textContent = 'Ended';
-    badge.className = 'badge badge-fail';
-    badge.textContent = '● Ended';
-  }
+  const newHash = evaluated.map(({candidate:c,evals})=>c.name+evals.length).join('');
+  if(listEl.dataset.lastHash === newHash) return;
+  listEl.dataset.lastHash = newHash;
+  listEl.style.transition = 'opacity 0.15s ease';
+  listEl.style.opacity = '0';
+  setTimeout(()=>{ listEl.innerHTML = newHtml; listEl.style.opacity = '1'; }, 150);
 }
 
+/* ---- TABS ---- */
+function switchRoundTab(tab, btn){
+  document.querySelectorAll('.tabs:first-of-type .tab-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('adminR1Panel').classList.toggle('active', tab === 'r1');
+  document.getElementById('adminR2Panel').classList.toggle('active', tab === 'r2');
+}
+
+function switchCandTab(tab, btn){
+  const parent = btn ? btn.closest('.card') : document;
+  if(parent) parent.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  ['tabAll','tabPass','tabFail'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+  });
+}
+
+// Legacy alias for old onclick calls
+function switchTab(tab){ switchCandTab(tab, null); }
 /* ---- UPDATE CONFIG ---- */
 function updateConfig(){
   const fd = new URLSearchParams();
@@ -404,17 +545,6 @@ function generateInvCode(){
   localStorage.setItem('invCode', code);
   document.getElementById('invigilatorCode').value = code;
   showToast('Invigilator code generated: ' + code, 'success');
-}
-
-/* ---- TABS ---- */
-function switchTab(tab){
-  document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    const tabs = ['all','pass','fail'];
-    b.classList.toggle('active', tabs[i] === tab);
-  });
-  ['tabAll','tabPass','tabFail'].forEach(id => {
-    document.getElementById(id).classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
-  });
 }
 
 /* ---- DOWNLOAD EXCEL ---- */

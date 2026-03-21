@@ -261,20 +261,31 @@ async function submitTest(fromCheat){
 }
 
 /* ========================= ANTI CHEAT ========================= */
+// cheatPopup is overridden by test.html to use the custom overlay
+// This is a fallback only — should not be called directly
 function cheatPopup(reason){
   if(examSubmitted || cheatPopupActive) return;
   cheatPopupActive = true;
-
-  const choice = confirm(reason + '\n\nPress OK to return to exam.\nPress Cancel to submit immediately.');
+  // Delegate to window.cheatPopup override if it exists
+  if(window._customCheatPopup){
+    cheatPopupActive = false;
+    window._customCheatPopup(reason);
+    return;
+  }
   cheatPopupActive = false;
-
-  if(choice) enterFullscreen();
-  else submitTest(true);
 }
 
+// fullscreenchange: only trigger if we're not already showing the overlay
+// and only if fullscreen exit was unexpected (not caused by our own enterFullscreen attempt)
+let _expectingFsChange = false;
 document.addEventListener('fullscreenchange', () => {
-  if(!document.fullscreenElement && !examSubmitted) cheatPopup('⚠️ Fullscreen exited!');
+  if(_expectingFsChange){ _expectingFsChange = false; return; }
+  if(!document.fullscreenElement && !examSubmitted){
+    window._customCheatPopup ? window._customCheatPopup('⚠️ Fullscreen exited!') : cheatPopup('⚠️ Fullscreen exited!');
+  }
 });
 document.addEventListener('visibilitychange', () => {
-  if(document.hidden && !examSubmitted) cheatPopup('⚠️ Tab switch detected!');
+  if(document.hidden && !examSubmitted){
+    window._customCheatPopup ? window._customCheatPopup('⚠️ Tab switch detected!') : cheatPopup('⚠️ Tab switch detected!');
+  }
 });

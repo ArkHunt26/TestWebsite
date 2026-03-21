@@ -1127,6 +1127,12 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Verdict badges */
+.verdict-badge { display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700; }
+.verdict-badge.v-selected     { background:rgba(0,200,150,0.15); color:#00c896; }
+.verdict-badge.v-hold         { background:rgba(255,193,7,0.15);  color:#ffc107; }
+.verdict-badge.v-not-selected { background:rgba(255,77,109,0.15); color:#ff4d6d; }
+
 /* Empty state */
 .empty-state {
   text-align: center;
@@ -1147,9 +1153,16 @@ body {
   align-items: center;
   gap: 14px;
   cursor: pointer;
-  transition: all var(--transition);
+  transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+  /* No transform — prevents horizontal scroll from translateX */
+  contain: layout; /* constrain reflow to card only */
 }
-.candidate-profile-card:hover { background: var(--accent-soft); border-color: var(--accent); transform: translateX(2px); box-shadow: var(--shadow); }
+.candidate-profile-card:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent), var(--shadow);
+  /* Inset left border accent replaces translateX animation */
+}
 .candidate-profile-card .cp-avatar {
   width: 44px; height: 44px;
   border-radius: 50%;

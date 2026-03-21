@@ -102,16 +102,113 @@
 <script src="js/timer.js"></script>
 
 <script>
-// Apply saved theme
+// ── Theme ──
 const t = localStorage.getItem('theme') || 'dark';
 document.documentElement.setAttribute('data-theme', t);
 
+// ── Tab key → 4 spaces in code editor ──
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Tab' && e.target.tagName === 'TEXTAREA'){
+    e.preventDefault();
+    const ta = e.target, s = ta.selectionStart;
+    ta.value = ta.value.substring(0,s) + '    ' + ta.value.substring(ta.selectionEnd);
+    ta.selectionStart = ta.selectionEnd = s + 4;
+  }
+  // Block Escape from exiting fullscreen
+  if(e.key === 'Escape' && !examSubmitted){ e.preventDefault(); e.stopPropagation(); }
+}, true);
+
+// ── Anti-cheat overlay ──
+let _overlayOpen = false;
+
+function showAntiCheat(title, message){
+  if(examSubmitted || _overlayOpen) return;
+  _overlayOpen = true;
+  document.getElementById('acTitle').textContent = title;
+  document.getElementById('acMessage').textContent = message;
+  document.getElementById('antiCheatOverlay').classList.add('show');
+}
+
+function acReturn(){
+  _overlayOpen = false;
+  document.getElementById('antiCheatOverlay').classList.remove('show');
+  // Mark that the NEXT fullscreen change is us doing it intentionally
+  _expectingFsChange = true;
+  document.documentElement.requestFullscreen().catch(() => { _expectingFsChange = false; });
+}
+
+function acSubmit(){
+  _overlayOpen = false;
+  document.getElementById('antiCheatOverlay').classList.remove('show');
+  submitTest(true);
+}
+
+// Route test.js cheatPopup calls through our overlay
+window._customCheatPopup = function(reason){
+  if(examSubmitted || _overlayOpen) return;
+  const map = {
+    '⚠️ Fullscreen exited!':       ['Fullscreen Required',   'You exited fullscreen mode. Click "Return to Exam" to continue.'],
+    '⚠️ Tab switch detected!':      ['Tab Switch Detected',   'Switching tabs is not allowed during the exam.'],
+    '⚠️ Back navigation detected!': ['Navigation Blocked',    'Back navigation is not allowed during an active exam.']
+  };
+  const [title, msg] = map[reason] || ['Warning', reason];
+  showAntiCheat(title, msg);
+};
+
+// ── Back button block ──
+history.pushState({ page: 'exam' }, '', '');
+window.addEventListener('popstate', function(){
+  if(!examSubmitted){
+    history.pushState({ page: 'exam' }, '', '');
+    window._customCheatPopup('⚠️ Back navigation detected!');
+  }
+});
+
+// ── Submit confirmation modal ──
+function confirmSubmit(){
+  document.getElementById('confirmModal').classList.remove('hidden');
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').classList.add('hidden');
+}
+
+// ── Patch submitTest to set localStorage flag first ──
+const _origSubmit = submitTest;
+window.submitTest = async function(fromCheat){
+  localStorage.setItem('examSubmittedFlag', '1');
+  localStorage.removeItem('examEndTime');
+  await _origSubmit(fromCheat);
+};
+
+// ── Silent fullscreen enforcement ──
+// Only show popup if browser truly can't re-enter fullscreen
+// (not while overlay is open or exam submitted)
+let _fsEnforcerActive = false;
+setInterval(function(){
+  if(examSubmitted || _overlayOpen || _fsEnforcerActive) return;
+  if(!document.fullscreenElement){
+    _fsEnforcerActive = true;
+    _expectingFsChange = true;
+    document.documentElement.requestFullscreen()
+      .then(() => { _fsEnforcerActive = false; })
+      .catch(() => {
+        _expectingFsChange = false;
+        _fsEnforcerActive = false;
+        // Only show overlay if not already open
+        if(!_overlayOpen){
+          showAntiCheat('Fullscreen Required', 'Please click "Return to Exam" to re-enter fullscreen and continue.');
+        }
+      });
+  }
+}, 4000); // 4s to avoid rapid retries
+
+// ── Init on load ──
 window.onload = function(){
   const name = localStorage.getItem('name');
   if(!name){ window.location.replace('index.html'); return; }
 
-  // Fix 5: if exam already submitted (examEndTime cleared), redirect immediately
-  const endTime = parseInt(localStorage.getItem('examEndTime') || '0');
+  // Guard: redirect back to result if exam already submitted
+  const endTime  = parseInt(localStorage.getItem('examEndTime') || '0');
   const submitted = localStorage.getItem('examSubmittedFlag');
   if(submitted === '1' || (endTime > 0 && Date.now() > endTime + 5000)){
     window.location.replace('result.html');
@@ -121,104 +218,11 @@ window.onload = function(){
   document.getElementById('candidateName').textContent = '👤 ' + name;
   renderMCQ();
   initExamTimer();
-  setTimeout(enterFullscreen, 500);
-};
-
-function confirmSubmit(){
-  document.getElementById('confirmModal').classList.remove('hidden');
-}
-function closeConfirm(){
-  document.getElementById('confirmModal').classList.add('hidden');
-}
-
-// Tab key in textarea → insert 4 spaces
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Tab' && e.target.tagName === 'TEXTAREA'){
-    e.preventDefault();
-    const ta = e.target;
-    const start = ta.selectionStart;
-    ta.value = ta.value.substring(0,start) + '    ' + ta.value.substring(ta.selectionEnd);
-    ta.selectionStart = ta.selectionEnd = start + 4;
-  }
-});
-
-// ── Fix 3: Custom anti-cheat overlay functions ──
-let acPendingAction = null;
-
-function showAntiCheat(title, message){
-  if(examSubmitted) return;
-  document.getElementById('acTitle').textContent = title;
-  document.getElementById('acMessage').textContent = message;
-  document.getElementById('antiCheatOverlay').classList.add('show');
-}
-
-function acReturn(){
-  document.getElementById('antiCheatOverlay').classList.remove('show');
-  acPendingAction = null;
-  // Try fullscreen again
-  document.documentElement.requestFullscreen().catch(()=>{});
-}
-
-function acSubmit(){
-  document.getElementById('antiCheatOverlay').classList.remove('show');
-  submitTest(true);
-}
-
-// ── Fix 5 + Fix 3: Override cheatPopup to use custom overlay ──
-// (cheatPopup is defined in test.js using confirm() — we override it here)
-window.cheatPopup = function(reason){
-  if(examSubmitted || document.getElementById('antiCheatOverlay').classList.contains('show')) return;
-  const messages = {
-    '⚠️ Fullscreen exited!':           ['Fullscreen Required', 'You exited fullscreen mode. Please return to the exam window.'],
-    '⚠️ Tab switch detected!':          ['Tab Switch Detected', 'Switching tabs is not allowed during the exam.'],
-    '⚠️ Back navigation detected!':     ['Navigation Blocked', 'Back navigation is not allowed during an active exam.']
-  };
-  const [title, msg] = messages[reason] || ['Warning', reason];
-  showAntiCheat(title, msg);
-};
-
-// ── Fix 5: Block back-button during exam ──
-history.pushState({ page: 'exam' }, '', '');
-window.addEventListener('popstate', function(){
-  if(!examSubmitted){
-    history.pushState({ page: 'exam' }, '', '');
-    window.cheatPopup('⚠️ Back navigation detected!');
-  }
-});
-
-// ── Fix 3 / Fix 6: Silent fullscreen enforcement (no popup spam) ──
-let fsFailCount = 0;
-setInterval(function(){
-  if(examSubmitted) return;
-  if(!document.fullscreenElement){
-    // Try silent re-entry first
-    document.documentElement.requestFullscreen().catch(() => {
-      fsFailCount++;
-      // Only show warning after 2 consecutive silent failures (i.e. browser truly blocked it)
-      if(fsFailCount >= 2 && !document.getElementById('antiCheatOverlay').classList.contains('show')){
-        fsFailCount = 0;
-        showAntiCheat('Fullscreen Required', 'You exited fullscreen. Please return to continue your exam.');
-      }
-    });
-  } else {
-    fsFailCount = 0; // reset if fullscreen is active
-  }
-}, 3000);
-
-// Block Escape key from exiting fullscreen
-document.addEventListener('keydown', function(e){
-  if(e.key === 'Escape' && !examSubmitted){
-    e.preventDefault();
-    e.stopPropagation();
-  }
-}, true);
-
-// ── Fix 5: Mark exam as submitted in localStorage so back-button redirect works ──
-// Patch submitTest to set the flag before redirecting
-const _origSubmit = submitTest;
-window.submitTest = async function(fromCheat){
-  localStorage.setItem('examSubmittedFlag','1');
-  await _origSubmit(fromCheat);
+  // Enter fullscreen after render
+  setTimeout(() => {
+    _expectingFsChange = true;
+    enterFullscreen();
+  }, 600);
 };
 </script>
 

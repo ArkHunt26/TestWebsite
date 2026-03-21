@@ -33,7 +33,33 @@
   white-space: nowrap;
 }
 
-/* ── Fix 2: coding question box inside modal ── */
+/* ── Fix 8: verdict option buttons ── */
+.verdict-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 14px 8px;
+  border-radius: var(--r);
+  border: 2px solid var(--border);
+  background: var(--surface2);
+  cursor: pointer;
+  transition: all var(--transition);
+  text-align: center;
+  user-select: none;
+}
+.verdict-option .verdict-icon { font-size: 22px; }
+.verdict-option .verdict-label { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+.verdict-option:hover { border-color: var(--accent); background: var(--accent-soft); }
+.verdict-option.selected-verdict[data-val="Selected"] { border-color: #00c896; background: rgba(0,200,150,0.12); }
+.verdict-option.selected-verdict[data-val="Hold"]     { border-color: #ffc107; background: rgba(255,193,7,0.12); }
+.verdict-option.selected-verdict[data-val="Not Selected"] { border-color: #ff4d6d; background: rgba(255,77,109,0.12); }
+
+/* Verdict badge for display in eval cards */
+.verdict-badge { display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700; }
+.verdict-badge.v-selected     { background:rgba(0,200,150,0.15);color:#00c896; }
+.verdict-badge.v-hold         { background:rgba(255,193,7,0.15);color:#ffc107; }
+.verdict-badge.v-not-selected { background:rgba(255,77,109,0.15);color:#ff4d6d; }
 .coding-q-box {
   background: var(--surface2);
   border: 1px solid var(--accent);
@@ -85,7 +111,7 @@
     </div>
     <button class="btn-primary" onclick="login()">Access Panel →</button>
     <p style="font-size:12px;color:var(--text3);margin-top:16px;text-align:center;">
-      Get your invigilator code from the HR &amp; Talent Acquisition Dashboard
+      Get your invigilator code from the HR &amp; TA Dashboard
     </p>
   </div>
 </div>
@@ -128,7 +154,7 @@
           <button class="tab-btn" onclick="filterByResult('FAIL',this)">❌ Fail</button>
         </div>
 
-        <div id="candidateList" style="max-height:600px;overflow-y:auto;scrollbar-width:thin;">
+        <div id="candidateList" style="max-height:600px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;">
           <div class="empty-state"><div class="spinner"></div><p>Loading candidates...</p></div>
         </div>
       </div>
@@ -155,9 +181,9 @@
       <button class="modal-close" onclick="closeGrading()">✕</button>
     </div>
 
-    <!-- Fix 2: Coding question the candidate received -->
+    <!-- Fix 7: Short coding question summary for the invigilator -->
     <div id="codingQBox" class="coding-q-box" style="display:none;">
-      <div class="cq-label">💻 Coding Question Assigned (Round 1)</div>
+      <div class="cq-label">💻 Coding Question Assigned (Round 1) — ask related questions</div>
       <div class="cq-text" id="codingQText">—</div>
     </div>
 
@@ -186,6 +212,26 @@
         placeholder="Optional remarks about the candidate..."></textarea>
     </div>
 
+    <!-- Fix 8: Verdict selection -->
+    <div style="margin-bottom:20px;">
+      <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);margin-bottom:12px;">📋 Candidate Verdict</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;" id="verdictGrid">
+        <label class="verdict-option" data-val="Selected" onclick="setVerdict('Selected',this)">
+          <span class="verdict-icon">✅</span>
+          <span class="verdict-label">Selected</span>
+        </label>
+        <label class="verdict-option" data-val="Hold" onclick="setVerdict('Hold',this)">
+          <span class="verdict-icon">⏸️</span>
+          <span class="verdict-label">Hold</span>
+        </label>
+        <label class="verdict-option" data-val="Not Selected" onclick="setVerdict('Not Selected',this)">
+          <span class="verdict-icon">❌</span>
+          <span class="verdict-label">Not Selected</span>
+        </label>
+      </div>
+      <div id="verdictError" style="font-size:12px;color:var(--danger);margin-top:6px;display:none;">Please select a verdict before submitting.</div>
+    </div>
+
     <div style="display:flex;justify-content:flex-end;gap:12px;">
       <button class="btn-secondary" onclick="closeGrading()">Cancel</button>
       <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="submitGrading()">
@@ -206,7 +252,16 @@ let resultFilter = 'all';
 let selectedCandidate = null;
 let ratings = {};
 let gradingCandidate = null;
+let currentVerdict = null;
 let refreshTimer = null;
+
+/* ── Fix 8: verdict selector ── */
+function setVerdict(val, el){
+  currentVerdict = val;
+  document.querySelectorAll('.verdict-option').forEach(o => o.classList.remove('selected-verdict'));
+  el.classList.add('selected-verdict');
+  document.getElementById('verdictError').style.display = 'none';
+}
 
 const RATING_FIELDS = [
   { key: 'communication', label: 'Communication', icon: '🗣️' },
@@ -343,7 +398,7 @@ function renderCandidateList(list){
         <div class="cp-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:2px;">
           <span class="badge ${cls}" style="font-size:10px;padding:2px 8px;">${c.result}</span>
-          ${evalCount ? `<span style="font-size:10px;color:var(--accent);">✓ ${evalCount} eval</span>` : ''}
+          ${evalCount ? `<span style="font-size:10px;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:10px;">✓ Evaluated</span>` : ''}
         </div>
       </div>
       <div class="cp-score">
@@ -508,6 +563,12 @@ function loadEvalHistory(candidateName, candidate){
         <div class="cell-stars">${'⭐'.repeat(ev.ratings[f.key]||0)}${'☆'.repeat(5-(ev.ratings[f.key]||0))}</div>
       </div>`).join('');
 
+    const verdictMap = { 'Selected':'v-selected', 'Hold':'v-hold', 'Not Selected':'v-not-selected' };
+    const verdictBadge = ev.verdict
+      ? `<span class="verdict-badge ${verdictMap[ev.verdict]||''}">
+           ${ev.verdict==='Selected'?'✅':ev.verdict==='Hold'?'⏸️':'❌'} ${ev.verdict}
+         </span>` : '';
+
     const codingLine = ev.codingQuestion
       ? `<div style="font-size:12px;color:var(--accent);margin-bottom:8px;padding:6px 10px;background:var(--accent-soft);border-radius:6px;">
            💻 Coding Q: ${ev.codingQuestion}
@@ -515,7 +576,10 @@ function loadEvalHistory(candidateName, candidate){
 
     return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-        <span style="font-size:13px;font-weight:600;color:var(--text);">👤 ${ev.invigilator}</span>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:600;color:var(--text);">👤 ${ev.invigilator}</span>
+          ${verdictBadge}
+        </div>
         <span style="font-size:12px;color:var(--text3);">🕐 ${ev.datetime}</span>
       </div>
       ${codingLine}
@@ -549,6 +613,11 @@ function openGrading(){
     codingBox.style.display = 'none';
   }
 
+  // Reset verdict
+  currentVerdict = null;
+  document.querySelectorAll('.verdict-option').forEach(o => o.classList.remove('selected-verdict'));
+  document.getElementById('verdictError').style.display = 'none';
+
   // Build rating grid (Fix 1: uses rating-grid class which already uses auto-fit)
   document.getElementById('ratingGrid').innerHTML = RATING_FIELDS.map(f => `
     <div class="rating-item">
@@ -581,6 +650,12 @@ function submitGrading(){
   const missing = RATING_FIELDS.find(f => !ratings[f.key]);
   if(missing){ showToast('Please rate all ' + missing.label, 'error'); return; }
 
+  if(!currentVerdict){
+    document.getElementById('verdictError').style.display = 'block';
+    showToast('Please select a candidate verdict', 'error');
+    return;
+  }
+
   // Fix 2: store coding question text alongside evaluation
   const codingKey = 'codingQ_' + gradingCandidate.name.replace(/\s/g,'_');
   const codingQ   = localStorage.getItem(codingKey) || '';
@@ -590,7 +665,8 @@ function submitGrading(){
     datetime:       document.getElementById('gradDateTime').value,
     ratings:        { ...ratings },
     remarks:        document.getElementById('gradRemarks').value.trim(),
-    codingQuestion: codingQ   // Fix 2: attach coding question description
+    codingQuestion: codingQ,
+    verdict:        currentVerdict   // Fix 8: Selected / Hold / Not Selected
   };
 
   // Fix 4: store under a per-invigilator-namespaced key so multiple invigilators don't overwrite
@@ -608,6 +684,7 @@ function submitGrading(){
   fd.append('ratings',        JSON.stringify(ratings));
   fd.append('remarks',        evaluation.remarks);
   fd.append('codingQuestion', codingQ);
+  fd.append('verdict',        currentVerdict);
 
   fetch(SCRIPT_URL, { method: 'POST', body: fd })
     .catch(() => {}); // silently fail – localStorage is the source of truth
