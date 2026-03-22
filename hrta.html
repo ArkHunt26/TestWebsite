@@ -64,7 +64,7 @@
 
     <!-- STAT CARDS -->
     <div class="stats-row">
-      <div class="stat-card" style="--card-accent:#00c896;">
+      <div class="stat-card" style="--card-accent:#3b9eff;">
         <div class="stat-icon">👥</div>
         <div class="stat-value" id="statTotal">0</div>
         <div class="stat-label">Total Candidates</div>
@@ -79,7 +79,7 @@
         <div class="stat-value" id="statFailed">0</div>
         <div class="stat-label">Failed</div>
       </div>
-      <div class="stat-card" style="--card-accent:#3b9eff;">
+      <div class="stat-card" style="--card-accent:#ffc107;">
         <div class="stat-icon">📊</div>
         <div class="stat-value" id="statPassRate">0%</div>
         <div class="stat-label">Pass Rate</div>
@@ -206,14 +206,15 @@
         <div class="card-header">
           <div>
             <div class="card-title">Round 2 — F2F Evaluations</div>
-            <div class="card-subtitle">Invigilator ratings &amp; verdicts</div>
+            <div class="card-subtitle">Click a verdict card to filter · click again to show all</div>
           </div>
-          <div id="r2EvalCount" style="font-size:13px;color:var(--text3);">0 evaluated</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span id="r2ActiveFilter" style="font-size:12px;color:var(--accent);display:none;">Filtering: <strong id="r2FilterLabel"></strong></span>
+            <div id="r2EvalCount" style="font-size:13px;color:var(--text3);">0 evaluated</div>
+          </div>
         </div>
-
-        <!-- R2 summary stats -->
+        <!-- R2 verdict filter stats -->
         <div id="adminR2Stats" class="stats-row" style="margin-bottom:20px;"></div>
-
         <!-- R2 candidate list -->
         <div id="adminR2List">
           <div class="empty-state">
@@ -263,8 +264,8 @@ function setStartTimeMin(){
   const local = new Date(now.getTime() - offset * 60000);
   el.min = local.toISOString().slice(0,16);
 }
-setStartTimeMin();
-setInterval(setStartTimeMin, 60000); // refresh every minute
+// setStartTimeMin called after login; also on interval
+setInterval(setStartTimeMin, 60000);
 
 function login(){
   const pwd = document.getElementById('passInput').value.trim();
@@ -285,6 +286,7 @@ function login(){
       if(d.error){ adminPassword = ''; showToast('Wrong password', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
+      setStartTimeMin(); // now safe to call
       // Process the data we already fetched — no second call
       allData = d;
       updateStats(d);
@@ -339,7 +341,7 @@ function loadData(){
       document.getElementById('sessionIdDisplay').value = d.sessionId || '';
       if(invCode) document.getElementById('invigilatorCode').value = invCode;
     })
-    .catch(() => {}); // silent fail on auto-refresh
+    .catch(() => {}); // silent fail on auto-refresh — avoids 'Connection error' toast on scheduled refresh
 }
 
 function loadSettings(d){
@@ -464,7 +466,27 @@ function updateLists(d){
   renderAdminR2(d);
 }
 
-/* ---- FIX 9: Render R2 panel in admin ---- */
+/* ---- R2 Panel: verdict filter state ---- */
+let _r2VerdictFilter = null; // null = show all
+
+function filterR2Verdict(verdict){
+  _r2VerdictFilter = (_r2VerdictFilter === verdict) ? null : verdict; // toggle
+  // Update filter indicator
+  const indicator = document.getElementById('r2ActiveFilter');
+  const label = document.getElementById('r2FilterLabel');
+  if(_r2VerdictFilter && indicator && label){
+    indicator.style.display = 'inline';
+    label.textContent = _r2VerdictFilter;
+  } else if(indicator){
+    indicator.style.display = 'none';
+  }
+  // Force re-render
+  const listEl = document.getElementById('adminR2List');
+  if(listEl) delete listEl.dataset.lastHash;
+  if(allData) renderAdminR2(allData);
+}
+
+/* ---- Render R2 panel in admin ---- */
 function renderAdminR2(d){
   const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))]
     .sort((a,b) => Number(b.score) - Number(a.score));
@@ -484,7 +506,7 @@ function renderAdminR2(d){
 
   document.getElementById('r2EvalCount').textContent = evaluated.length + ' evaluated';
 
-  // Stats row
+  // Stats row — Fix 4: clickable verdict filter cards
   const statsEl = document.getElementById('adminR2Stats');
   if(statsEl){
     const verdictCounts = { Selected:0, Hold:0, 'Not Selected':0, Pending:0 };
@@ -494,27 +516,48 @@ function renderAdminR2(d){
       else verdictCounts.Pending++;
     });
     statsEl.innerHTML = [
-      { label:'Selected',     val: verdictCounts['Selected'],     color:'#00c896', icon:'✅' },
-      { label:'Hold',         val: verdictCounts['Hold'],         color:'#ffc107', icon:'⏸️' },
-      { label:'Not Selected', val: verdictCounts['Not Selected'], color:'#ff4d6d', icon:'❌' },
-      { label:'Pending R2',   val: verdictCounts['Pending'],      color:'#8b949e', icon:'⏳' }
-    ].map(s => `<div class="stat-card" style="--card-accent:${s.color};">
-      <div class="stat-icon">${s.icon}</div>
-      <div class="stat-value" style="font-size:24px;">${s.val}</div>
-      <div class="stat-label">${s.label}</div>
-    </div>`).join('');
+      { label:'Selected',     val: verdictCounts['Selected'],     color:'#00c896', icon:'✅', filter:'Selected'     },
+      { label:'Hold',         val: verdictCounts['Hold'],         color:'#ffc107', icon:'⏸️', filter:'Hold'         },
+      { label:'Not Selected', val: verdictCounts['Not Selected'], color:'#ff4d6d', icon:'❌', filter:'Not Selected' },
+      { label:'Pending R2',   val: verdictCounts['Pending'],      color:'#8b949e', icon:'⏳', filter:'Pending'      }
+    ].map(s => {
+      const isActive = _r2VerdictFilter === s.filter;
+      return `<div class="stat-card" style="--card-accent:${s.color};cursor:pointer;outline:${isActive?'2px solid '+s.color:'none'};outline-offset:2px;transform:${isActive?'scale(1.03)':'none'}"
+        onclick="filterR2Verdict('${s.filter}')" title="Click to filter by ${s.label}">
+        <div class="stat-icon">${s.icon}</div>
+        <div class="stat-value" style="font-size:24px;">${s.val}</div>
+        <div class="stat-label">${s.label}</div>
+      </div>`;
+    }).join('');
   }
 
-  // List
+  // List — apply verdict filter, sort highest score first
   const listEl = document.getElementById('adminR2List');
   if(!listEl) return;
-  if(!evaluated.length){
-    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
+
+  let toShow = evaluated;
+  if(_r2VerdictFilter){
+    if(_r2VerdictFilter === 'Pending'){
+      toShow = evaluated.filter(({evals}) => !evals[evals.length-1]?.verdict);
+    } else {
+      toShow = evaluated.filter(({evals}) => evals[evals.length-1]?.verdict === _r2VerdictFilter);
+    }
+  }
+
+  if(!toShow.length){
+    const msg = _r2VerdictFilter
+      ? `<div class="empty-state"><div class="empty-icon">🔍</div><p>No candidates with verdict: <strong>${_r2VerdictFilter}</strong></p></div>`
+      : '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
+    listEl.dataset.lastHash = 'empty';
+    listEl.style.transition='opacity 0.15s ease'; listEl.style.opacity='0';
+    setTimeout(()=>{ listEl.innerHTML=msg; listEl.style.opacity='1'; },150);
     return;
   }
+
   const verdictMap  = { 'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected' };
   const verdictIcon = { 'Selected':'✅','Hold':'⏸️','Not Selected':'❌' };
-  const newHtml = evaluated.map(({candidate:c, evals}) => {
+
+  const newHtml = toShow.map(({candidate:c, evals}) => {
     const latest = evals[evals.length-1];
     const avgRating = (RATING_FIELDS_ADM.reduce((s,f)=>s+(latest.ratings[f.key]||0),0)/RATING_FIELDS_ADM.length).toFixed(1);
     const stars = '⭐'.repeat(Math.round(parseFloat(avgRating)));
@@ -536,13 +579,13 @@ function renderAdminR2(d){
     </div>`;
   }).join('');
 
-  const newHash = evaluated.map(({candidate:c,evals})=>c.name+evals.length).join('');
+  const newHash = (_r2VerdictFilter||'all') + toShow.map(({candidate:c,evals})=>c.name+evals.length+(evals[evals.length-1]?.verdict||'')).join('');
   if(listEl.dataset.lastHash === newHash) return;
   listEl.dataset.lastHash = newHash;
-  listEl.style.transition = 'opacity 0.15s ease';
-  listEl.style.opacity = '0';
-  setTimeout(()=>{ listEl.innerHTML = newHtml; listEl.style.opacity = '1'; }, 150);
+  listEl.style.transition='opacity 0.15s ease'; listEl.style.opacity='0';
+  setTimeout(()=>{ listEl.innerHTML=newHtml; listEl.style.opacity='1'; },150);
 }
+
 
 /* ---- TABS ---- */
 function switchRoundTab(tab, btn){
@@ -551,6 +594,13 @@ function switchRoundTab(tab, btn){
   if(btn) btn.classList.add('active');
   document.getElementById('adminR1Panel').classList.toggle('active', tab === 'r1');
   document.getElementById('adminR2Panel').classList.toggle('active', tab === 'r2');
+  // Fix 3: always refresh R2 data when switching to it (localStorage may have new evals)
+  if(tab === 'r2' && allData && allData.passList){
+    // Force re-render by clearing hash
+    const listEl = document.getElementById('adminR2List');
+    if(listEl) delete listEl.dataset.lastHash;
+    renderAdminR2(allData);
+  }
 }
 
 function switchCandTab(tab, btn){

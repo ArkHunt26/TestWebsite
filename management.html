@@ -94,6 +94,21 @@
         <div class="stat-value" id="sR2Count">0</div>
         <div class="stat-label">R2 Evaluated</div>
       </div>
+      <div class="stat-card" style="--card-accent:#00c896;">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value" id="sR2Selected">0</div>
+        <div class="stat-label">R2 Selected</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#ffc107;">
+        <div class="stat-icon">⏸️</div>
+        <div class="stat-value" id="sR2Hold">0</div>
+        <div class="stat-label">R2 Hold</div>
+      </div>
+      <div class="stat-card" style="--card-accent:#ff4d6d;">
+        <div class="stat-icon">❌</div>
+        <div class="stat-value" id="sR2NotSelected">0</div>
+        <div class="stat-label">R2 Not Selected</div>
+      </div>
     </div>
 
     <!-- TABS: Round 1 | Round 2 -->
@@ -103,7 +118,7 @@
     </div>
 
     <!-- ROUND 1 TAB -->
-    <div id="panelR1" class="tab-panel active">
+    <div id="panelR1" class="tab-panel active" style="margin-top:8px;">
 
       <div class="grid-2" style="margin-bottom:24px;">
         <div class="card">
@@ -117,7 +132,7 @@
               <span id="examStatusLabel">Live</span>
             </div>
           </div>
-          <div class="chart-container" style="height:220px;">
+          <div class="chart-container" style="height:220px;min-height:220px;position:relative;">
             <canvas id="r1PieChart"></canvas>
           </div>
         </div>
@@ -126,7 +141,7 @@
           <div class="card-header">
             <div class="card-title">Section Avg. Performance</div>
           </div>
-          <div class="chart-container" style="height:220px;">
+          <div class="chart-container" style="height:220px;min-height:220px;position:relative;">
             <canvas id="sectionBarChart"></canvas>
           </div>
         </div>
@@ -160,7 +175,7 @@
     </div>
 
     <!-- ROUND 2 TAB -->
-    <div id="panelR2" class="tab-panel">
+    <div id="panelR2" class="tab-panel" style="margin-top:8px;">
 
       <div class="card" style="margin-bottom:24px;">
         <div class="card-header">
@@ -168,26 +183,35 @@
           <div class="card-subtitle">Invigilator ratings across all evaluated candidates</div>
         </div>
 
-        <div id="r2SummaryGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
+        <div id="r2SummaryGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;">
           <!-- Filled by JS -->
         </div>
 
-        <div style="height:240px;">
+        <div style="height:240px;position:relative;">
           <canvas id="r2RadarChart"></canvas>
         </div>
       </div>
 
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Candidate Evaluations</div>
-          <div class="card-subtitle">All Round 2 rated candidates</div>
+          <div>
+            <div class="card-title">Candidate Evaluations</div>
+            <div class="card-subtitle">Click a verdict tab to filter · highest score first</div>
+          </div>
+        </div>
+        <!-- Fix 7: verdict filter tabs -->
+        <div class="tabs" style="margin-bottom:16px;" id="mgmtR2FilterTabs">
+          <button class="tab-btn active" onclick="filterMgmtR2('all',this)">All</button>
+          <button class="tab-btn" onclick="filterMgmtR2('Selected',this)">✅ Selected</button>
+          <button class="tab-btn" onclick="filterMgmtR2('Hold',this)">⏸️ Hold</button>
+          <button class="tab-btn" onclick="filterMgmtR2('Not Selected',this)">❌ Not Selected</button>
+          <button class="tab-btn" onclick="filterMgmtR2('Pending',this)">⏳ Pending</button>
         </div>
         <div id="r2List">
-          <div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet. Invigilators will grade candidates in the Invigilator Panel.</p></div>
+          <div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -198,6 +222,7 @@
 let adminPassword = '';
 let _isAutoRefresh = false;
 let allData = {};
+let _mgmtR2Filter = 'all'; // Fix 7: verdict filter for R2 list
 let r1Chart = null;
 let secBarChart = null;
 let r2Radar = null;
@@ -281,15 +306,24 @@ function updateTopStats(d){
   const rate = d.totalCandidates > 0 ? Math.round((d.passedCount/d.totalCandidates)*100) : 0;
   document.getElementById('sPassRate').textContent = rate + '%';
 
-  // Count R2 evaluations
+  // Count R2 evaluations + verdict breakdown
   const all = [...(d.passList||[]), ...(d.failList||[])];
-  let r2Count = 0;
+  let r2Count = 0, r2Selected = 0, r2Hold = 0, r2NotSelected = 0;
   all.forEach(c => {
     const key = 'eval_' + c.name.replace(/\s/g,'_');
     const evals = JSON.parse(localStorage.getItem(key) || '[]');
-    if(evals.length) r2Count++;
+    if(evals.length){
+      r2Count++;
+      const verdict = evals[evals.length-1]?.verdict;
+      if(verdict === 'Selected')     r2Selected++;
+      else if(verdict === 'Hold')    r2Hold++;
+      else if(verdict === 'Not Selected') r2NotSelected++;
+    }
   });
   document.getElementById('sR2Count').textContent = r2Count;
+  document.getElementById('sR2Selected').textContent = r2Selected;
+  document.getElementById('sR2Hold').textContent = r2Hold;
+  document.getElementById('sR2NotSelected').textContent = r2NotSelected;
 }
 
 function updateExamStatus(d){
@@ -363,6 +397,7 @@ function updateR1Charts(d){
       type: 'bar',
       data: { labels: secLabels, datasets: [{ label:'Avg %', data: secAvgs, backgroundColor: secColors, borderRadius: 6, borderSkipped: false }] },
       options: { responsive:true, maintainAspectRatio:false,
+        animation: { duration: 400 },
         scales: { y:{ beginAtZero:true, max:100, ticks:{color:'rgba(128,128,128,0.7)', font:{family:'Sora',size:10}}, grid:{color:'rgba(128,128,128,0.1)'}},
           x:{ ticks:{color:'rgba(128,128,128,0.7)', font:{family:'Sora',size:10}}, grid:{display:false} } },
         plugins:{ legend:{display:false} }
@@ -443,6 +478,18 @@ function renderR1Table(skipFade){
 }
 
 
+/* ---- Fix 7: R2 verdict filter in management ---- */
+function filterMgmtR2(verdict, btn){
+  _mgmtR2Filter = verdict;
+  // Update tab buttons
+  document.querySelectorAll('#mgmtR2FilterTabs .tab-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  // Force re-render
+  const list = document.getElementById('r2List');
+  if(list) delete list.dataset.lastHash;
+  if(allData) renderR2Section(allData);
+}
+
 function renderR2Section(d){
   const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
   const evaluated = [];
@@ -501,13 +548,29 @@ function renderR2Section(d){
     });
   }
 
-  // List — Fix 10: hash-based flicker-free update
+  // List — Fix 7: apply verdict filter + sort highest score first
   const list = document.getElementById('r2List');
   if(!list) return;
-  if(!evaluated.length){
-    const emptyHtml = '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
-    if(list.dataset.lastHash !== 'empty'){
-      list.dataset.lastHash = 'empty';
+
+  // Sort evaluated by R1 score descending
+  evaluated.sort((a,b) => Number(b.candidate.score) - Number(a.candidate.score));
+
+  // Apply filter
+  let toShow = evaluated;
+  if(_mgmtR2Filter && _mgmtR2Filter !== 'all'){
+    if(_mgmtR2Filter === 'Pending'){
+      toShow = evaluated.filter(({evals}) => !evals[evals.length-1]?.verdict);
+    } else {
+      toShow = evaluated.filter(({evals}) => evals[evals.length-1]?.verdict === _mgmtR2Filter);
+    }
+  }
+
+  if(!toShow.length){
+    const emptyHtml = _mgmtR2Filter !== 'all'
+      ? `<div class="empty-state"><div class="empty-icon">🔍</div><p>No candidates with verdict: <strong>${_mgmtR2Filter}</strong></p></div>`
+      : '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
+    if(list.dataset.lastHash !== 'empty_'+_mgmtR2Filter){
+      list.dataset.lastHash = 'empty_'+_mgmtR2Filter;
       list.style.transition='opacity 0.15s ease'; list.style.opacity='0';
       setTimeout(()=>{ list.innerHTML=emptyHtml; list.style.opacity='1'; },150);
     }
@@ -515,7 +578,7 @@ function renderR2Section(d){
   }
   const verdictMap  = { 'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected' };
   const verdictIcon = {'Selected':'✅','Hold':'⏸️','Not Selected':'❌'};
-  const newHtml = evaluated.map(({candidate:c, evals}) => {
+  const newHtml = toShow.map(({candidate:c, evals}) => {
     const latestEval = evals[evals.length-1];
     const avgRating = (RATING_FIELDS.reduce((sum,f) => sum+(latestEval.ratings[f.key]||0), 0)/RATING_FIELDS.length).toFixed(1);
     const init = (c.name||'?')[0].toUpperCase();
@@ -536,7 +599,7 @@ function renderR2Section(d){
       </div>
     </div>`;
   }).join('');
-  const newHash = evaluated.map(({candidate:c,evals})=>c.name+evals.length+(evals[evals.length-1]?.verdict||'')).join('');
+  const newHash = (_mgmtR2Filter||'all') + toShow.map(({candidate:c,evals})=>c.name+evals.length+(evals[evals.length-1]?.verdict||'')).join('');
   if(list.dataset.lastHash === newHash) return;
   list.dataset.lastHash = newHash;
   list.style.transition='opacity 0.15s ease'; list.style.opacity='0';
