@@ -34,7 +34,7 @@
     <div class="form-field">
       <label>HR/TA Password</label>
       <div class="password-wrap">
-        <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+        <input type="password" id="passInput" placeholder="manage@123" onkeydown="if(event.key==='Enter')login()">
         <button class="eye-btn" type="button" onclick="togglePwd('passInput',this)" tabindex="-1">👁️</button>
       </div>
     </div>
@@ -63,9 +63,18 @@
   <div class="dash-wrapper">
 
     <!-- SUMMARY STATS -->
-    <div style="margin-bottom:8px;">
-      <div class="page-title">Assessment Overview</div>
-      <div class="page-subtitle">Real-time monitoring across both interview rounds</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <div class="page-title">Assessment Overview</div>
+        <div class="page-subtitle">Real-time monitoring across both interview rounds</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;">Session</span>
+        <select id="mgmtSessionSelector" onchange="switchMgmtSession(this.value)"
+          style="padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;min-width:220px;">
+          <option value="">Loading…</option>
+        </select>
+      </div>
     </div>
 
     <!-- Fix 3: Symmetric 2-row stats layout — 4 per row -->
@@ -227,6 +236,7 @@
 let adminPassword = '';
 let _isAutoRefresh = false;
 let allData = {};
+let currentSessionId = localStorage.getItem('mgmt_session') || '';
 let _mgmtR2Filter = 'all'; // Fix 7: verdict filter for R2 list
 let r1Chart = null;
 let secBarChart = null;
@@ -281,7 +291,8 @@ function login(){
       if(d.error){ adminPassword = ''; showToast('Wrong password', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
-      processData(d);
+      // Load session list, then data for active session
+      loadMgmtSessions(() => { processData(d); });
       setInterval(() => refresh(), 5000);
     })
     .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
@@ -289,9 +300,43 @@ function login(){
 
 function refresh(){
   _isAutoRefresh = true;
-  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+  const sid2 = currentSessionId ? '&sessionId=' + encodeURIComponent(currentSessionId) : '';
+  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword + sid2)
     .then(r => r.json())
     .then(d => { if(!d.error) processData(d); });
+}
+
+/* ---- MGMT SESSION ---- */
+function loadMgmtSessions(callback){
+  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      if(d.error || !d.sessions){ if(callback) callback(); return; }
+      const sel = document.getElementById('mgmtSessionSelector');
+      sel.innerHTML = d.sessions.map(s =>
+        `<option value="${s.sessionId}" ${s.sessionId===currentSessionId?'selected':''}>
+          ${s.sessionName||s.sessionId} ${s.enabled?'● ACTIVE':''}
+        </option>`
+      ).join('');
+      if(!currentSessionId && d.sessions.length){
+        currentSessionId = d.sessions[d.sessions.length-1].sessionId;
+        sel.value = currentSessionId;
+        localStorage.setItem('mgmt_session', currentSessionId);
+      }
+      if(callback) callback();
+    }).catch(() => { if(callback) callback(); });
+}
+
+function switchMgmtSession(sid){
+  currentSessionId = sid;
+  localStorage.setItem('mgmt_session', sid);
+  // Clear all render hashes
+  ['r1TableWrap','r2List','r2SummaryGrid'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) delete el.dataset.lastHash;
+  });
+  refresh();
+  showToast('Viewing session: ' + sid, 'info');
 }
 
 function processData(d){
@@ -637,7 +682,14 @@ function switchTab(tab, btn){
   ['panelR1','panelR2'].forEach(id => {
     document.getElementById(id).classList.toggle('active', id === 'panel' + tab.toUpperCase());
   });
-  if(tab === 'r2') renderR2Section(allData);
+  if(tab === 'r2'){
+    // Reset verdict filter to 'all' and highlight All tab button
+    _mgmtR2Filter = 'all';
+    document.querySelectorAll('#mgmtR2FilterTabs .tab-btn').forEach((b,i) => b.classList.toggle('active', i === 0));
+    const list = document.getElementById('r2List');
+    if(list) delete list.dataset.lastHash;
+    renderR2Section(allData);
+  }
 }
 
 /* ---- DOWNLOAD ---- */

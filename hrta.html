@@ -34,7 +34,7 @@
     <div class="form-field">
       <label>HR/TA Password</label>
       <div class="password-wrap">
-        <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+        <input type="password" id="passInput" placeholder="hr&ta@123" onkeydown="if(event.key==='Enter')login()">
         <button class="eye-btn" type="button" onclick="togglePwd('passInput',this)" tabindex="-1">👁️</button>
       </div>
     </div>
@@ -59,6 +59,39 @@
       <button class="btn-danger" onclick="logout()" style="padding:8px 16px;font-size:13px;">Logout</button>
     </div>
   </nav>
+
+  <!-- SESSION SELECTOR BAR -->
+  <div id="sessionBar" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <span style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;">Exam Session</span>
+    <select id="sessionSelector" onchange="switchSession(this.value)"
+      style="flex:1;min-width:200px;max-width:340px;padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;cursor:pointer;">
+      <option value="">Loading sessions…</option>
+    </select>
+    <button onclick="openNewSession()" class="btn-secondary" style="padding:8px 16px;font-size:13px;white-space:nowrap;">+ New Session</button>
+    <button onclick="deleteCurrentSession()" class="btn-danger" style="padding:8px 16px;font-size:13px;white-space:nowrap;">🗑 Delete</button>
+  </div>
+
+  <!-- NEW SESSION MODAL -->
+  <div id="newSessionModal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header">
+        <h3>📋 Create New Exam Session</h3>
+        <button class="modal-close" onclick="closeNewSession()">✕</button>
+      </div>
+      <div class="form-group" style="margin-bottom:16px;">
+        <label>Session ID <span style="font-size:11px;color:var(--text3);">(short, no spaces e.g. BATCH_MAR26)</span></label>
+        <input type="text" id="newSessionId" placeholder="BATCH_MAR_2026" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_\-]/g,'')">
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label>Session Name <span style="font-size:11px;color:var(--text3);">(descriptive)</span></label>
+        <input type="text" id="newSessionName" placeholder="e.g. March 2026 Embedded Batch">
+      </div>
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button class="btn-secondary" onclick="closeNewSession()">Cancel</button>
+        <button class="btn-primary" style="width:auto;padding:12px 24px;" onclick="createNewSession()">Create Session →</button>
+      </div>
+    </div>
+  </div>
 
   <div class="dash-wrapper">
 
@@ -238,6 +271,7 @@ let refreshTimer = null;
 let settingsLoaded = false;
 let allData = [];
 let invCode = localStorage.getItem('invCode') || '';
+let currentSessionId = localStorage.getItem('hrta_session') || '';
 
 /* ---- THEME ---- */
 const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -294,11 +328,12 @@ function login(){
       updateLists(d);
       updateStatus(d);
       loadSettings(d);  // always load settings on fresh login
-      document.getElementById('sessionIdDisplay').value = d.sessionId || '';
-      if(invCode) document.getElementById('invigilatorCode').value = invCode;
-      // Start auto-refresh
-      if(refreshTimer) clearInterval(refreshTimer);
-      refreshTimer = setInterval(loadData, 5000);
+      // Load session list then data
+      loadSessionList(() => {
+        loadData();
+        if(refreshTimer) clearInterval(refreshTimer);
+        refreshTimer = setInterval(loadData, 5000);
+      });
     })
     .catch(() => {
       btn.textContent = orig; btn.disabled = false;
@@ -326,7 +361,8 @@ function logout(){
 /* ---- LOAD DATA (auto-refresh) ---- */
 function loadData(){
   if(!adminPassword) return;
-  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+  const sid = currentSessionId ? '&sessionId=' + encodeURIComponent(currentSessionId) : '';
+  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword + sid)
     .then(r => r.json())
     .then(d => {
       if(d.error){ clearInterval(refreshTimer); return; }
@@ -337,9 +373,7 @@ function loadData(){
       updateStatus(d);
       // Always refresh settings — loadSettings() internally checks if user is editing
       loadSettings(d);
-      // Sync session ID display on every refresh
-      document.getElementById('sessionIdDisplay').value = d.sessionId || '';
-      if(invCode) document.getElementById('invigilatorCode').value = invCode;
+      // loadSettings() handles sessionIdDisplay and invigilatorCode
     })
     .catch(() => {}); // silent fail on auto-refresh — avoids 'Connection error' toast on scheduled refresh
 }
@@ -393,9 +427,17 @@ function loadSettings(d){
     stEl.min = savedMin;
   }
 
-  // Restore security codes display
-  if(invCode) document.getElementById('invigilatorCode').value = invCode;
-  document.getElementById('sessionIdDisplay').value = d.sessionId || '';
+  // Restore security codes display — prefer server data over localStorage
+  const serverInvCode = d.invCode || '';
+  if(serverInvCode){
+    invCode = serverInvCode; // sync localStorage with server
+    localStorage.setItem('invCode', serverInvCode);
+  }
+  const displayInvCode = invCode || serverInvCode;
+  const icEl = document.getElementById('invigilatorCode');
+  if(icEl) icEl.value = displayInvCode;
+  const sidDisplayEl = document.getElementById('sessionIdDisplay');
+  if(sidDisplayEl) sidDisplayEl.value = d.sessionId || '';
   settingsLoaded = true;
 }
 
@@ -649,8 +691,8 @@ function updateConfig(){
   fd.append('startTime', document.getElementById('startTime').value);
   fd.append('enabled', document.getElementById('enabled').checked);
   fd.append('passMark', document.getElementById('passMark').value);
-  fd.append('sessionId', document.getElementById('sessionId').value);
-
+  fd.append('sessionId', currentSessionId || document.getElementById('sessionId').value);
+  fd.append('sessionName', document.getElementById('sessionId').value); // use session ID field as name too
   if(invCode) fd.append('invCode', invCode);
 
   fetch(SCRIPT_URL, { method: 'POST', body: fd })
@@ -688,6 +730,95 @@ function downloadExcel(){
   ws['!cols'] = [{wch:30},{wch:10},{wch:10}];
   XLSX.utils.book_append_sheet(wb, ws, 'Results');
   XLSX.writeFile(wb, 'exam_results_' + new Date().toISOString().slice(0,10) + '.xlsx');
+}
+
+/* ---- SESSION MANAGEMENT ---- */
+function loadSessionList(callback){
+  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      if(d.error || !d.sessions) { if(callback) callback(); return; }
+      const sel = document.getElementById('sessionSelector');
+      sel.innerHTML = d.sessions.map(s =>
+        `<option value="${s.sessionId}" ${s.sessionId===currentSessionId?'selected':''}>
+          ${s.sessionName || s.sessionId} ${s.enabled?'● ACTIVE':''}
+        </option>`
+      ).join('');
+      // Default to first if none selected
+      if(!currentSessionId && d.sessions.length){
+        currentSessionId = d.sessions[d.sessions.length-1].sessionId;
+        sel.value = currentSessionId;
+        localStorage.setItem('hrta_session', currentSessionId);
+      }
+      if(callback) callback();
+    }).catch(() => { if(callback) callback(); });
+}
+
+function switchSession(sid){
+  currentSessionId = sid;
+  localStorage.setItem('hrta_session', sid);
+  settingsLoaded = false;
+  // Force reload data for this session
+  const listEl = document.getElementById('adminR2List');
+  if(listEl) delete listEl.dataset.lastHash;
+  loadData();
+  showToast('Switched to session: ' + sid, 'info');
+}
+
+function openNewSession(){
+  document.getElementById('newSessionModal').classList.remove('hidden');
+  document.getElementById('newSessionId').value = '';
+  document.getElementById('newSessionName').value = '';
+}
+function closeNewSession(){
+  document.getElementById('newSessionModal').classList.add('hidden');
+}
+
+function createNewSession(){
+  const sid  = document.getElementById('newSessionId').value.trim();
+  const name = document.getElementById('newSessionName').value.trim();
+  if(!sid){ showToast('Enter a session ID', 'error'); return; }
+
+  const fd = new URLSearchParams();
+  fd.append('type','CREATE_SESSION');
+  fd.append('password', adminPassword);
+  fd.append('sessionId', sid);
+  fd.append('sessionName', name || sid);
+
+  fetch(SCRIPT_URL, {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast(d.error, 'error'); return; }
+      currentSessionId = sid;
+      localStorage.setItem('hrta_session', sid);
+      closeNewSession();
+      settingsLoaded = false;
+      loadSessionList(() => { switchSession(sid); });
+      showToast('Session created: ' + sid, 'success');
+    });
+}
+
+function deleteCurrentSession(){
+  if(!currentSessionId){ showToast('No session selected', 'error'); return; }
+  if(!confirm('Delete session "' + currentSessionId + '"? This cannot be undone.')) return;
+
+  const fd = new URLSearchParams();
+  fd.append('type','DELETE_SESSION');
+  fd.append('password', adminPassword);
+  fd.append('sessionId', currentSessionId);
+
+  fetch(SCRIPT_URL, {method:'POST', body:fd})
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast(d.error,'error'); return; }
+      currentSessionId = '';
+      localStorage.removeItem('hrta_session');
+      loadSessionList(() => {
+        if(currentSessionId) switchSession(currentSessionId);
+        else loadData();
+      });
+      showToast('Session deleted','success');
+    });
 }
 
 /* ---- TOAST ---- */
