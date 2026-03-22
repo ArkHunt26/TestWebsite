@@ -288,7 +288,7 @@ function login(){
     .then(r => r.json())
     .then(d => {
       btn.textContent = orig; btn.disabled = false;
-      if(d.error){ adminPassword = ''; showToast('Wrong password', 'error'); return; }
+      if(d.error){ adminPassword = ''; showToast('Wrong password. Ensure Code.gs has been redeployed with new passwords.', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       // Load session list, then data for active session

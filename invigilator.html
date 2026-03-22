@@ -320,7 +320,7 @@ function login(){
     .then(r => r.json())
     .then(d => {
       btn.textContent = orig; btn.disabled = false;
-      if(d.error){ adminPass = ''; showToast('Wrong admin password', 'error'); return; }
+      if(d.error){ adminPass = ''; showToast('Wrong password. Ensure Code.gs has been redeployed with new passwords.', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainPanel').style.display   = 'block';
       document.getElementById('invName').textContent = '🔍 Invigilator';

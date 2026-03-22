@@ -317,7 +317,7 @@ function login(){
     .then(r => r.json())
     .then(d => {
       btn.textContent = orig; btn.disabled = false;
-      if(d.error){ adminPassword = ''; showToast('Wrong password', 'error'); return; }
+      if(d.error){ adminPassword = ''; showToast('Wrong password. If this is your first login after update, the Apps Script needs redeployment with new Code.gs.', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       setStartTimeMin(); // now safe to call
