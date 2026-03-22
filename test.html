@@ -6,7 +6,7 @@
 <title>Exam — Technical Assessment</title>
 <link rel="stylesheet" href="css/style.css">
 <style>
-/* Fix 3: Custom non-blocking anti-cheat overlay (replaces browser confirm) */
+/* Anti-cheat warning overlay (tab-switch etc.) */
 #antiCheatOverlay {
   display: none;
   position: fixed;
@@ -31,7 +31,7 @@
 }
 .anti-cheat-box .ac-icon { font-size: 52px; margin-bottom: 12px; }
 .anti-cheat-box h3 { font-size: 20px; font-weight: 700; color: var(--danger); margin-bottom: 8px; }
-.anti-cheat-box p { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.6; }
+.anti-cheat-box p { font-size: 14px; color: var(--text2); margin-bottom: 24px; line-height: 1.7; }
 .anti-cheat-box .ac-btns { display: flex; gap: 12px; justify-content: center; }
 .ac-btn-return {
   padding: 11px 24px; background: var(--accent); color: #fff;
@@ -46,9 +46,133 @@
   cursor: pointer; transition: all 0.2s;
 }
 .ac-btn-submit:hover { background: var(--danger); color: #fff; }
+
+/* Consent modal — shown before exam starts */
+#consentModal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  backdrop-filter: blur(10px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.consent-box {
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: 24px;
+  padding: 40px 36px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  animation: fadeUp 0.4s ease;
+}
+.consent-box .consent-icon { font-size: 56px; margin-bottom: 16px; }
+.consent-box h2 { font-size: 22px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+.consent-box .consent-sub { font-size: 13px; color: var(--text3); margin-bottom: 24px; }
+.consent-rules {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+.consent-rules .rule {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+.consent-rules .rule:last-child { border-bottom: none; }
+.consent-rules .rule .rule-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+.consent-checkbox-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+}
+.consent-checkbox-row input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+#consentProceedBtn {
+  width: 100%;
+  padding: 13px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Sora', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s;
+  opacity: 0.4;
+  pointer-events: none;
+}
+#consentProceedBtn.enabled {
+  opacity: 1;
+  pointer-events: auto;
+  box-shadow: 0 6px 20px var(--accent-glow);
+}
+#consentProceedBtn.enabled:hover { filter: brightness(1.1); transform: translateY(-1px); }
 </style>
 </head>
 <body>
+
+<!-- ── Consent modal shown before exam ── -->
+<div id="consentModal">
+  <div class="consent-box">
+    <div class="consent-icon">📋</div>
+    <h2>Before You Begin</h2>
+    <p class="consent-sub">Please read and acknowledge the exam rules</p>
+    <div class="consent-rules">
+      <div class="rule">
+        <span class="rule-icon">⏱️</span>
+        <span>The timer starts immediately once you click <strong>Start Exam</strong>. It cannot be paused.</span>
+      </div>
+      <div class="rule">
+        <span class="rule-icon">🚫</span>
+        <span><strong>Switching tabs or windows</strong> will be detected and your exam will be <strong>auto-submitted immediately</strong>.</span>
+      </div>
+      <div class="rule">
+        <span class="rule-icon">🔙</span>
+        <span><strong>Pressing the Back button</strong> during the exam will trigger an auto-submit warning.</span>
+      </div>
+      <div class="rule">
+        <span class="rule-icon">📵</span>
+        <span>Do not use any external tools, browsers, or communicate with others during the exam.</span>
+      </div>
+      <div class="rule">
+        <span class="rule-icon">✅</span>
+        <span>Ensure you have a <strong>stable internet connection</strong> before starting.</span>
+      </div>
+    </div>
+    <label class="consent-checkbox-row">
+      <input type="checkbox" id="consentCheck" onchange="toggleConsent(this)">
+      I have read and understood the exam rules
+    </label>
+    <button id="consentProceedBtn" onclick="startExamAfterConsent()">
+      Start Exam →
+    </button>
+  </div>
+</div>
 
 <div class="exam-topbar">
   <div style="display:flex;align-items:center;gap:10px;">
@@ -83,7 +207,7 @@
   </div>
 </div>
 
-<!-- Fix 3: Non-blocking anti-cheat overlay -->
+<!-- Anti-cheat overlay -->
 <div id="antiCheatOverlay">
   <div class="anti-cheat-box">
     <div class="ac-icon">⚠️</div>
@@ -114,9 +238,19 @@ document.addEventListener('keydown', function(e){
     ta.value = ta.value.substring(0,s) + '    ' + ta.value.substring(ta.selectionEnd);
     ta.selectionStart = ta.selectionEnd = s + 4;
   }
-  // Block Escape from exiting fullscreen
-  if(e.key === 'Escape' && !examSubmitted){ e.preventDefault(); e.stopPropagation(); }
 }, true);
+
+// ── Consent modal ──
+function toggleConsent(cb){
+  const btn = document.getElementById('consentProceedBtn');
+  btn.classList.toggle('enabled', cb.checked);
+}
+
+function startExamAfterConsent(){
+  document.getElementById('consentModal').style.display = 'none';
+  // Timer starts now
+  initExamTimer();
+}
 
 // ── Anti-cheat overlay ──
 let _overlayOpen = false;
@@ -132,9 +266,6 @@ function showAntiCheat(title, message){
 function acReturn(){
   _overlayOpen = false;
   document.getElementById('antiCheatOverlay').classList.remove('show');
-  // Mark that the NEXT fullscreen change is us doing it intentionally
-  _expectingFsChange = true;
-  document.documentElement.requestFullscreen().catch(() => { _expectingFsChange = false; });
 }
 
 function acSubmit(){
@@ -147,9 +278,9 @@ function acSubmit(){
 window._customCheatPopup = function(reason){
   if(examSubmitted || _overlayOpen) return;
   const map = {
-    '⚠️ Fullscreen exited!':       ['Fullscreen Required',   'You exited fullscreen mode. Click "Return to Exam" to continue.'],
-    '⚠️ Tab switch detected!':      ['Tab Switch Detected',   'Switching tabs is not allowed during the exam.'],
-    '⚠️ Back navigation detected!': ['Navigation Blocked',    'Back navigation is not allowed during an active exam.']
+    '⚠️ Fullscreen exited!':       ['Tab Switch Detected',  'Switching away from this exam page has been detected.'],
+    '⚠️ Tab switch detected!':      ['Tab Switch Detected',  'Switching tabs is not allowed. Your exam may be auto-submitted.'],
+    '⚠️ Back navigation detected!': ['Navigation Blocked',   'Back navigation is not allowed during an active exam.']
   };
   const [title, msg] = map[reason] || ['Warning', reason];
   showAntiCheat(title, msg);
@@ -180,35 +311,13 @@ window.submitTest = async function(fromCheat){
   await _origSubmit(fromCheat);
 };
 
-// ── Silent fullscreen enforcement ──
-// Only show popup if browser truly can't re-enter fullscreen
-// (not while overlay is open or exam submitted)
-let _fsEnforcerActive = false;
-setInterval(function(){
-  if(examSubmitted || _overlayOpen || _fsEnforcerActive) return;
-  if(!document.fullscreenElement){
-    _fsEnforcerActive = true;
-    _expectingFsChange = true;
-    document.documentElement.requestFullscreen()
-      .then(() => { _fsEnforcerActive = false; })
-      .catch(() => {
-        _expectingFsChange = false;
-        _fsEnforcerActive = false;
-        // Only show overlay if not already open
-        if(!_overlayOpen){
-          showAntiCheat('Fullscreen Required', 'Please click "Return to Exam" to re-enter fullscreen and continue.');
-        }
-      });
-  }
-}, 4000); // 4s to avoid rapid retries
-
 // ── Init on load ──
 window.onload = function(){
   const name = localStorage.getItem('name');
   if(!name){ window.location.replace('index.html'); return; }
 
   // Guard: redirect back to result if exam already submitted
-  const endTime  = parseInt(localStorage.getItem('examEndTime') || '0');
+  const endTime   = parseInt(localStorage.getItem('examEndTime') || '0');
   const submitted = localStorage.getItem('examSubmittedFlag');
   if(submitted === '1' || (endTime > 0 && Date.now() > endTime + 5000)){
     window.location.replace('result.html');
@@ -217,12 +326,7 @@ window.onload = function(){
 
   document.getElementById('candidateName').textContent = '👤 ' + name;
   renderMCQ();
-  initExamTimer();
-  // Enter fullscreen after render
-  setTimeout(() => {
-    _expectingFsChange = true;
-    enterFullscreen();
-  }, 600);
+  // Note: initExamTimer() is called AFTER consent is given
 };
 </script>
 

@@ -8,13 +8,11 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-/* Fix 9: seamless round-tab → card connection */
+/* Fix 5: panel cards have full rounded corners, separated from tab row by a small gap */
 #adminR1Panel .card,
 #adminR2Panel .card {
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  margin-top: 0;
-  border-top: none;
+  border-radius: var(--r);
+  margin-top: 8px;
 }
 #adminR1Panel, #adminR2Panel {
   margin-bottom: 28px;
@@ -35,7 +33,10 @@
     <p class="subtitle">HR &amp; TA access only</p>
     <div class="form-field">
       <label>HR/TA Password</label>
-      <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+      <div class="password-wrap">
+        <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+        <button class="eye-btn" type="button" onclick="togglePwd('passInput',this)" tabindex="-1">👁️</button>
+      </div>
     </div>
     <button class="btn-primary" onclick="login()">Login →</button>
   </div>
@@ -172,7 +173,7 @@
 
     <!-- ROUND 1 PANEL -->
     <div id="adminR1Panel" class="tab-panel active" style="margin-bottom:28px;">
-      <div class="card" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0;">
+      <div class="card">
         <div class="card-header">
           <div>
             <div class="card-title">Live Results — Round 1</div>
@@ -201,7 +202,7 @@
 
     <!-- ROUND 2 PANEL: Fix 9 -->
     <div id="adminR2Panel" class="tab-panel" style="margin-bottom:28px;">
-      <div class="card" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0;">
+      <div class="card">
         <div class="card-header">
           <div>
             <div class="card-title">Round 2 — F2F Evaluations</div>
@@ -266,30 +267,63 @@ setStartTimeMin();
 setInterval(setStartTimeMin, 60000); // refresh every minute
 
 function login(){
-  adminPassword = document.getElementById('passInput').value;
+  const pwd = document.getElementById('passInput').value.trim();
+  if(!pwd){ showToast('Enter password', 'error'); return; }
+  adminPassword = pwd;
+
+  // Show loading state
+  const btn = document.querySelector('#loginScreen .btn-primary');
+  const orig = btn.textContent;
+  btn.textContent = 'Logging in…';
+  btn.disabled = true;
+
+  // Single fetch — auth + data in one call
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
     .then(r => r.json())
     .then(d => {
-      if(d.error){ showToast('Wrong password', 'error'); return; }
+      btn.textContent = orig; btn.disabled = false;
+      if(d.error){ adminPassword = ''; showToast('Wrong password', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
-      loadData();
+      // Process the data we already fetched — no second call
+      allData = d;
+      updateStats(d);
+      updateChart(d);
+      updateLists(d);
+      updateStatus(d);
+      loadSettings(d);  // always load settings on fresh login
+      document.getElementById('sessionIdDisplay').value = d.sessionId || '';
+      if(invCode) document.getElementById('invigilatorCode').value = invCode;
+      // Start auto-refresh
+      if(refreshTimer) clearInterval(refreshTimer);
       refreshTimer = setInterval(loadData, 5000);
     })
-    .catch(() => showToast('Connection error', 'error'));
+    .catch(() => {
+      btn.textContent = orig; btn.disabled = false;
+      adminPassword = '';
+      showToast('Connection error — check internet', 'error');
+    });
 }
 
 function logout(){
   clearInterval(refreshTimer);
+  refreshTimer = null;
   adminPassword = '';
   settingsLoaded = false;
+  allData = [];
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('dashboard').style.display = 'none';
   document.getElementById('passInput').value = '';
+  // Reset password eye icon
+  const passInput = document.getElementById('passInput');
+  if(passInput) passInput.type = 'password';
+  const eyeBtn = document.querySelector('#loginScreen .eye-btn');
+  if(eyeBtn) eyeBtn.textContent = '👁️';
 }
 
-/* ---- LOAD DATA ---- */
+/* ---- LOAD DATA (auto-refresh) ---- */
 function loadData(){
+  if(!adminPassword) return;
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
     .then(r => r.json())
     .then(d => {
@@ -299,11 +333,13 @@ function loadData(){
       updateChart(d);
       updateLists(d);
       updateStatus(d);
+      // Fix 4: always refresh settings unless user is actively editing
       if(!settingsLoaded) loadSettings(d);
-      // Sync session ID display
+      // Sync session ID display on every refresh
       document.getElementById('sessionIdDisplay').value = d.sessionId || '';
       if(invCode) document.getElementById('invigilatorCode').value = invCode;
-    });
+    })
+    .catch(() => {}); // silent fail on auto-refresh
 }
 
 function loadSettings(d){
@@ -311,15 +347,28 @@ function loadSettings(d){
   document.getElementById('passMark').value = d.passMark || '';
   document.getElementById('sessionId').value = d.sessionId || '';
   document.getElementById('enabled').checked = d.enabled === true;
+
+  // Fix 4: handle all date formats Google Sheets may return
   if(d.startTime){
-    const dt = new Date(d.startTime);
-    if(!isNaN(dt)){
-      const offset = dt.getTimezoneOffset();
-      const local = new Date(dt.getTime() - offset * 60000);
-      document.getElementById('startTime').value = local.toISOString().slice(0,16);
+    let dt;
+    if(typeof d.startTime === 'string' && d.startTime.trim()){
+      dt = new Date(d.startTime);
+    } else if(d.startTime instanceof Date){
+      dt = d.startTime;
+    } else if(typeof d.startTime === 'number'){
+      dt = new Date(d.startTime);
+    }
+    if(dt && !isNaN(dt.getTime())){
+      // Convert to local datetime-local string (YYYY-MM-DDTHH:MM)
+      const offset = dt.getTimezoneOffset() * 60000;
+      const local  = new Date(dt.getTime() - offset);
+      document.getElementById('startTime').value = local.toISOString().slice(0, 16);
     }
   }
+
+  // Restore inv code and session display
   if(invCode) document.getElementById('invigilatorCode').value = invCode;
+  document.getElementById('sessionIdDisplay').value = d.sessionId || '';
   settingsLoaded = true;
 }
 

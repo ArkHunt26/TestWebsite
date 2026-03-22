@@ -33,7 +33,10 @@
     <p class="subtitle">Executive overview of all assessment rounds</p>
     <div class="form-field">
       <label>HR/TA Password</label>
-      <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+      <div class="password-wrap">
+        <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+        <button class="eye-btn" type="button" onclick="togglePwd('passInput',this)" tabindex="-1">👁️</button>
+      </div>
     </div>
     <button class="btn-primary" onclick="login()">View Dashboard →</button>
   </div>
@@ -234,17 +237,24 @@ function toggleTheme(){
 
 /* ---- LOGIN ---- */
 function login(){
-  adminPassword = document.getElementById('passInput').value;
+  const pwd = document.getElementById('passInput').value.trim();
+  if(!pwd){ showToast('Enter password', 'error'); return; }
+  adminPassword = pwd;
+  const btn = document.querySelector('#loginScreen .btn-primary');
+  const orig = btn.textContent;
+  btn.textContent = 'Logging in…'; btn.disabled = true;
+
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
     .then(r => r.json())
     .then(d => {
-      if(d.error){ showToast('Wrong password', 'error'); return; }
+      btn.textContent = orig; btn.disabled = false;
+      if(d.error){ adminPassword = ''; showToast('Wrong password', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       processData(d);
       setInterval(() => refresh(), 5000);
     })
-    .catch(() => showToast('Connection error', 'error'));
+    .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
 }
 
 function refresh(){

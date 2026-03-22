@@ -277,14 +277,11 @@ function cheatPopup(reason){
   cheatPopupActive = false;
 }
 
-// fullscreenchange: only trigger if we're not already showing the overlay
-// and only if fullscreen exit was unexpected (not caused by our own enterFullscreen attempt)
+// fullscreenchange: no longer enforced — fullscreen is optional
+// Tab-switch is still detected via visibilitychange
 let _expectingFsChange = false;
 document.addEventListener('fullscreenchange', () => {
-  if(_expectingFsChange){ _expectingFsChange = false; return; }
-  if(!document.fullscreenElement && !examSubmitted){
-    window._customCheatPopup ? window._customCheatPopup('⚠️ Fullscreen exited!') : cheatPopup('⚠️ Fullscreen exited!');
-  }
+  // No action — fullscreen is not mandatory
 });
 document.addEventListener('visibilitychange', () => {
   if(document.hidden && !examSubmitted){

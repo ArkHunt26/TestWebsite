@@ -106,8 +106,11 @@
     </div>
     <div class="form-field">
       <label>Admin Password (for data access)</label>
-      <input type="password" id="adminPassInput" placeholder="Admin password"
-        onkeydown="if(event.key==='Enter')login()">
+      <div class="password-wrap">
+        <input type="password" id="adminPassInput" placeholder="Admin password"
+          onkeydown="if(event.key==='Enter')login()">
+        <button class="eye-btn" type="button" onclick="togglePwd('adminPassInput',this)" tabindex="-1">👁️</button>
+      </div>
     </div>
     <button class="btn-primary" onclick="login()">Access Panel →</button>
     <p style="font-size:12px;color:var(--text3);margin-top:16px;text-align:center;">
@@ -298,28 +301,31 @@ function toggleTheme(){
 /* ─── LOGIN ─── */
 function login(){
   const inputCode  = document.getElementById('invCodeInput').value.trim().toUpperCase();
-  const pass       = document.getElementById('adminPassInput').value;
+  const pass       = document.getElementById('adminPassInput').value.trim();
   const storedCode = localStorage.getItem('invCode') || '';
 
   if(!inputCode || !pass){ showToast('Fill all fields', 'error'); return; }
-  // If there's a stored code and it doesn't match → reject
   if(storedCode && inputCode !== storedCode){ showToast('Invalid invigilator code', 'error'); return; }
 
   adminPass      = pass;
   currentInvCode = inputCode;
 
+  const btn = document.querySelector('#loginScreen .btn-primary');
+  const orig = btn.textContent;
+  btn.textContent = 'Logging in…'; btn.disabled = true;
+
   fetch(SCRIPT_URL + '?mode=admin&password=' + pass)
     .then(r => r.json())
     .then(d => {
-      if(d.error){ showToast('Wrong admin password', 'error'); return; }
+      btn.textContent = orig; btn.disabled = false;
+      if(d.error){ adminPass = ''; showToast('Wrong admin password', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainPanel').style.display   = 'block';
       document.getElementById('invName').textContent = '🔍 Invigilator';
       loadCandidates(d);
-      // Fix 4: refresh candidate list every 8 s so multiple invigilators see latest data
       refreshTimer = setInterval(loadCandidatesRefresh, 8000);
     })
-    .catch(() => showToast('Connection error', 'error'));
+    .catch(() => { btn.textContent = orig; btn.disabled = false; adminPass = ''; showToast('Connection error', 'error'); });
 }
 
 function logout(){
