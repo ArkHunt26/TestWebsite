@@ -68,7 +68,12 @@
       <div class="page-subtitle">Real-time monitoring across both interview rounds</div>
     </div>
 
-    <div class="stats-row" style="margin-bottom:32px;">
+    <!-- Fix 3: Symmetric 2-row stats layout — 4 per row -->
+    <style>
+      @media(max-width:900px){ .mgmt-stats-grid{ grid-template-columns:repeat(2,1fr) !important; } }
+      @media(max-width:500px){ .mgmt-stats-grid{ grid-template-columns:1fr 1fr !important; } }
+    </style>
+    <div class="mgmt-stats-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:32px;">
       <div class="stat-card" style="--card-accent:#3b9eff;">
         <div class="stat-icon">👥</div>
         <div class="stat-value" id="sTotal">0</div>
@@ -490,21 +495,32 @@ function filterMgmtR2(verdict, btn){
   if(allData) renderR2Section(allData);
 }
 
+/* ---- Fix 7+2: R2 Section with full candidate awareness ---- */
 function renderR2Section(d){
-  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
-  const evaluated = [];
+  const allCandidates = [
+    ...(d.passList||[]).map(c=>({...c,result:'PASS'})),
+    ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))
+  ].sort((a,b) => Number(b.score) - Number(a.score));
 
-  all.forEach(c => {
+  // Build evaluated list (from localStorage)
+  const evaluatedMap = {}; // name -> evals array
+  allCandidates.forEach(c => {
     const key = 'eval_' + c.name.replace(/\s/g,'_');
     const evals = JSON.parse(localStorage.getItem(key) || '[]');
-    if(evals.length) evaluated.push({ candidate: c, evals });
+    if(evals.length) evaluatedMap[c.name] = evals;
   });
 
-  // Average ratings across all evaluated candidates per field
+  const evaluatedList = allCandidates
+    .filter(c => evaluatedMap[c.name])
+    .map(c => ({ candidate:c, evals: evaluatedMap[c.name] }));
+
+  const pendingList = allCandidates.filter(c => !evaluatedMap[c.name]);
+
+  // Average ratings summary (across evaluated)
   const fieldTotals = {};
   let totalCount = 0;
   RATING_FIELDS.forEach(f => fieldTotals[f.key] = 0);
-  evaluated.forEach(({evals}) => {
+  evaluatedList.forEach(({evals}) => {
     evals.forEach(ev => {
       RATING_FIELDS.forEach(f => fieldTotals[f.key] += (ev.ratings[f.key]||0));
       totalCount++;
@@ -524,10 +540,9 @@ function renderR2Section(d){
     }).join('');
   }
 
-  // Radar chart for avg ratings
+  // Radar chart
   const radarLabels = RATING_FIELDS.map(f => f.label);
   const radarData = RATING_FIELDS.map(f => totalCount > 0 ? (fieldTotals[f.key]/totalCount) : 0);
-
   if(r2Radar){
     r2Radar.data.datasets[0].data = radarData;
     r2Radar.update();
@@ -535,58 +550,28 @@ function renderR2Section(d){
     const ctx = document.getElementById('r2RadarChart');
     if(ctx) r2Radar = new Chart(ctx, {
       type: 'radar',
-      data: {
-        labels: radarLabels,
-        datasets: [{ label:'Avg Rating', data: radarData, backgroundColor:'rgba(171,71,188,0.1)', borderColor:'#ab47bc', borderWidth:2, pointBackgroundColor:'#ab47bc', pointRadius:5 }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        scales: { r: { beginAtZero:true, max:5, ticks:{stepSize:1,color:'rgba(128,128,128,0.5)',backdropColor:'transparent',font:{size:10}},
-          grid:{color:'rgba(128,128,128,0.15)'}, pointLabels:{color:'rgba(128,128,128,0.8)',font:{size:11,family:'Sora'}}, angleLines:{color:'rgba(128,128,128,0.15)'} }},
-        plugins:{ legend:{display:false} }
-      }
+      data: { labels: radarLabels, datasets: [{ label:'Avg Rating', data: radarData, backgroundColor:'rgba(171,71,188,0.1)', borderColor:'#ab47bc', borderWidth:2, pointBackgroundColor:'#ab47bc', pointRadius:5 }] },
+      options: { responsive:true, maintainAspectRatio:false,
+        scales: { r:{ beginAtZero:true, max:5, ticks:{stepSize:1,color:'rgba(128,128,128,0.5)',backdropColor:'transparent',font:{size:10}},
+          grid:{color:'rgba(128,128,128,0.15)'}, pointLabels:{color:'rgba(128,128,128,0.8)',font:{size:11,family:'Sora'}}, angleLines:{color:'rgba(128,128,128,0.15)'}}},
+        plugins:{legend:{display:false}} }
     });
   }
 
-  // List — Fix 7: apply verdict filter + sort highest score first
+  // Build r2List based on active filter
   const list = document.getElementById('r2List');
   if(!list) return;
 
-  // Sort evaluated by R1 score descending
-  evaluated.sort((a,b) => Number(b.candidate.score) - Number(a.candidate.score));
-
-  // Apply filter
-  let toShow = evaluated;
-  if(_mgmtR2Filter && _mgmtR2Filter !== 'all'){
-    if(_mgmtR2Filter === 'Pending'){
-      toShow = evaluated.filter(({evals}) => !evals[evals.length-1]?.verdict);
-    } else {
-      toShow = evaluated.filter(({evals}) => evals[evals.length-1]?.verdict === _mgmtR2Filter);
-    }
-  }
-
-  if(!toShow.length){
-    const emptyHtml = _mgmtR2Filter !== 'all'
-      ? `<div class="empty-state"><div class="empty-icon">🔍</div><p>No candidates with verdict: <strong>${_mgmtR2Filter}</strong></p></div>`
-      : '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
-    if(list.dataset.lastHash !== 'empty_'+_mgmtR2Filter){
-      list.dataset.lastHash = 'empty_'+_mgmtR2Filter;
-      list.style.transition='opacity 0.15s ease'; list.style.opacity='0';
-      setTimeout(()=>{ list.innerHTML=emptyHtml; list.style.opacity='1'; },150);
-    }
-    return;
-  }
-  const verdictMap  = { 'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected' };
+  const verdictMap  = {'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected'};
   const verdictIcon = {'Selected':'✅','Hold':'⏸️','Not Selected':'❌'};
-  const newHtml = toShow.map(({candidate:c, evals}) => {
+
+  function renderEvaluatedEntry({candidate:c, evals}){
     const latestEval = evals[evals.length-1];
-    const avgRating = (RATING_FIELDS.reduce((sum,f) => sum+(latestEval.ratings[f.key]||0), 0)/RATING_FIELDS.length).toFixed(1);
-    const init = (c.name||'?')[0].toUpperCase();
+    const avgRating  = (RATING_FIELDS.reduce((sum,f)=>sum+(latestEval.ratings[f.key]||0),0)/RATING_FIELDS.length).toFixed(1);
+    const init  = (c.name||'?')[0].toUpperCase();
     const stars = '⭐'.repeat(Math.round(parseFloat(avgRating)));
     const vBadge = latestEval.verdict
-      ? `<span class="verdict-badge ${verdictMap[latestEval.verdict]||''}" style="margin-left:8px;">
-           ${verdictIcon[latestEval.verdict]||''} ${latestEval.verdict}
-         </span>` : '';
+      ? `<span class="verdict-badge ${verdictMap[latestEval.verdict]||''}" style="margin-left:8px;">${verdictIcon[latestEval.verdict]||''} ${latestEval.verdict}</span>` : '';
     return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;">
       <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
       <div>
@@ -598,13 +583,52 @@ function renderR2Section(d){
         <div style="font-size:12px;color:var(--text3);">Avg ${avgRating}/5</div>
       </div>
     </div>`;
-  }).join('');
-  const newHash = (_mgmtR2Filter||'all') + toShow.map(({candidate:c,evals})=>c.name+evals.length+(evals[evals.length-1]?.verdict||'')).join('');
+  }
+
+  function renderPendingEntry(c){
+    const init = (c.name||'?')[0].toUpperCase();
+    return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;opacity:0.75;">
+      <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
+      <div>
+        <div class="entry-name">${c.name}</div>
+        <div class="entry-detail">R1: ${c.score} pts • <span style="color:var(--text3);">⏳ Awaiting Round 2</span></div>
+      </div>
+      <span class="badge badge-pending" style="margin-left:auto;">Pending</span>
+    </div>`;
+  }
+
+  let toRender = [];
+  let emptyMsg = '';
+
+  if(_mgmtR2Filter === 'all'){
+    // ALL: every candidate from R1, evaluated first then pending
+    toRender = [
+      ...evaluatedList.map(e => renderEvaluatedEntry(e)),
+      ...pendingList.map(c => renderPendingEntry(c))
+    ];
+    emptyMsg = '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet.</p></div>';
+  } else if(_mgmtR2Filter === 'Pending'){
+    // PENDING: only those without any R2 evaluation
+    toRender = pendingList.map(c => renderPendingEntry(c));
+    emptyMsg = '<div class="empty-state"><div class="empty-icon">✅</div><p>All candidates have been evaluated in Round 2.</p></div>';
+  } else {
+    // Verdict filter: Selected / Hold / Not Selected
+    const filtered = evaluatedList.filter(({evals}) => evals[evals.length-1]?.verdict === _mgmtR2Filter);
+    toRender = filtered.map(e => renderEvaluatedEntry(e));
+    emptyMsg = `<div class="empty-state"><div class="empty-icon">🔍</div><p>No candidates with verdict: <strong>${_mgmtR2Filter}</strong></p></div>`;
+  }
+
+  const newHtml = toRender.length ? toRender.join('') : emptyMsg;
+  const newHash = _mgmtR2Filter + '|' + allCandidates.length + '|' + evaluatedList.length +
+    evaluatedList.map(({candidate:c,evals})=>c.name+(evals[evals.length-1]?.verdict||'')).join('');
+
   if(list.dataset.lastHash === newHash) return;
   list.dataset.lastHash = newHash;
-  list.style.transition='opacity 0.15s ease'; list.style.opacity='0';
-  setTimeout(()=>{ list.innerHTML=newHtml; list.style.opacity='1'; },150)
+  list.style.transition = 'opacity 0.15s ease';
+  list.style.opacity = '0';
+  setTimeout(()=>{ list.innerHTML = newHtml; list.style.opacity = '1'; }, 150);
 }
+
 
 /* ---- TABS ---- */
 function switchTab(tab, btn){

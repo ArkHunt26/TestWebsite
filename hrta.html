@@ -335,8 +335,8 @@ function loadData(){
       updateChart(d);
       updateLists(d);
       updateStatus(d);
-      // Fix 4: always refresh settings unless user is actively editing
-      if(!settingsLoaded) loadSettings(d);
+      // Always refresh settings — loadSettings() internally checks if user is editing
+      loadSettings(d);
       // Sync session ID display on every refresh
       document.getElementById('sessionIdDisplay').value = d.sessionId || '';
       if(invCode) document.getElementById('invigilatorCode').value = invCode;
@@ -345,30 +345,55 @@ function loadData(){
 }
 
 function loadSettings(d){
-  document.getElementById('duration').value = d.duration || '';
-  document.getElementById('passMark').value = d.passMark || '';
-  document.getElementById('sessionId').value = d.sessionId || '';
-  document.getElementById('enabled').checked = d.enabled === true;
+  // Don't overwrite a field the user is actively editing
+  const focused = document.activeElement;
+  const editingIds = ['duration','passMark','sessionId','startTime'];
+  const userEditing = editingIds.some(id => focused && focused.id === id);
+  if(userEditing) return;
 
-  // Fix 4: handle all date formats Google Sheets may return
-  if(d.startTime){
-    let dt;
-    if(typeof d.startTime === 'string' && d.startTime.trim()){
-      dt = new Date(d.startTime);
-    } else if(d.startTime instanceof Date){
-      dt = d.startTime;
-    } else if(typeof d.startTime === 'number'){
-      dt = new Date(d.startTime);
-    }
-    if(dt && !isNaN(dt.getTime())){
-      // Convert to local datetime-local string (YYYY-MM-DDTHH:MM)
-      const offset = dt.getTimezoneOffset() * 60000;
-      const local  = new Date(dt.getTime() - offset);
-      document.getElementById('startTime').value = local.toISOString().slice(0, 16);
-    }
+  // Set numeric and text fields (use String() to ensure non-empty values work)
+  const durEl = document.getElementById('duration');
+  const pmEl  = document.getElementById('passMark');
+  const sidEl = document.getElementById('sessionId');
+  const enEl  = document.getElementById('enabled');
+
+  if(durEl && (d.duration !== undefined && d.duration !== null && d.duration !== ''))
+    durEl.value = d.duration;
+  if(pmEl && (d.passMark !== undefined && d.passMark !== null && d.passMark !== ''))
+    pmEl.value = d.passMark;
+  if(sidEl) sidEl.value = d.sessionId || '';
+  if(enEl)  enEl.checked = d.enabled === true;
+
+  // Handle startTime — remove min temporarily so past dates are accepted
+  const stEl = document.getElementById('startTime');
+  if(stEl && d.startTime){
+    const savedMin = stEl.min;
+    stEl.removeAttribute('min'); // allow setting any date value
+    try {
+      let dt = null;
+      const raw = d.startTime;
+      if(typeof raw === 'string' && raw.trim()){
+        // Try direct parse (ISO, JS Date string, etc.)
+        dt = new Date(raw);
+        // If invalid, try replacing "Date(" format from Apps Script
+        if(isNaN(dt.getTime())) {
+          const m = raw.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
+          if(m) dt = new Date(Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]));
+        }
+      } else if(typeof raw === 'number'){
+        dt = new Date(raw);
+      }
+      if(dt && !isNaN(dt.getTime())){
+        const offset = dt.getTimezoneOffset() * 60000;
+        const local  = new Date(dt.getTime() - offset);
+        stEl.value   = local.toISOString().slice(0, 16);
+      }
+    } catch(e){}
+    // Restore min (user shouldn't be able to pick new past dates)
+    stEl.min = savedMin;
   }
 
-  // Restore inv code and session display
+  // Restore security codes display
   if(invCode) document.getElementById('invigilatorCode').value = invCode;
   document.getElementById('sessionIdDisplay').value = d.sessionId || '';
   settingsLoaded = true;
