@@ -2,39 +2,47 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HR &amp; TA</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>HR &amp; TA Dashboard</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
-/* Fix 5: panel cards have full rounded corners, separated from tab row by a small gap */
-#adminR1Panel .card,
-#adminR2Panel .card {
-  border-radius: var(--r);
-  margin-top: 8px;
-}
-#adminR1Panel, #adminR2Panel {
-  margin-bottom: 28px;
-}
+.session-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:64px;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,0.1);}
+.session-select{flex:1;min-width:200px;max-width:360px;padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;cursor:pointer;}
+.session-select:focus{border-color:var(--accent);}
+.active-pill{display:none;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);color:var(--accent);border:1px solid rgba(0,200,150,0.3);}
+.active-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pulse 1.5s infinite;}
+.search-wrap{position:relative;flex:1;max-width:460px;}
+.search-input{width:100%;padding:9px 14px 9px 36px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;box-sizing:border-box;}
+.search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--text3);font-size:14px;pointer-events:none;}
+.search-drop{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:300;max-height:300px;overflow-y:auto;}
+.search-drop.open{display:block;}
+.search-item{padding:10px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s;}
+.search-item:last-child{border-bottom:none;}
+.search-item:hover{background:var(--accent-soft);}
+.assign-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--r-sm);margin-bottom:8px;transition:all .2s;}
+.assign-row.active-session{border-color:var(--accent);background:var(--accent-soft);}
+#adminR1Panel,#adminR2Panel{margin-bottom:28px;}
+#adminR1Panel .card,#adminR2Panel .card{border-radius:var(--r);margin-top:8px;}
 </style>
 </head>
 <body>
 
-<!-- ========== LOGIN ========== -->
+<!-- LOGIN -->
 <div id="loginScreen" class="auth-screen">
   <button class="theme-toggle" onclick="toggleTheme()">
-    <span class="icon" id="themeIcon">🌙</span>
-    <span id="themeLabel">Dark Mode</span>
+    <span id="themeIcon">🌙</span> <span id="themeLabel">Dark Mode</span>
   </button>
   <div class="auth-card">
     <div class="brand-icon">🛡️</div>
     <h2>HR &amp; TA</h2>
     <p class="subtitle">HR &amp; TA access only</p>
     <div class="form-field">
-      <label>HR &amp; TA Password <span style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;">(contact admin for password)</span></label>
+      <label>Password</label>
       <div class="password-wrap">
-        <input type="password" id="passInput" placeholder="Enter HR/TA password" onkeydown="if(event.key==='Enter')login()">
+        <input type="password" id="passInput" placeholder="Enter password" onkeydown="if(event.key==='Enter')login()">
         <button class="eye-btn" type="button" onclick="togglePwd('passInput',this)" tabindex="-1">👁️</button>
       </div>
     </div>
@@ -42,108 +50,73 @@
   </div>
 </div>
 
-<!-- ========== DASHBOARD ========== -->
+<!-- DASHBOARD -->
 <div id="dashboard" style="display:none;">
 
   <nav class="topbar">
     <div class="topbar-brand">
-      <span>🛡️</span>
-      <span>HR &amp; TA</span>
-      <span class="badge">HR / TA</span>
+      <span>🛡️</span><span>HR &amp; TA</span><span class="badge">HR / TA</span>
     </div>
     <div class="topbar-actions">
       <div id="examStatusBadge" class="badge badge-pending">● Checking...</div>
-      <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
-        <span id="themeIconDash">🌙</span> Theme
-      </button>
+      <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;"><span id="themeIconDash">🌙</span> Theme</button>
       <button class="btn-danger" onclick="logout()" style="padding:8px 16px;font-size:13px;">Logout</button>
     </div>
   </nav>
 
-  <!-- SESSION SELECTOR BAR -->
-  <div id="sessionBar" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-    <span style="font-size:13px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;">Exam Session</span>
-    <select id="sessionSelector" onchange="switchSession(this.value)"
-      style="flex:1;min-width:200px;max-width:340px;padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;cursor:pointer;">
-      <option value="">Loading sessions…</option>
+  <!-- SESSION BAR -->
+  <div class="session-bar">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);white-space:nowrap;">Session</span>
+    <select class="session-select" id="sessionSelector" onchange="switchSession(this.value)">
+      <option value="">Loading…</option>
     </select>
-    <button onclick="openNewSession()" class="btn-secondary" style="padding:8px 16px;font-size:13px;white-space:nowrap;">+ New Session</button>
-    <button onclick="deleteCurrentSession()" class="btn-danger" style="padding:8px 16px;font-size:13px;white-space:nowrap;">🗑 Delete</button>
+    <div id="activePill" class="active-pill"><span class="dot"></span>Active</div>
+    <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="openAssignModal()">🔗 Assign to Invigilator</button>
+      <button class="btn-danger"    style="padding:7px 12px;font-size:12px;" onclick="deleteCurrentSession()">🗑 Delete</button>
+      <button class="download-btn"  style="padding:7px 12px;font-size:12px;" onclick="downloadExcel()">⬇ Export</button>
+    </div>
   </div>
 
-  <!-- NEW SESSION MODAL -->
-  <div id="newSessionModal" class="modal-overlay hidden">
-    <div class="modal" style="max-width:420px;">
-      <div class="modal-header">
-        <h3>📋 Create New Exam Session</h3>
-        <button class="modal-close" onclick="closeNewSession()">✕</button>
-      </div>
-      <div class="form-group" style="margin-bottom:16px;">
-        <label>Session ID <span style="font-size:11px;color:var(--text3);">(short, no spaces e.g. BATCH_MAR26)</span></label>
-        <input type="text" id="newSessionId" placeholder="BATCH_MAR_2026" style="text-transform:uppercase;" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9_\-]/g,'')">
-      </div>
-      <div class="form-group" style="margin-bottom:20px;">
-        <label>Session Name <span style="font-size:11px;color:var(--text3);">(descriptive)</span></label>
-        <input type="text" id="newSessionName" placeholder="e.g. March 2026 Embedded Batch">
-      </div>
-      <div style="display:flex;gap:12px;justify-content:flex-end;">
-        <button class="btn-secondary" onclick="closeNewSession()">Cancel</button>
-        <button class="btn-primary" style="width:auto;padding:12px 24px;" onclick="createNewSession()">Create Session →</button>
-      </div>
+  <!-- GLOBAL SEARCH BAR -->
+  <div style="background:var(--surface2);border-bottom:1px solid var(--border);padding:10px 28px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" class="search-input" id="globalSearch"
+        placeholder="Search candidates by name, phone or result…"
+        oninput="doSearch(this.value)"
+        onblur="setTimeout(()=>closeSearch(),200)">
+      <div id="searchDrop" class="search-drop"></div>
     </div>
+    <span id="searchScope" style="font-size:12px;color:var(--text3);">Current session</span>
   </div>
 
   <div class="dash-wrapper">
 
-    <!-- STAT CARDS -->
+    <!-- STATS ROW -->
     <div class="stats-row">
-      <div class="stat-card" style="--card-accent:#3b9eff;">
-        <div class="stat-icon">👥</div>
-        <div class="stat-value" id="statTotal">0</div>
-        <div class="stat-label">Total Candidates</div>
-      </div>
-      <div class="stat-card" style="--card-accent:#00c896;">
-        <div class="stat-icon">✅</div>
-        <div class="stat-value" id="statPassed">0</div>
-        <div class="stat-label">Passed</div>
-      </div>
-      <div class="stat-card" style="--card-accent:#ff4d6d;">
-        <div class="stat-icon">❌</div>
-        <div class="stat-value" id="statFailed">0</div>
-        <div class="stat-label">Failed</div>
-      </div>
-      <div class="stat-card" style="--card-accent:#ffc107;">
-        <div class="stat-icon">📊</div>
-        <div class="stat-value" id="statPassRate">0%</div>
-        <div class="stat-label">Pass Rate</div>
-      </div>
+      <div class="stat-card" style="--card-accent:#3b9eff;"><div class="stat-icon">👥</div><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Candidates</div></div>
+      <div class="stat-card" style="--card-accent:#00c896;"><div class="stat-icon">✅</div><div class="stat-value" id="statPassed">0</div><div class="stat-label">Passed</div></div>
+      <div class="stat-card" style="--card-accent:#ff4d6d;"><div class="stat-icon">❌</div><div class="stat-value" id="statFailed">0</div><div class="stat-label">Failed</div></div>
+      <div class="stat-card" style="--card-accent:#ffc107;"><div class="stat-icon">📊</div><div class="stat-value" id="statPassRate">0%</div><div class="stat-label">Pass Rate</div></div>
     </div>
 
-    <!-- GRID: Chart + Settings -->
+    <!-- CHART + CONFIG GRID -->
     <div class="grid-2" style="margin-bottom:28px;">
 
-      <!-- Chart Card -->
+      <!-- Pie chart -->
       <div class="card">
         <div class="card-header">
-          <div>
-            <div class="card-title">Results Overview</div>
-            <div class="card-subtitle">Pass / Fail distribution</div>
-          </div>
-          <button class="download-btn" onclick="downloadExcel()">⬇ Export Excel</button>
+          <div><div class="card-title">Results Overview</div><div class="card-subtitle">Pass / Fail distribution</div></div>
         </div>
-        <div class="chart-container" style="height:240px;">
-          <canvas id="pieChart"></canvas>
-        </div>
+        <div class="chart-container" style="height:240px;"><canvas id="pieChart"></canvas></div>
       </div>
 
-      <!-- Exam Settings -->
+      <!-- Exam configuration -->
       <div class="card">
         <div class="card-header">
-          <div>
-            <div class="card-title">Exam Configuration</div>
-            <div class="card-subtitle">Manage exam settings</div>
-          </div>
-          <div id="statusLight" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);">
+          <div><div class="card-title">Exam Configuration</div><div class="card-subtitle">Configure &amp; create sessions</div></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text3);">
             <span class="status-dot inactive" id="statusDot"></span>
             <span id="statusText">Inactive</span>
           </div>
@@ -151,69 +124,72 @@
 
         <div class="form-grid">
           <div class="form-group">
-            <label>Start Time <span style="font-size:10px;color:var(--accent);font-weight:400;text-transform:none;letter-spacing:0;">(cannot set past time)</span></label>
-            <input type="datetime-local" id="startTime">
+            <label>Session Name <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;">(e.g. March 2026 Batch)</span></label>
+            <input type="text" id="cfgSessionName" placeholder="e.g. March 2026 Batch">
+          </div>
+          <div class="form-group">
+            <label>Start Time</label>
+            <input type="datetime-local" id="cfgStartTime">
           </div>
           <div class="form-group">
             <label>Duration (minutes)</label>
-            <input type="number" id="duration" min="1" placeholder="60">
+            <input type="number" id="cfgDuration" min="1" placeholder="60">
           </div>
           <div class="form-group">
             <label>Pass Mark</label>
-            <input type="number" id="passMark" min="0" placeholder="25">
-          </div>
-          <div class="form-group">
-            <label>Session ID</label>
-            <input type="text" id="sessionId" placeholder="e.g. EXAM2025">
+            <input type="number" id="cfgPassMark" min="0" placeholder="25">
           </div>
         </div>
 
         <div class="form-group" style="margin-top:12px;">
           <label class="checkbox-label">
-            <input type="checkbox" id="enabled">
-            Enable Exam (candidates can log in)
+            <input type="checkbox" id="cfgEnabled">
+            Enable Exam — candidates can log in
           </label>
         </div>
 
-        <div style="margin-top:16px;padding:14px;background:var(--surface2);border-radius:var(--r-sm);border:1px solid var(--border);">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:10px;">Security Codes</div>
+        <div style="margin-top:14px;padding:14px;background:var(--surface2);border-radius:var(--r-sm);border:1px solid var(--border);">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin-bottom:10px;">Security Codes</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
-              <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Session ID (for candidates)</div>
-              <div style="display:flex;gap:6px;">
-                <input type="text" id="sessionIdDisplay" readonly style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);flex:1;" placeholder="(set above)">
-              </div>
+              <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Session ID <span style="color:var(--text3);font-weight:400;">(candidates type this)</span></div>
+              <input type="text" id="cfgCandidateCode" placeholder="e.g. EXAM2025"
+                style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);width:100%;outline:none;box-sizing:border-box;">
             </div>
             <div>
               <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Invigilator Code</div>
               <div style="display:flex;gap:6px;">
-                <input type="text" id="invigilatorCode" readonly style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);flex:1;" placeholder="—">
+                <input type="text" id="cfgInvCode" readonly
+                  style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);flex:1;">
                 <button class="btn-secondary" style="padding:7px 10px;font-size:12px;" onclick="generateInvCode()">Gen</button>
               </div>
             </div>
           </div>
         </div>
 
-        <button class="btn-primary" onclick="updateConfig()" style="margin-top:16px;">Update Settings</button>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn-primary"   style="flex:1;" onclick="saveSession(false)">💾 Update Session</button>
+          <button class="btn-secondary" style="flex:1;" onclick="saveSession(true)">✨ New Session</button>
+        </div>
       </div>
     </div>
 
-    <!-- ROUNDS TABS: Fix 9 -->
+    <!-- ROUND TABS -->
     <div class="tabs round-tabs" id="adminRoundTabs" style="margin-bottom:0;">
       <button class="tab-btn active" onclick="switchRoundTab('r1',this)">📋 Round 1 — Technical Test</button>
-      <button class="tab-btn" onclick="switchRoundTab('r2',this)">🎯 Round 2 — F2F Evaluation</button>
+      <button class="tab-btn"        onclick="switchRoundTab('r2',this)">🎯 Round 2 — F2F Evaluation</button>
     </div>
 
-    <!-- ROUND 1 PANEL -->
-    <div id="adminR1Panel" class="tab-panel active" style="margin-bottom:28px;">
+    <!-- R1 PANEL -->
+    <div id="adminR1Panel" class="tab-panel active">
       <div class="card">
         <div class="card-header">
           <div>
             <div class="card-title">Live Results — Round 1</div>
-            <div class="card-subtitle">Auto-refreshes every 5 seconds</div>
+            <div class="card-subtitle" id="r1SubLabel">Auto-refreshes every 5s</div>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3);">
-            <span class="status-dot active"></span> Live
+            <span class="status-dot active"></span>Live
           </div>
         </div>
         <div class="tabs" style="margin-bottom:16px;">
@@ -221,43 +197,45 @@
           <button class="tab-btn" onclick="switchCandTab('pass',this)">✅ Passed</button>
           <button class="tab-btn" onclick="switchCandTab('fail',this)">❌ Failed</button>
         </div>
-        <div id="tabAll" class="tab-panel active">
-          <div class="live-feed" id="allList"><div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div></div>
-        </div>
-        <div id="tabPass" class="tab-panel">
-          <div class="live-feed" id="passList"><div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div></div>
-        </div>
-        <div id="tabFail" class="tab-panel">
-          <div class="live-feed" id="failList"><div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div></div>
-        </div>
+        <div id="tabAll"  class="tab-panel active"><div class="live-feed" id="allList"><div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div></div></div>
+        <div id="tabPass" class="tab-panel"><div class="live-feed" id="passList"><div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div></div></div>
+        <div id="tabFail" class="tab-panel"><div class="live-feed" id="failList"><div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div></div></div>
       </div>
     </div>
 
-    <!-- ROUND 2 PANEL: Fix 9 -->
-    <div id="adminR2Panel" class="tab-panel" style="margin-bottom:28px;">
+    <!-- R2 PANEL -->
+    <div id="adminR2Panel" class="tab-panel">
       <div class="card">
         <div class="card-header">
-          <div>
-            <div class="card-title">Round 2 — F2F Evaluations</div>
-            <div class="card-subtitle">Click a verdict card to filter · click again to show all</div>
-          </div>
+          <div><div class="card-title">Round 2 — F2F Evaluations</div><div class="card-subtitle">Click a verdict card to filter</div></div>
           <div style="display:flex;align-items:center;gap:10px;">
-            <span id="r2ActiveFilter" style="font-size:12px;color:var(--accent);display:none;">Filtering: <strong id="r2FilterLabel"></strong></span>
-            <div id="r2EvalCount" style="font-size:13px;color:var(--text3);">0 evaluated</div>
+            <span id="r2FilterIndicator" style="display:none;font-size:12px;color:var(--accent);">Filtering: <strong id="r2FilterLabel"></strong></span>
+            <span id="r2EvalCount" style="font-size:13px;color:var(--text3);">0 evaluated</span>
           </div>
         </div>
-        <!-- R2 verdict filter stats -->
         <div id="adminR2Stats" class="stats-row" style="margin-bottom:20px;"></div>
-        <!-- R2 candidate list -->
-        <div id="adminR2List">
-          <div class="empty-state">
-            <div class="empty-icon">🎯</div>
-            <p>No Round 2 evaluations yet. Invigilators evaluate candidates in the Invigilator Panel.</p>
-          </div>
-        </div>
+        <div id="adminR2List"><div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div></div>
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ASSIGN INVIGILATOR MODAL -->
+<div id="assignModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:500px;">
+    <div class="modal-header">
+      <h3>🔗 Assign Session to Invigilators</h3>
+      <button class="modal-close" onclick="closeAssignModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">
+      Share the <strong>Invigilator Code</strong> for the session you want invigilators to work on.
+      They log in at <code>invigilator.html</code> with password <strong>invig@123</strong> and the code.
+    </p>
+    <div id="assignList"></div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+      <button class="btn-primary" style="width:auto;padding:10px 24px;" onclick="closeAssignModal()">Done</button>
+    </div>
   </div>
 </div>
 
@@ -265,575 +243,385 @@
 
 <script src="js/config.js"></script>
 <script>
-let adminPassword = '';
-let chartInst = null;
-let refreshTimer = null;
-let settingsLoaded = false;
-let allData = [];
-let invCode = localStorage.getItem('invCode') || '';
+/* ─── State ─────────────────────────────────────────────────── */
+let adminPassword    = '';
+let chartInst        = null;
+let refreshTimer     = null;
+let settingsLoaded   = false;
+let allData          = {};
+let sessionsCache    = [];          // all sessions from server
 let currentSessionId = localStorage.getItem('hrta_session') || '';
+let pendingInvCode   = localStorage.getItem('invCode') || '';
+let _listHashes      = { allList:'', passList:'', failList:'' };
+let _r2Filter        = null;        // null = show all
 
-/* ---- THEME ---- */
-const savedTheme = localStorage.getItem('theme') || 'dark';
-document.documentElement.setAttribute('data-theme', savedTheme);
+/* ─── Theme ──────────────────────────────────────────────────── */
+(function(){ const t=localStorage.getItem('theme')||'dark'; document.documentElement.setAttribute('data-theme',t); })();
 function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  ['themeIcon','themeIconDash'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.textContent = next === 'dark' ? '🌙' : '☀️';
-  });
-  const lbl = document.getElementById('themeLabel');
-  if(lbl) lbl.textContent = next === 'dark' ? 'Dark Mode' : 'Light Mode';
+  const n = document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  document.documentElement.setAttribute('data-theme',n); localStorage.setItem('theme',n);
+  ['themeIcon','themeIconDash'].forEach(id=>{ const e=document.getElementById(id); if(e) e.textContent=n==='dark'?'🌙':'☀️'; });
+  const l=document.getElementById('themeLabel'); if(l) l.textContent=n==='dark'?'Dark Mode':'Light Mode';
 }
 
-/* ---- LOGIN ---- */
-function setStartTimeMin(){
-  const el = document.getElementById('startTime');
-  if(!el) return;
-  const now = new Date();
-  const offset = now.getTimezoneOffset();
-  const local = new Date(now.getTime() - offset * 60000);
-  el.min = local.toISOString().slice(0,16);
+/* ─── Start-time min ─────────────────────────────────────────── */
+function setStartMin(){
+  const el=document.getElementById('cfgStartTime'); if(!el) return;
+  const now=new Date(); el.min=new Date(now.getTime()-now.getTimezoneOffset()*60000).toISOString().slice(0,16);
 }
-// setStartTimeMin called after login; also on interval
-setInterval(setStartTimeMin, 60000);
+setInterval(setStartMin,60000);
 
+/* ─── Login / Logout ─────────────────────────────────────────── */
 function login(){
-  const pwd = document.getElementById('passInput').value.trim();
-  if(!pwd){ showToast('Enter password', 'error'); return; }
-  adminPassword = pwd;
-
-  // Show loading state
-  const btn = document.querySelector('#loginScreen .btn-primary');
-  const orig = btn.textContent;
-  btn.textContent = 'Logging in…';
-  btn.disabled = true;
-
-  // Single fetch — auth + data in one call
-  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
-    .then(r => r.json())
-    .then(d => {
-      btn.textContent = orig; btn.disabled = false;
-      if(d.error){ adminPassword = ''; showToast('Wrong password. If this is your first login after update, the Apps Script needs redeployment with new Code.gs.', 'error'); return; }
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      setStartTimeMin(); // now safe to call
-      // Process the data we already fetched — no second call
-      allData = d;
-      updateStats(d);
-      updateChart(d);
-      updateLists(d);
-      updateStatus(d);
-      loadSettings(d);  // always load settings on fresh login
-      // Load session list then data
-      loadSessionList(() => {
-        loadData();
-        if(refreshTimer) clearInterval(refreshTimer);
-        refreshTimer = setInterval(loadData, 5000);
-      });
+  const pwd=document.getElementById('passInput').value.trim();
+  if(!pwd){ showToast('Enter password','error'); return; }
+  adminPassword=pwd;
+  const btn=document.querySelector('#loginScreen .btn-primary'), orig=btn.textContent;
+  btn.textContent='Logging in…'; btn.disabled=true;
+  fetch(SCRIPT_URL+'?mode=admin&password='+adminPassword)
+    .then(r=>r.json())
+    .then(d=>{
+      btn.textContent=orig; btn.disabled=false;
+      if(d.error){ adminPassword=''; showToast('Wrong password','error'); return; }
+      document.getElementById('loginScreen').style.display='none';
+      document.getElementById('dashboard').style.display='block';
+      setStartMin();
+      loadSessionList(()=>{ loadData(); refreshTimer=setInterval(loadData,5000); });
     })
-    .catch(() => {
-      btn.textContent = orig; btn.disabled = false;
-      adminPassword = '';
-      showToast('Connection error — check internet', 'error');
-    });
+    .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error','error'); });
 }
-
 function logout(){
-  clearInterval(refreshTimer);
-  refreshTimer = null;
-  adminPassword = '';
-  settingsLoaded = false;
-  allData = [];
-  document.getElementById('loginScreen').style.display = 'flex';
-  document.getElementById('dashboard').style.display = 'none';
-  document.getElementById('passInput').value = '';
-  // Reset password eye icon
-  const passInput = document.getElementById('passInput');
-  if(passInput) passInput.type = 'password';
-  const eyeBtn = document.querySelector('#loginScreen .eye-btn');
-  if(eyeBtn) eyeBtn.textContent = '👁️';
+  clearInterval(refreshTimer); refreshTimer=null;
+  adminPassword=''; settingsLoaded=false; allData={}; sessionsCache=[];
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('passInput').value='';
+  const pi=document.getElementById('passInput'); if(pi) pi.type='password';
+  const eb=document.querySelector('#loginScreen .eye-btn'); if(eb) eb.textContent='👁️';
 }
 
-/* ---- LOAD DATA (auto-refresh) ---- */
+/* ─── Data load ──────────────────────────────────────────────── */
 function loadData(){
   if(!adminPassword) return;
-  const sid = currentSessionId ? '&sessionId=' + encodeURIComponent(currentSessionId) : '';
-  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword + sid)
-    .then(r => r.json())
-    .then(d => {
-      if(d.error){ clearInterval(refreshTimer); return; }
-      allData = d;
-      updateStats(d);
-      updateChart(d);
-      updateLists(d);
-      updateStatus(d);
-      // Always refresh settings — loadSettings() internally checks if user is editing
-      loadSettings(d);
-      // loadSettings() handles sessionIdDisplay and invigilatorCode
+  const sid=currentSessionId?'&sessionId='+encodeURIComponent(currentSessionId):'';
+  fetch(SCRIPT_URL+'?mode=admin&password='+adminPassword+sid)
+    .then(r=>r.json())
+    .then(d=>{ if(d.error) return; allData=d; renderAll(d); })
+    .catch(()=>{});
+}
+
+function renderAll(d){
+  updateStats(d); updateChart(d); updateStatus(d); applySettings(d); updateLists(d); renderR2(d);
+  const lbl=document.getElementById('r1SubLabel');
+  if(lbl) lbl.textContent=(d.sessionName||d.sessionId||'Session')+' · Auto-refreshes every 5s';
+}
+
+/* ─── Session list ───────────────────────────────────────────── */
+function loadSessionList(cb){
+  fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
+    .then(r=>r.json())
+    .then(d=>{
+      if(d.error||!d.sessions){ if(cb) cb(); return; }
+      sessionsCache=d.sessions;
+      const sel=document.getElementById('sessionSelector');
+      sel.innerHTML=d.sessions.map(s=>`<option value="${s.sessionId}"${s.sessionId===currentSessionId?' selected':''}>${s.sessionName||s.sessionId}${s.enabled?' 🟢 ACTIVE':''}</option>`).join('');
+      if(!currentSessionId&&d.sessions.length){
+        currentSessionId=d.sessions[d.sessions.length-1].sessionId;
+        sel.value=currentSessionId; localStorage.setItem('hrta_session',currentSessionId);
+      }
+      refreshActivePill(); if(cb) cb();
     })
-    .catch(() => {}); // silent fail on auto-refresh — avoids 'Connection error' toast on scheduled refresh
+    .catch(()=>{ if(cb) cb(); });
 }
 
-function loadSettings(d){
-  // Don't overwrite a field the user is actively editing
-  const focused = document.activeElement;
-  const editingIds = ['duration','passMark','sessionId','startTime'];
-  const userEditing = editingIds.some(id => focused && focused.id === id);
-  if(userEditing) return;
-
-  // Set numeric and text fields (use String() to ensure non-empty values work)
-  const durEl = document.getElementById('duration');
-  const pmEl  = document.getElementById('passMark');
-  const sidEl = document.getElementById('sessionId');
-  const enEl  = document.getElementById('enabled');
-
-  if(durEl && (d.duration !== undefined && d.duration !== null && d.duration !== ''))
-    durEl.value = d.duration;
-  if(pmEl && (d.passMark !== undefined && d.passMark !== null && d.passMark !== ''))
-    pmEl.value = d.passMark;
-  if(sidEl) sidEl.value = d.sessionId || '';
-  if(enEl)  enEl.checked = d.enabled === true;
-
-  // Handle startTime — remove min temporarily so past dates are accepted
-  const stEl = document.getElementById('startTime');
-  if(stEl && d.startTime){
-    const savedMin = stEl.min;
-    stEl.removeAttribute('min'); // allow setting any date value
-    try {
-      let dt = null;
-      const raw = d.startTime;
-      if(typeof raw === 'string' && raw.trim()){
-        // Try direct parse (ISO, JS Date string, etc.)
-        dt = new Date(raw);
-        // If invalid, try replacing "Date(" format from Apps Script
-        if(isNaN(dt.getTime())) {
-          const m = raw.match(/Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)/);
-          if(m) dt = new Date(Number(m[1]), Number(m[2]), Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]));
-        }
-      } else if(typeof raw === 'number'){
-        dt = new Date(raw);
-      }
-      if(dt && !isNaN(dt.getTime())){
-        const offset = dt.getTimezoneOffset() * 60000;
-        const local  = new Date(dt.getTime() - offset);
-        stEl.value   = local.toISOString().slice(0, 16);
-      }
-    } catch(e){}
-    // Restore min (user shouldn't be able to pick new past dates)
-    stEl.min = savedMin;
-  }
-
-  // Restore security codes display — prefer server data over localStorage
-  const serverInvCode = d.invCode || '';
-  if(serverInvCode){
-    invCode = serverInvCode; // sync localStorage with server
-    localStorage.setItem('invCode', serverInvCode);
-  }
-  const displayInvCode = invCode || serverInvCode;
-  const icEl = document.getElementById('invigilatorCode');
-  if(icEl) icEl.value = displayInvCode;
-  const sidDisplayEl = document.getElementById('sessionIdDisplay');
-  if(sidDisplayEl) sidDisplayEl.value = d.sessionId || '';
-  settingsLoaded = true;
-}
-
-function updateStats(d){
-  document.getElementById('statTotal').textContent = d.totalCandidates || 0;
-  document.getElementById('statPassed').textContent = d.passedCount || 0;
-  document.getElementById('statFailed').textContent = d.failedCount || 0;
-  const rate = d.totalCandidates > 0 ? Math.round((d.passedCount/d.totalCandidates)*100) : 0;
-  document.getElementById('statPassRate').textContent = rate + '%';
-}
-
-function updateChart(d){
-  const pass = d.passedCount || 0;
-  const fail = d.failedCount || 0;
-  if(chartInst){
-    chartInst.data.datasets[0].data = [pass, fail];
-    chartInst.update();
-  } else {
-    chartInst = new Chart(document.getElementById('pieChart'), {
-      type: 'doughnut',
-      data: {
-        labels: ['Pass', 'Fail'],
-        datasets: [{
-          data: [pass, fail],
-          backgroundColor: ['#00c896','#ff4d6d'],
-          borderWidth: 0,
-          hoverOffset: 8
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '65%',
-        plugins: {
-          legend: { position: 'bottom', labels: { color: getComputedStyle(document.documentElement).getPropertyValue('--text').trim(), padding: 16, font: { family: 'Sora', size: 13 } } },
-          tooltip: { callbacks: { label: ctx => {
-            const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
-            return ctx.label + ': ' + ctx.raw + ' (' + (total ? ((ctx.raw/total)*100).toFixed(1) : 0) + '%)';
-          }}}
-        }
-      }
-    });
-  }
-}
-
-/* ---- FIX 10: Anti-flicker updateLists ---- */
-let _listHashes = { allList: '', passList: '', failList: '' };
-
-function updateLists(d){
-  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))]
-    .sort((a,b) => Number(b.score) - Number(a.score));
-
-  function renderEntry(c){
-    const init = (c.name||'?')[0].toUpperCase();
-    const cls  = c.result === 'PASS' ? 'badge-pass' : 'badge-fail';
-    const avatarCls = c.result === 'PASS' ? 'avatar-pass' : 'avatar-fail';
-    return `<div class="live-entry">
-      <div class="entry-avatar ${avatarCls}">${init}</div>
-      <div>
-        <div class="entry-name">${c.name}</div>
-        <div class="entry-detail">${c.result === 'PASS' ? '✅ Passed' : '❌ Failed'}</div>
-      </div>
-      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
-        <span class="badge ${cls}">${c.result}</span>
-        <span class="entry-score" style="font-family:'JetBrains Mono'">${c.score}</span>
-      </div>
-    </div>`;
-  }
-
-  const sets = {
-    allList:  { items: all,           empty: '<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div>' },
-    passList: { items: (d.passList||[]).map(c=>({...c,result:'PASS'})), empty: '<div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates yet</p></div>' },
-    failList: { items: (d.failList||[]).map(c=>({...c,result:'FAIL'})), empty: '<div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div>' }
-  };
-
-  Object.entries(sets).forEach(([id, {items, empty}]) => {
-    const newHtml = items.length ? items.map(renderEntry).join('') : empty;
-    const newHash = String(items.length) + items.map(c=>c.name+c.score).join('');
-    if(_listHashes[id] === newHash) return; // nothing changed — skip DOM update entirely
-    _listHashes[id] = newHash;
-    const el = document.getElementById(id);
-    if(!el) return;
-    // Fade out → swap → fade in
-    el.style.transition = 'opacity 0.15s ease';
-    el.style.opacity = '0';
-    setTimeout(() => {
-      el.innerHTML = newHtml;
-      el.style.opacity = '1';
-    }, 150);
-  });
-
-  // Fix 9: also refresh R2 panel
-  renderAdminR2(d);
-}
-
-/* ---- R2 Panel: verdict filter state ---- */
-let _r2VerdictFilter = null; // null = show all
-
-function filterR2Verdict(verdict){
-  _r2VerdictFilter = (_r2VerdictFilter === verdict) ? null : verdict; // toggle
-  // Update filter indicator
-  const indicator = document.getElementById('r2ActiveFilter');
-  const label = document.getElementById('r2FilterLabel');
-  if(_r2VerdictFilter && indicator && label){
-    indicator.style.display = 'inline';
-    label.textContent = _r2VerdictFilter;
-  } else if(indicator){
-    indicator.style.display = 'none';
-  }
-  // Force re-render
-  const listEl = document.getElementById('adminR2List');
-  if(listEl) delete listEl.dataset.lastHash;
-  if(allData) renderAdminR2(allData);
-}
-
-/* ---- Render R2 panel in admin ---- */
-function renderAdminR2(d){
-  const all = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))]
-    .sort((a,b) => Number(b.score) - Number(a.score));
-  const RATING_FIELDS_ADM = [
-    { key:'communication', label:'Communication', icon:'🗣️' },
-    { key:'c_prog',        label:'C Programming', icon:'⚙️'  },
-    { key:'hardware',      label:'Hardware',       icon:'🔋'  },
-    { key:'c_plus',        label:'C++ / OOP',      icon:'🔧'  },
-    { key:'rtos',          label:'RTOS',           icon:'⏱️'  }
-  ];
-  const evaluated = [];
-  all.forEach(c => {
-    const key = 'eval_' + c.name.replace(/\s/g,'_');
-    const evals = JSON.parse(localStorage.getItem(key)||'[]');
-    if(evals.length) evaluated.push({ candidate:c, evals });
-  });
-
-  document.getElementById('r2EvalCount').textContent = evaluated.length + ' evaluated';
-
-  // Stats row — Fix 4: clickable verdict filter cards
-  const statsEl = document.getElementById('adminR2Stats');
-  if(statsEl){
-    const verdictCounts = { Selected:0, Hold:0, 'Not Selected':0, Pending:0 };
-    evaluated.forEach(({evals}) => {
-      const v = evals[evals.length-1]?.verdict;
-      if(v && verdictCounts[v] !== undefined) verdictCounts[v]++;
-      else verdictCounts.Pending++;
-    });
-    statsEl.innerHTML = [
-      { label:'Selected',     val: verdictCounts['Selected'],     color:'#00c896', icon:'✅', filter:'Selected'     },
-      { label:'Hold',         val: verdictCounts['Hold'],         color:'#ffc107', icon:'⏸️', filter:'Hold'         },
-      { label:'Not Selected', val: verdictCounts['Not Selected'], color:'#ff4d6d', icon:'❌', filter:'Not Selected' },
-      { label:'Pending R2',   val: verdictCounts['Pending'],      color:'#8b949e', icon:'⏳', filter:'Pending'      }
-    ].map(s => {
-      const isActive = _r2VerdictFilter === s.filter;
-      return `<div class="stat-card" style="--card-accent:${s.color};cursor:pointer;outline:${isActive?'2px solid '+s.color:'none'};outline-offset:2px;transform:${isActive?'scale(1.03)':'none'}"
-        onclick="filterR2Verdict('${s.filter}')" title="Click to filter by ${s.label}">
-        <div class="stat-icon">${s.icon}</div>
-        <div class="stat-value" style="font-size:24px;">${s.val}</div>
-        <div class="stat-label">${s.label}</div>
-      </div>`;
-    }).join('');
-  }
-
-  // List — apply verdict filter, sort highest score first
-  const listEl = document.getElementById('adminR2List');
-  if(!listEl) return;
-
-  let toShow = evaluated;
-  if(_r2VerdictFilter){
-    if(_r2VerdictFilter === 'Pending'){
-      toShow = evaluated.filter(({evals}) => !evals[evals.length-1]?.verdict);
-    } else {
-      toShow = evaluated.filter(({evals}) => evals[evals.length-1]?.verdict === _r2VerdictFilter);
-    }
-  }
-
-  if(!toShow.length){
-    const msg = _r2VerdictFilter
-      ? `<div class="empty-state"><div class="empty-icon">🔍</div><p>No candidates with verdict: <strong>${_r2VerdictFilter}</strong></p></div>`
-      : '<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>';
-    listEl.dataset.lastHash = 'empty';
-    listEl.style.transition='opacity 0.15s ease'; listEl.style.opacity='0';
-    setTimeout(()=>{ listEl.innerHTML=msg; listEl.style.opacity='1'; },150);
-    return;
-  }
-
-  const verdictMap  = { 'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected' };
-  const verdictIcon = { 'Selected':'✅','Hold':'⏸️','Not Selected':'❌' };
-
-  const newHtml = toShow.map(({candidate:c, evals}) => {
-    const latest = evals[evals.length-1];
-    const avgRating = (RATING_FIELDS_ADM.reduce((s,f)=>s+(latest.ratings[f.key]||0),0)/RATING_FIELDS_ADM.length).toFixed(1);
-    const stars = '⭐'.repeat(Math.round(parseFloat(avgRating)));
-    const vBadge = latest.verdict
-      ? `<span class="verdict-badge ${verdictMap[latest.verdict]||''}">${verdictIcon[latest.verdict]||''} ${latest.verdict}</span>` : '';
-    const init = (c.name||'?')[0].toUpperCase();
-    return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;">
-      <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
-      <div style="flex:1;min-width:0;">
-        <div class="entry-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          ${c.name} ${vBadge}
-        </div>
-        <div class="entry-detail">R1: ${c.score} pts • By: ${latest.invigilator}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-size:14px;">${stars}</div>
-        <div style="font-size:11px;color:var(--text3);">Avg ${avgRating}/5</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const newHash = (_r2VerdictFilter||'all') + toShow.map(({candidate:c,evals})=>c.name+evals.length+(evals[evals.length-1]?.verdict||'')).join('');
-  if(listEl.dataset.lastHash === newHash) return;
-  listEl.dataset.lastHash = newHash;
-  listEl.style.transition='opacity 0.15s ease'; listEl.style.opacity='0';
-  setTimeout(()=>{ listEl.innerHTML=newHtml; listEl.style.opacity='1'; },150);
-}
-
-
-/* ---- TABS ---- */
-function switchRoundTab(tab, btn){
-  // Use the specific ID so inner candidate tabs are never affected
-  document.querySelectorAll('#adminRoundTabs .tab-btn').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  document.getElementById('adminR1Panel').classList.toggle('active', tab === 'r1');
-  document.getElementById('adminR2Panel').classList.toggle('active', tab === 'r2');
-  // Fix 3: always refresh R2 data when switching to it (localStorage may have new evals)
-  if(tab === 'r2' && allData && allData.passList){
-    // Force re-render by clearing hash
-    const listEl = document.getElementById('adminR2List');
-    if(listEl) delete listEl.dataset.lastHash;
-    renderAdminR2(allData);
-  }
-}
-
-function switchCandTab(tab, btn){
-  const parent = btn ? btn.closest('.card') : document;
-  if(parent) parent.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  ['tabAll','tabPass','tabFail'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.classList.toggle('active', id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
-  });
-}
-
-// Legacy alias for old onclick calls
-function switchTab(tab){ switchCandTab(tab, null); }
-/* ---- UPDATE CONFIG ---- */
-function updateConfig(){
-  const fd = new URLSearchParams();
-  fd.append('type','UPDATE_CONFIG');
-  fd.append('password', adminPassword);
-  fd.append('duration', document.getElementById('duration').value);
-  fd.append('startTime', document.getElementById('startTime').value);
-  fd.append('enabled', document.getElementById('enabled').checked);
-  fd.append('passMark', document.getElementById('passMark').value);
-  fd.append('sessionId', currentSessionId || document.getElementById('sessionId').value);
-  fd.append('sessionName', document.getElementById('sessionId').value); // use session ID field as name too
-  if(invCode) fd.append('invCode', invCode);
-
-  fetch(SCRIPT_URL, { method: 'POST', body: fd })
-    .then(() => {
-      settingsLoaded = false;
-      loadData();
-      showToast('Settings updated successfully!', 'success');
-      document.getElementById('sessionIdDisplay').value = document.getElementById('sessionId').value;
-    })
-    .catch(() => showToast('Update failed', 'error'));
-}
-
-/* ---- INVIGILATOR CODE ---- */
-function generateInvCode(){
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'INV-';
-  for(let i=0;i<6;i++) code += chars[Math.floor(Math.random()*chars.length)];
-  invCode = code;
-  localStorage.setItem('invCode', code);
-  document.getElementById('invigilatorCode').value = code;
-  showToast('Invigilator code generated: ' + code, 'success');
-}
-
-/* ---- DOWNLOAD EXCEL ---- */
-function downloadExcel(){
-  const d = allData;
-  if(!d || !d.passList) { showToast('No data to download', 'error'); return; }
-
-  const rows = [['Name','Score','Result']];
-  (d.passList||[]).forEach(c => rows.push([c.name, c.score, 'PASS']));
-  (d.failList||[]).forEach(c => rows.push([c.name, c.score, 'FAIL']));
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:30},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, ws, 'Results');
-  XLSX.writeFile(wb, 'exam_results_' + new Date().toISOString().slice(0,10) + '.xlsx');
-}
-
-/* ---- SESSION MANAGEMENT ---- */
-function loadSessionList(callback){
-  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
-    .then(r => r.json())
-    .then(d => {
-      if(d.error || !d.sessions) { if(callback) callback(); return; }
-      const sel = document.getElementById('sessionSelector');
-      sel.innerHTML = d.sessions.map(s =>
-        `<option value="${s.sessionId}" ${s.sessionId===currentSessionId?'selected':''}>
-          ${s.sessionName || s.sessionId} ${s.enabled?'● ACTIVE':''}
-        </option>`
-      ).join('');
-      // Default to first if none selected
-      if(!currentSessionId && d.sessions.length){
-        currentSessionId = d.sessions[d.sessions.length-1].sessionId;
-        sel.value = currentSessionId;
-        localStorage.setItem('hrta_session', currentSessionId);
-      }
-      if(callback) callback();
-    }).catch(() => { if(callback) callback(); });
+function refreshActivePill(){
+  const s=sessionsCache.find(s=>s.sessionId===currentSessionId);
+  const pill=document.getElementById('activePill');
+  if(pill) pill.style.display=(s&&s.enabled)?'inline-flex':'none';
 }
 
 function switchSession(sid){
-  currentSessionId = sid;
-  localStorage.setItem('hrta_session', sid);
-  settingsLoaded = false;
-  // Force reload data for this session
-  const listEl = document.getElementById('adminR2List');
-  if(listEl) delete listEl.dataset.lastHash;
-  loadData();
-  showToast('Switched to session: ' + sid, 'info');
+  currentSessionId=sid; localStorage.setItem('hrta_session',sid);
+  settingsLoaded=false; _r2Filter=null; _listHashes={allList:'',passList:'',failList:''};
+  const r2=document.getElementById('adminR2List'); if(r2) delete r2.dataset.hash;
+  refreshActivePill(); loadData(); loadSessionList(()=>{});
 }
 
-function openNewSession(){
-  document.getElementById('newSessionModal').classList.remove('hidden');
-  document.getElementById('newSessionId').value = '';
-  document.getElementById('newSessionName').value = '';
-}
-function closeNewSession(){
-  document.getElementById('newSessionModal').classList.add('hidden');
-}
+/* ─── Save session (Update or New) ──────────────────────────── */
+function saveSession(isNew){
+  const sessionName  = document.getElementById('cfgSessionName').value.trim();
+  const candidateCode= document.getElementById('cfgCandidateCode').value.trim();
+  const duration     = document.getElementById('cfgDuration').value;
+  const startTime    = document.getElementById('cfgStartTime').value;
+  const passMark     = document.getElementById('cfgPassMark').value;
+  const enabled      = document.getElementById('cfgEnabled').checked;
+  const invCode      = document.getElementById('cfgInvCode').value.trim();
 
-function createNewSession(){
-  const sid  = document.getElementById('newSessionId').value.trim();
-  const name = document.getElementById('newSessionName').value.trim();
-  if(!sid){ showToast('Enter a session ID', 'error'); return; }
+  if(!sessionName){  showToast('Enter a Session Name','error'); return; }
+  if(!candidateCode){ showToast('Enter a Session ID (for candidates)','error'); return; }
+  if(!duration||!passMark){ showToast('Fill in Duration and Pass Mark','error'); return; }
 
-  const fd = new URLSearchParams();
-  fd.append('type','CREATE_SESSION');
-  fd.append('password', adminPassword);
-  fd.append('sessionId', sid);
-  fd.append('sessionName', name || sid);
+  let sessionId;
+  if(isNew){
+    const np=sessionName.toUpperCase().replace(/[^A-Z0-9]/g,'_').replace(/_+/g,'_').slice(0,18);
+    const dp=new Date().toISOString().slice(2,10).replace(/-/g,'');
+    sessionId=np+'_'+dp;
+  } else {
+    sessionId=currentSessionId;
+    if(!sessionId){ showToast('No session selected to update','error'); return; }
+  }
 
-  fetch(SCRIPT_URL, {method:'POST', body:fd})
-    .then(r => r.json())
-    .then(d => {
-      if(d.error){ showToast(d.error, 'error'); return; }
-      currentSessionId = sid;
-      localStorage.setItem('hrta_session', sid);
-      closeNewSession();
-      settingsLoaded = false;
-      loadSessionList(() => { switchSession(sid); });
-      showToast('Session created: ' + sid, 'success');
-    });
-}
+  const fd=new URLSearchParams();
+  fd.append('type','UPDATE_CONFIG'); fd.append('password',adminPassword);
+  fd.append('sessionId',sessionId);  fd.append('sessionName',sessionName);
+  fd.append('candidateCode',candidateCode);
+  fd.append('duration',duration);    fd.append('startTime',startTime);
+  fd.append('enabled',enabled);      fd.append('passMark',passMark);
+  fd.append('invCode',invCode);
 
-function deleteCurrentSession(){
-  if(!currentSessionId){ showToast('No session selected', 'error'); return; }
-  if(!confirm('Delete session "' + currentSessionId + '"? This cannot be undone.')) return;
+  const btn=event.target, orig=btn.textContent;
+  btn.textContent='Saving…'; btn.disabled=true;
 
-  const fd = new URLSearchParams();
-  fd.append('type','DELETE_SESSION');
-  fd.append('password', adminPassword);
-  fd.append('sessionId', currentSessionId);
-
-  fetch(SCRIPT_URL, {method:'POST', body:fd})
-    .then(r => r.json())
-    .then(d => {
+  fetch(SCRIPT_URL,{method:'POST',body:fd})
+    .then(r=>r.json())
+    .then(d=>{
+      btn.textContent=orig; btn.disabled=false;
       if(d.error){ showToast(d.error,'error'); return; }
-      currentSessionId = '';
-      localStorage.removeItem('hrta_session');
-      loadSessionList(() => {
-        if(currentSessionId) switchSession(currentSessionId);
-        else loadData();
-      });
-      showToast('Session deleted','success');
-    });
+      if(isNew){ currentSessionId=sessionId; localStorage.setItem('hrta_session',sessionId); showToast('Session created: '+sessionName,'success'); }
+      else showToast('Session updated!','success');
+      settingsLoaded=false;
+      loadSessionList(()=>{ document.getElementById('sessionSelector').value=currentSessionId; loadData(); });
+    })
+    .catch(()=>{ btn.textContent=orig; btn.disabled=false; showToast('Save failed','error'); });
 }
 
-/* ---- TOAST ---- */
-function showToast(msg, type='info'){
-  const c = document.getElementById('toastContainer');
-  const t = document.createElement('div');
-  t.className = 'toast ' + type;
-  t.textContent = msg;
-  c.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+/* ─── Delete session ─────────────────────────────────────────── */
+function deleteCurrentSession(){
+  if(!currentSessionId){ showToast('No session selected','error'); return; }
+  const sel=document.getElementById('sessionSelector');
+  const label=sel.options[sel.selectedIndex]?.text||currentSessionId;
+  if(!confirm('⚠️ Delete "'+label+'"?\n\nThe Config entry is removed but Results and Evals sheets are kept.')) return;
+  const fd=new URLSearchParams();
+  fd.append('type','DELETE_SESSION'); fd.append('password',adminPassword); fd.append('sessionId',currentSessionId);
+  fetch(SCRIPT_URL,{method:'POST',body:fd}).then(r=>r.json()).then(d=>{
+    if(d.error){ showToast(d.error,'error'); return; }
+    currentSessionId=''; localStorage.removeItem('hrta_session');
+    loadSessionList(()=>{ if(currentSessionId) switchSession(currentSessionId); else loadData(); });
+    showToast('Session deleted','success');
+  }).catch(()=>showToast('Delete failed','error'));
 }
 
-document.addEventListener('keydown', e => {
-  if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
-});
+/* ─── Assign invigilator modal ───────────────────────────────── */
+function openAssignModal(){
+  document.getElementById('assignList').innerHTML=sessionsCache.length
+    ? sessionsCache.map(s=>`
+      <div class="assign-row${s.enabled?' active-session':''}">
+        <div>
+          <div style="font-weight:600;font-size:14px;">${s.sessionName||s.sessionId}${s.enabled?' <span style="color:var(--accent);font-size:12px;">🟢 Active</span>':''}</div>
+          <div style="font-size:12px;color:var(--text3);">Session ID: ${s.sessionId}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:var(--text3);">Invigilator Code</div>
+          <div style="font-family:'JetBrains Mono';font-size:15px;color:var(--accent);font-weight:700;">${s.invCode||'(not set)'}</div>
+        </div>
+      </div>`).join('')
+    : '<p style="color:var(--text3);text-align:center;padding:20px;">No sessions yet.</p>';
+  document.getElementById('assignModal').classList.remove('hidden');
+}
+function closeAssignModal(){ document.getElementById('assignModal').classList.add('hidden'); }
+
+/* ─── Generate invigilator code ──────────────────────────────── */
+function generateInvCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let c='INV-'; for(let i=0;i<6;i++) c+=chars[Math.floor(Math.random()*chars.length)];
+  pendingInvCode=c; localStorage.setItem('invCode',c);
+  document.getElementById('cfgInvCode').value=c;
+  showToast('Code generated: '+c,'success');
+}
+
+/* ─── Settings loader (focus-aware) ─────────────────────────── */
+function applySettings(d){
+  const editing=['cfgSessionName','cfgCandidateCode','cfgDuration','cfgPassMark','cfgStartTime'];
+  if(editing.some(id=>document.activeElement&&document.activeElement.id===id)) return;
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el&&v!=null&&v!=='') el.value=v; };
+  set('cfgSessionName', d.sessionName||d.sessionId||'');
+  set('cfgCandidateCode', d.candidateCode||d.sessionId||'');
+  set('cfgDuration', d.duration); set('cfgPassMark', d.passMark);
+  const en=document.getElementById('cfgEnabled'); if(en) en.checked=(d.enabled===true);
+  const st=document.getElementById('cfgStartTime');
+  if(st&&d.startTime){ const sm=st.min; st.removeAttribute('min');
+    try{ const dt=new Date(d.startTime); if(!isNaN(dt)){ st.value=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,16); }}catch(e){}
+    st.min=sm; }
+  const srv=d.invCode||'';
+  if(srv){ pendingInvCode=srv; localStorage.setItem('invCode',srv); }
+  const ic=document.getElementById('cfgInvCode'); if(ic) ic.value=pendingInvCode||srv;
+  settingsLoaded=true;
+}
+
+/* ─── Stats ──────────────────────────────────────────────────── */
+function updateStats(d){
+  document.getElementById('statTotal').textContent=d.totalCandidates||0;
+  document.getElementById('statPassed').textContent=d.passedCount||0;
+  document.getElementById('statFailed').textContent=d.failedCount||0;
+  const r=d.totalCandidates>0?Math.round(d.passedCount/d.totalCandidates*100):0;
+  document.getElementById('statPassRate').textContent=r+'%';
+}
+
+/* ─── Doughnut chart ─────────────────────────────────────────── */
+function updateChart(d){
+  const pass=d.passedCount||0, fail=d.failedCount||0;
+  if(chartInst){ chartInst.data.datasets[0].data=[pass,fail]; chartInst.update(); return; }
+  chartInst=new Chart(document.getElementById('pieChart'),{type:'doughnut',
+    data:{labels:['Pass','Fail'],datasets:[{data:[pass,fail],backgroundColor:['#00c896','#ff4d6d'],borderWidth:0,hoverOffset:8}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',
+      plugins:{legend:{position:'bottom',labels:{color:'rgba(128,128,128,0.8)',padding:12,font:{family:'Sora',size:12}}},
+      tooltip:{callbacks:{label:ctx=>{ const t=ctx.dataset.data.reduce((a,b)=>a+b,0); return ctx.label+': '+ctx.raw+' ('+(t?((ctx.raw/t)*100).toFixed(1):0)+'%)'; }}}}}});
+}
+
+/* ─── Exam status badge ──────────────────────────────────────── */
+function updateStatus(d){
+  const dot=document.getElementById('statusDot'),txt=document.getElementById('statusText'),badge=document.getElementById('examStatusBadge');
+  if(!d.enabled||!d.startTime||!d.duration){
+    dot.className='status-dot inactive'; txt.textContent='Not configured';
+    badge.className='badge badge-pending'; badge.textContent='● Not Active'; return;
+  }
+  const now=new Date(),start=new Date(d.startTime),end=new Date(start.getTime()+d.duration*60000);
+  if(now<start){ dot.className='status-dot inactive'; txt.textContent='Scheduled'; badge.className='badge badge-info'; badge.textContent='● Scheduled'; }
+  else if(now<=end){ dot.className='status-dot active'; txt.textContent='Live'; badge.className='badge badge-pass'; badge.textContent='● LIVE'; }
+  else { dot.className='status-dot ended'; txt.textContent='Ended'; badge.className='badge badge-fail'; badge.textContent='● Ended'; }
+}
+
+/* ─── Candidate lists (anti-flicker) ────────────────────────── */
+function updateLists(d){
+  const all=[...(d.passList||[]).map(c=>({...c,result:'PASS'})),...(d.failList||[]).map(c=>({...c,result:'FAIL'}))].sort((a,b)=>b.score-a.score);
+  const sets={
+    allList:{items:all,                              empty:'<div class="empty-state"><div class="empty-icon">👥</div><p>No candidates yet</p></div>'},
+    passList:{items:(d.passList||[]).map(c=>({...c,result:'PASS'})),empty:'<div class="empty-state"><div class="empty-icon">✅</div><p>No passing candidates</p></div>'},
+    failList:{items:(d.failList||[]).map(c=>({...c,result:'FAIL'})),empty:'<div class="empty-state"><div class="empty-icon">❌</div><p>No failing candidates</p></div>'}
+  };
+  Object.entries(sets).forEach(([id,{items,empty}])=>{
+    const html=items.length?items.map(c=>{
+      const init=(c.name||'?')[0].toUpperCase(),av=c.result==='PASS'?'avatar-pass':'avatar-fail',cl=c.result==='PASS'?'badge-pass':'badge-fail';
+      return `<div class="live-entry"><div class="entry-avatar ${av}">${init}</div><div><div class="entry-name">${c.name}</div><div class="entry-detail">${c.result==='PASS'?'✅ Passed':'❌ Failed'}</div></div><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="badge ${cl}">${c.result}</span><span class="entry-score">${c.score}</span></div></div>`;
+    }).join(''):empty;
+    const hash=items.length+'|'+items.map(c=>c.name+c.score).join('');
+    if(_listHashes[id]===hash) return; _listHashes[id]=hash;
+    const el=document.getElementById(id); if(!el) return;
+    el.style.transition='opacity .15s'; el.style.opacity='0';
+    setTimeout(()=>{ el.innerHTML=html; el.style.opacity='1'; },150);
+  });
+}
+
+/* ─── R2 Panel ───────────────────────────────────────────────── */
+const RF=[{key:'communication',label:'Communication'},{key:'c_prog',label:'C Prog.'},{key:'hardware',label:'Hardware'},{key:'c_plus',label:'C++ / OOP'},{key:'rtos',label:'RTOS'}];
+
+function filterR2(v){
+  _r2Filter=(_r2Filter===v)?null:v;
+  const ind=document.getElementById('r2FilterIndicator'),lbl=document.getElementById('r2FilterLabel');
+  if(_r2Filter&&ind&&lbl){ ind.style.display='inline'; lbl.textContent=_r2Filter; } else if(ind) ind.style.display='none';
+  const el=document.getElementById('adminR2List'); if(el) delete el.dataset.hash;
+  renderR2(allData);
+}
+
+function renderR2(d){
+  const srvMap=d.evalsMap||{};
+  const all=[...(d.passList||[]).map(c=>({...c,result:'PASS'})),...(d.failList||[]).map(c=>({...c,result:'FAIL'}))].sort((a,b)=>b.score-a.score);
+
+  // Merge server evals with localStorage (server wins)
+  const evaluated=[];
+  all.forEach(c=>{
+    const srv=srvMap[c.name];
+    const loc=JSON.parse(localStorage.getItem('eval_'+c.name.replace(/\s/g,'_'))||'[]');
+    const ev=(srv&&srv.length)?srv:loc;
+    if(ev.length) evaluated.push({candidate:c,evals:ev});
+  });
+
+  document.getElementById('r2EvalCount').textContent=evaluated.length+' evaluated';
+
+  // Verdict summary cards
+  const vc={Selected:0,Hold:0,'Not Selected':0,Pending:0};
+  evaluated.forEach(({evals})=>{ const v=evals[evals.length-1]?.verdict; if(v&&vc[v]!=null)vc[v]++; else vc.Pending++; });
+  const statsEl=document.getElementById('adminR2Stats');
+  if(statsEl) statsEl.innerHTML=[
+    {l:'Selected',v:vc.Selected,c:'#00c896',i:'✅',f:'Selected'},
+    {l:'Hold',v:vc.Hold,c:'#ffc107',i:'⏸️',f:'Hold'},
+    {l:'Not Selected',v:vc['Not Selected'],c:'#ff4d6d',i:'❌',f:'Not Selected'},
+    {l:'Pending R2',v:vc.Pending,c:'#8b949e',i:'⏳',f:'Pending'}
+  ].map(s=>{
+    const ia=_r2Filter===s.f;
+    return `<div class="stat-card" style="--card-accent:${s.c};cursor:pointer;outline:${ia?'2px solid '+s.c:'none'};outline-offset:2px;" onclick="filterR2('${s.f}')"><div class="stat-icon">${s.i}</div><div class="stat-value" style="font-size:24px;">${s.v}</div><div class="stat-label">${s.l}</div></div>`;
+  }).join('');
+
+  // Filtered list
+  const listEl=document.getElementById('adminR2List'); if(!listEl) return;
+  let show=evaluated;
+  if(_r2Filter){ show=_r2Filter==='Pending'?evaluated.filter(({evals})=>!evals[evals.length-1]?.verdict):evaluated.filter(({evals})=>evals[evals.length-1]?.verdict===_r2Filter); }
+  const vm={'Selected':'v-selected','Hold':'v-hold','Not Selected':'v-not-selected'},vi={'Selected':'✅','Hold':'⏸️','Not Selected':'❌'};
+  const html=show.length?show.map(({candidate:c,evals})=>{
+    const lat=evals[evals.length-1],avg=(RF.reduce((s,f)=>s+(lat.ratings[f.key]||0),0)/RF.length).toFixed(1);
+    const stars='⭐'.repeat(Math.round(+avg)),vb=lat.verdict?`<span class="verdict-badge ${vm[lat.verdict]||''}">${vi[lat.verdict]||''} ${lat.verdict}</span>`:'';
+    return `<div class="live-entry" style="flex-wrap:wrap;gap:8px;"><div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${(c.name||'?')[0].toUpperCase()}</div><div style="flex:1;min-width:0;"><div class="entry-name" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">${c.name} ${vb}</div><div class="entry-detail">R1: ${c.score} pts · By: ${lat.invigilator}</div></div><div style="text-align:right;flex-shrink:0;"><div style="font-size:14px;">${stars}</div><div style="font-size:11px;color:var(--text3);">Avg ${avg}/5</div></div></div>`;
+  }).join(''):(_r2Filter?`<div class="empty-state"><div class="empty-icon">🔍</div><p>No candidates: <strong>${_r2Filter}</strong></p></div>`:'<div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>');
+  const hash=(_r2Filter||'all')+'|'+show.map(({candidate:c,evals})=>c.name+(evals[evals.length-1]?.verdict||'')).join('');
+  if(listEl.dataset.hash===hash) return; listEl.dataset.hash=hash;
+  listEl.style.transition='opacity .15s'; listEl.style.opacity='0';
+  setTimeout(()=>{ listEl.innerHTML=html; listEl.style.opacity='1'; },150);
+}
+
+/* ─── Tabs ───────────────────────────────────────────────────── */
+function switchRoundTab(tab,btn){
+  document.querySelectorAll('#adminRoundTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  document.getElementById('adminR1Panel').classList.toggle('active',tab==='r1');
+  document.getElementById('adminR2Panel').classList.toggle('active',tab==='r2');
+  if(tab==='r2'){ const el=document.getElementById('adminR2List'); if(el) delete el.dataset.hash; renderR2(allData); }
+}
+function switchCandTab(tab,btn){
+  const p=btn?btn.closest('.card'):document;
+  if(p) p.querySelectorAll('.tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  ['tabAll','tabPass','tabFail'].forEach(id=>{ const el=document.getElementById(id); if(el) el.classList.toggle('active',id==='tab'+tab[0].toUpperCase()+tab.slice(1)); });
+}
+
+/* ─── Global search ──────────────────────────────────────────── */
+let _sTimer=null;
+function doSearch(q){
+  clearTimeout(_sTimer); const drop=document.getElementById('searchDrop');
+  if(!q||q.length<2){ drop.classList.remove('open'); return; }
+  _sTimer=setTimeout(()=>{
+    const lower=q.toLowerCase();
+    const all=[...(allData.passList||[]).map(c=>({...c,result:'PASS'})),...(allData.failList||[]).map(c=>({...c,result:'FAIL'}))];
+    const res=all.filter(c=>c.name?.toLowerCase().includes(lower)||String(c.phone||'').includes(lower)||c.result?.toLowerCase().includes(lower));
+    const scope=document.getElementById('searchScope');
+    if(scope) scope.textContent='Searching: '+(allData.sessionName||currentSessionId||'current session');
+    drop.innerHTML=res.length
+      ? res.map(c=>`<div class="search-item"><div style="width:32px;height:32px;border-radius:50%;background:${c.result==='PASS'?'var(--accent)':'var(--danger)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${(c.name||'?')[0].toUpperCase()}</div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;">${c.name}</div><div style="font-size:12px;color:var(--text3);">${c.phone||''} · Score: ${c.score} · <span style="color:${c.result==='PASS'?'var(--pass)':'var(--fail)'};">${c.result}</span></div></div></div>`).join('')
+      : `<div style="padding:14px;text-align:center;color:var(--text3);font-size:13px;">No candidates found for "${q}"</div>`;
+    drop.classList.add('open');
+  },300);
+}
+function closeSearch(){ document.getElementById('searchDrop').classList.remove('open'); }
+
+/* ─── Export Excel ───────────────────────────────────────────── */
+function downloadExcel(){
+  const d=allData; if(!d||!d.passList){ showToast('No data to export','error'); return; }
+  const rows=[['Name','Phone','Score','Result','Session']];
+  [...(d.passList||[]).map(c=>({...c,result:'PASS'})),...(d.failList||[]).map(c=>({...c,result:'FAIL'}))].forEach(c=>{
+    rows.push([c.name,c.phone||'',c.score,c.result,d.sessionName||currentSessionId||'']);
+  });
+  const wb=XLSX.utils.book_new(),ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=[{wch:28},{wch:14},{wch:8},{wch:8},{wch:24}];
+  XLSX.utils.book_append_sheet(wb,ws,'Results');
+  XLSX.writeFile(wb,'results_'+(d.sessionName||currentSessionId||'export').replace(/\s/g,'_')+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+/* ─── Toast ──────────────────────────────────────────────────── */
+function showToast(msg,type='info'){
+  const c=document.getElementById('toastContainer'),t=document.createElement('div');
+  t.className='toast '+type; t.textContent=msg; c.appendChild(t); setTimeout(()=>t.remove(),3500);
+}
+
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&document.getElementById('loginScreen').style.display!=='none') login(); });
 </script>
 </body>
 </html>

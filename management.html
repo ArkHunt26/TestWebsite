@@ -63,17 +63,34 @@
   <div class="dash-wrapper">
 
     <!-- SUMMARY STATS -->
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-      <div>
-        <div class="page-title">Assessment Overview</div>
-        <div class="page-subtitle">Real-time monitoring across both interview rounds</div>
+    <div style="margin-bottom:20px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+        <div>
+          <div class="page-title">Assessment Overview</div>
+          <div class="page-subtitle">Real-time monitoring across both interview rounds</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <span style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;">Session</span>
+          <select id="mgmtSessionSelector" onchange="switchMgmtSession(this.value)"
+            style="padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;min-width:240px;">
+            <option value="">Loading…</option>
+          </select>
+          <div id="mgmtActiveBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);color:var(--accent);border:1px solid rgba(0,200,150,0.25);">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:5px;animation:pulse 1.5s infinite;"></span>Active Session
+          </div>
+          <button class="download-btn" onclick="downloadExcel()" style="padding:8px 14px;font-size:12px;">⬇ Export</button>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;">Session</span>
-        <select id="mgmtSessionSelector" onchange="switchMgmtSession(this.value)"
-          style="padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;min-width:220px;">
-          <option value="">Loading…</option>
-        </select>
+      <!-- Global Search -->
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;">
+        <div style="position:relative;flex:1;max-width:480px;">
+          <input type="text" id="mgmtGlobalSearch" placeholder="🔍 Search candidates by name, phone, result…"
+            oninput="mgmtSearch(this.value)"
+            onblur="setTimeout(()=>document.getElementById('mgmtSearchDrop').style.display='none',200)"
+            style="width:100%;padding:9px 16px 9px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;box-sizing:border-box;">
+          <div id="mgmtSearchDrop" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow-lg);z-index:200;max-height:280px;overflow-y:auto;"></div>
+        </div>
+        <span style="font-size:12px;color:var(--text3);" id="mgmtSearchScope">Current session</span>
       </div>
     </div>
 
@@ -237,6 +254,7 @@ let adminPassword = '';
 let _isAutoRefresh = false;
 let allData = {};
 let currentSessionId = localStorage.getItem('mgmt_session') || '';
+let _allMgmtSessions = [];
 let _mgmtR2Filter = 'all'; // Fix 7: verdict filter for R2 list
 let r1Chart = null;
 let secBarChart = null;
@@ -312,17 +330,22 @@ function loadMgmtSessions(callback){
     .then(r => r.json())
     .then(d => {
       if(d.error || !d.sessions){ if(callback) callback(); return; }
+      _allMgmtSessions = d.sessions;
       const sel = document.getElementById('mgmtSessionSelector');
       sel.innerHTML = d.sessions.map(s =>
         `<option value="${s.sessionId}" ${s.sessionId===currentSessionId?'selected':''}>
-          ${s.sessionName||s.sessionId} ${s.enabled?'● ACTIVE':''}
+          ${s.sessionName||s.sessionId}${s.enabled?' 🟢 ACTIVE':''}
         </option>`
       ).join('');
-      if(!currentSessionId && d.sessions.length){
-        currentSessionId = d.sessions[d.sessions.length-1].sessionId;
-        sel.value = currentSessionId;
-        localStorage.setItem('mgmt_session', currentSessionId);
+      // Default: active session first, else most recent
+      if(!currentSessionId){
+        const active = d.sessions.find(s=>s.enabled);
+        const def = active || d.sessions[d.sessions.length-1];
+        if(def){ currentSessionId=def.sessionId; sel.value=currentSessionId; localStorage.setItem('mgmt_session',currentSessionId); }
       }
+      // Show active badge
+      const badge = document.getElementById('mgmtActiveBadge');
+      if(badge){ const s=_allMgmtSessions.find(s=>s.sessionId===currentSessionId); badge.style.display=(s&&s.enabled)?'inline-flex':'none'; }
       if(callback) callback();
     }).catch(() => { if(callback) callback(); });
 }
@@ -330,13 +353,35 @@ function loadMgmtSessions(callback){
 function switchMgmtSession(sid){
   currentSessionId = sid;
   localStorage.setItem('mgmt_session', sid);
-  // Clear all render hashes
-  ['r1TableWrap','r2List','r2SummaryGrid'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) delete el.dataset.lastHash;
-  });
+  ['r1TableWrap','r2List','r2SummaryGrid'].forEach(id => { const el=document.getElementById(id); if(el) delete el.dataset.lastHash; });
+  // Show/hide active badge
+  const badge = document.getElementById('mgmtActiveBadge');
+  if(badge){ const s=_allMgmtSessions.find(s=>s.sessionId===sid); badge.style.display=(s&&s.enabled)?'inline-flex':'none'; }
   refresh();
-  showToast('Viewing session: ' + sid, 'info');
+}
+
+/* ── MGMT GLOBAL SEARCH ── */
+let _mgmtSearchTimer=null;
+function mgmtSearch(q){
+  clearTimeout(_mgmtSearchTimer);
+  const drop=document.getElementById('mgmtSearchDrop');
+  if(!q||q.length<2){ drop.style.display='none'; return; }
+  _mgmtSearchTimer=setTimeout(()=>{
+    const lower=q.toLowerCase();
+    const all=[...(allData.passList||[]).map(c=>({...c,result:'PASS'})),...(allData.failList||[]).map(c=>({...c,result:'FAIL'}))];
+    const results=all.filter(c=>c.name?.toLowerCase().includes(lower)||c.phone?.toString().includes(lower)||c.result?.toLowerCase().includes(lower));
+    const scope=document.getElementById('mgmtSearchScope');
+    if(scope) scope.textContent='Searching: '+(allData.sessionName||currentSessionId||'current');
+    if(!results.length){ drop.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">No candidates found</div>'; drop.style.display='block'; return; }
+    drop.innerHTML=results.map(c=>{
+      const init=(c.name||'?')[0].toUpperCase();
+      return `<div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background=''">
+        <div style="width:32px;height:32px;border-radius:50%;background:${c.result==='PASS'?'var(--accent)":'var(--danger)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${init}</div>
+        <div><div style="font-size:14px;font-weight:600;color:var(--text);">${c.name}</div><div style="font-size:12px;color:var(--text3);">${c.phone||''} · Score: ${c.score} · <span style="color:${c.result==='PASS'?'var(--pass)":'var(--fail)'}">${c.result}</span></div></div>
+      </div>`;
+    }).join('');
+    drop.style.display='block';
+  },300);
 }
 
 function processData(d){
@@ -356,12 +401,14 @@ function updateTopStats(d){
   const rate = d.totalCandidates > 0 ? Math.round((d.passedCount/d.totalCandidates)*100) : 0;
   document.getElementById('sPassRate').textContent = rate + '%';
 
-  // Count R2 evaluations + verdict breakdown
+  // Count R2 evaluations + verdict breakdown — prefer server evalsMap
   const all = [...(d.passList||[]), ...(d.failList||[])];
+  const serverEvals = d.evalsMap || {};
   let r2Count = 0, r2Selected = 0, r2Hold = 0, r2NotSelected = 0;
   all.forEach(c => {
+    const sev = serverEvals[c.name];
     const key = 'eval_' + c.name.replace(/\s/g,'_');
-    const evals = JSON.parse(localStorage.getItem(key) || '[]');
+    const evals = (sev && sev.length) ? sev : JSON.parse(localStorage.getItem(key)||'[]');
     if(evals.length){
       r2Count++;
       const verdict = evals[evals.length-1]?.verdict;
@@ -547,11 +594,13 @@ function renderR2Section(d){
     ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))
   ].sort((a,b) => Number(b.score) - Number(a.score));
 
-  // Build evaluated list (from localStorage)
-  const evaluatedMap = {}; // name -> evals array
+  // Build evaluated list — prefer server evalsMap (cross-device)
+  const serverEvMap = d.evalsMap || {};
+  const evaluatedMap = {};
   allCandidates.forEach(c => {
+    const sev = serverEvMap[c.name];
     const key = 'eval_' + c.name.replace(/\s/g,'_');
-    const evals = JSON.parse(localStorage.getItem(key) || '[]');
+    const evals = (sev && sev.length) ? sev : JSON.parse(localStorage.getItem(key)||'[]');
     if(evals.length) evaluatedMap[c.name] = evals;
   });
 
