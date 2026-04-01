@@ -48,7 +48,15 @@ function renderMCQ(){
     }
 
     if(q.type === 'mcq'){
-      const optHtml = q.options.map((opt, i) => `
+      // Shuffle options randomly; keep track of which shuffled index = correct
+      const indices = q.options.map((_,i)=>i);
+      for(let si=indices.length-1;si>0;si--){ const sj=Math.floor(Math.random()*(si+1)); [indices[si],indices[sj]]=[indices[sj],indices[si]]; }
+      const shuffledOpts = indices.map(i=>q.options[i]);
+      const shuffledAnswer = indices.indexOf(q.answer);
+      // Store shuffled answer index on the question for scoring
+      q._shuffledAnswer = shuffledAnswer;
+
+      const optHtml = shuffledOpts.map((opt, i) => `
         <label class="option-label">
           <input type="radio" name="q${index}" value="${i}">
           <span>${opt}</span>
@@ -172,7 +180,9 @@ function calculateSectionScores(){
       sectionData[sec].total++;
       sectionData[sec].maxMarks += 1;
       const sel = document.querySelector(`input[name="q${index}"]:checked`);
-      if(sel && Number(sel.value) === q.answer){
+      // Use shuffled answer index if options were shuffled, else original answer
+      const correctIdx = (q._shuffledAnswer !== undefined) ? q._shuffledAnswer : q.answer;
+      if(sel && Number(sel.value) === correctIdx){
         sectionData[sec].correct++;
         sectionData[sec].marks += 1;
       }
@@ -250,6 +260,7 @@ async function submitTest(fromCheat){
   formData.append('score', totalScore);
   formData.append('result', result);
   formData.append('sections', JSON.stringify(sectionBreakdown));
+  formData.append('sessionId', localStorage.getItem('examSessionId') || '');
 
   try {
     await fetch(SCRIPT_URL, { method: 'POST', body: formData });

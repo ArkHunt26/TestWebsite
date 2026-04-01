@@ -218,22 +218,41 @@ async function startExam(){
   btn.disabled = true;
 
   try {
-    const res = await fetch(SCRIPT_URL + '?mode=student');
+    const res = await fetch(SCRIPT_URL + '?mode=student&sessionId=' + encodeURIComponent(sessionId));
     const config = await res.json();
 
-    if(!config.enabled){
-      alert('Exam is not enabled. Contact the admin.');
+    if(config.error || !config.enabled){
+      alert('Exam is not active or Session ID is invalid. Please check with admin.');
       btn.textContent = 'Start Exam →'; btn.disabled = false;
       return;
     }
+
+    // Validate session ID (what candidate typed) against candidateCode from server
     if(sessionId !== config.sessionId){
       alert('Invalid Session ID. Please check with admin.');
       btn.textContent = 'Start Exam →'; btn.disabled = false;
       return;
     }
 
-    // Fix 1: wipe ALL stale exam state so a fresh candidate (or same browser re-login)
-    // never gets redirected to result.html by the test.html guard
+    // ── Exam window check: block entry if exam time has passed ──
+    if(config.startTime && config.duration){
+      const start = new Date(config.startTime).getTime();
+      const end   = start + Number(config.duration) * 60000;
+      const now   = Date.now();
+      if(now < start){
+        const mins = Math.ceil((start - now) / 60000);
+        alert('Exam has not started yet. It begins in ' + mins + ' minute(s).');
+        btn.textContent = 'Start Exam →'; btn.disabled = false;
+        return;
+      }
+      if(now > end){
+        alert('The exam window has closed. You can no longer enter.');
+        btn.textContent = 'Start Exam →'; btn.disabled = false;
+        return;
+      }
+    }
+
+    // Wipe stale exam state
     localStorage.removeItem('examSubmittedFlag');
     localStorage.removeItem('examEndTime');
     localStorage.removeItem('score');
@@ -243,7 +262,12 @@ async function startExam(){
     localStorage.setItem('name', name);
     localStorage.setItem('phone', phone);
     localStorage.setItem('passMark', config.passMark);
-    localStorage.setItem('examEndTime', Date.now() + Number(config.duration) * 60000);
+    // Store internalId (used by test.js to POST result to correct sheet)
+    localStorage.setItem('examSessionId', config.internalId || config.sessionId);
+    // Use remaining time from exam window, not full duration, in case candidate logs in late
+    const start2 = config.startTime ? new Date(config.startTime).getTime() : Date.now();
+    const examEnd = start2 + Number(config.duration) * 60000;
+    localStorage.setItem('examEndTime', String(examEnd));
 
     window.location.href = 'test.html';
   } catch(err) {

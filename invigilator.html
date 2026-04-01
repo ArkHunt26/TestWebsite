@@ -376,7 +376,18 @@ function loadCandidatesRefresh(){
   fetch(SCRIPT_URL + '?mode=admin&password=' + adminPass + sid)
     .then(r => r.json())
     .then(d => {
-      if(d.error) return;
+      if(d.error){
+        // Session may have been deleted — clear the panel and show notice
+        if(d.error.includes('not found') || d.error.includes('Session')){
+          allCandidates = [];
+          filterCandidates();
+          const bn = document.getElementById('sessionBanner');
+          const bnt = document.getElementById('sessionBannerName');
+          if(bn && bnt){ bnt.textContent = 'Session deleted by HR&TA'; bn.style.background='rgba(255,77,109,0.15)'; bn.style.borderColor='rgba(255,77,109,0.3)'; bn.style.color='var(--danger)'; bn.style.display='block'; }
+          showToast('Session has been deleted by HR & TA. Please contact them.', 'error');
+        }
+        return;
+      }
       // Merge without losing selected candidate's local eval data
       const prevSelected = selectedCandidate ? selectedCandidate.name : null;
       loadCandidates(d);

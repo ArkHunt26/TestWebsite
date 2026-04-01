@@ -278,8 +278,19 @@ const RATING_FIELDS = [
 ];
 
 /* ---- THEME ---- */
-const savedTheme = localStorage.getItem('theme') || 'dark';
-document.documentElement.setAttribute('data-theme', savedTheme);
+(function(){
+  const t = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+  // Init icons after DOM ready
+  document.addEventListener('DOMContentLoaded', () => {
+    ['themeIcon','themeIconDash'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = t === 'dark' ? '🌙' : '☀️';
+    });
+    const lbl = document.getElementById('themeLabel');
+    if(lbl) lbl.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+  });
+})();
 function toggleTheme(){
   const cur = document.documentElement.getAttribute('data-theme');
   const next = cur === 'dark' ? 'light' : 'dark';
@@ -306,7 +317,7 @@ function login(){
     .then(r => r.json())
     .then(d => {
       btn.textContent = orig; btn.disabled = false;
-      if(d.error){ adminPassword = ''; showToast('Wrong password. Ensure Code.gs has been redeployed with new passwords.', 'error'); return; }
+      if(d.error){ adminPassword = ''; showToast('Wrong password — use mgmt@123 (or admin@123 if not yet redeployed)', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
       // Load session list, then data for active session
