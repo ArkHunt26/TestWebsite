@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,8 +8,15 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<script>
+// Apply saved theme IMMEDIATELY (in <head>) — no flash, works before body renders
+(function(){
+  var t = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
 <style>
-/* Fix 3 – smooth live update, no visible flicker */
+/* smooth live update, no visible flicker */
 #r1TableWrap, #r2List {
   transition: opacity 0.18s ease;
 }
@@ -278,31 +285,24 @@ const RATING_FIELDS = [
 ];
 
 /* ---- THEME ---- */
-(function(){
-  const t = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', t);
-  // Init icons after DOM ready
-  document.addEventListener('DOMContentLoaded', () => {
-    ['themeIcon','themeIconDash'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.textContent = t === 'dark' ? '🌙' : '☀️';
-    });
-    const lbl = document.getElementById('themeLabel');
-    if(lbl) lbl.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+function _syncThemeIcons(){
+  const t = document.documentElement.getAttribute('data-theme') || 'dark';
+  ['themeIcon','themeIconDash'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) el.textContent = t === 'dark' ? '🌙' : '☀️';
   });
-})();
+  const lbl = document.getElementById('themeLabel');
+  if(lbl) lbl.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+}
 function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme');
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
   const next = cur === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
-  ['themeIcon','themeIconDash'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) el.textContent = next === 'dark' ? '🌙' : '☀️';
-  });
-  const lbl = document.getElementById('themeLabel');
-  if(lbl) lbl.textContent = next === 'dark' ? 'Dark Mode' : 'Light Mode';
+  _syncThemeIcons();
 }
+// Sync icons as soon as this script tag executes
+_syncThemeIcons();
 
 /* ---- LOGIN ---- */
 function login(){
@@ -313,15 +313,23 @@ function login(){
   const orig = btn.textContent;
   btn.textContent = 'Logging in…'; btn.disabled = true;
 
-  fetch(SCRIPT_URL + '?mode=admin&password=' + adminPassword)
+  // Auth via sessions endpoint — never errors on empty session list
+  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
     .then(r => r.json())
     .then(d => {
       btn.textContent = orig; btn.disabled = false;
-      if(d.error){ adminPassword = ''; showToast('Wrong password — use mgmt@123 (or admin@123 if not yet redeployed)', 'error'); return; }
+      if(d.error){
+        adminPassword = '';
+        showToast(d.error === 'Unauthorized' ? 'Wrong password — use mgmt@123' : 'Server error: '+d.error, 'error');
+        return;
+      }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
-      // Load session list, then data for active session
-      loadMgmtSessions(() => { processData(d); });
+      _syncThemeIcons();
+      // Populate session list then load data
+      _allMgmtSessions = d.sessions || [];
+      _populateMgmtDropdown();
+      if(currentSessionId) refresh();
       setInterval(() => refresh(), 5000);
     })
     .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
@@ -336,6 +344,26 @@ function refresh(){
 }
 
 /* ---- MGMT SESSION ---- */
+function _populateMgmtDropdown(){
+  const sel = document.getElementById('mgmtSessionSelector');
+  if(!sel) return;
+  if(!_allMgmtSessions.length){
+    sel.innerHTML = '<option value="">— No sessions —</option>';
+    currentSessionId = ''; return;
+  }
+  sel.innerHTML = _allMgmtSessions.map(s =>
+    `<option value="${s.sessionId}"${s.sessionId===currentSessionId?' selected':''}>${s.sessionName||s.sessionId}${s.enabled?' 🟢 ACTIVE':''}</option>`
+  ).join('');
+  // Default: active session, else most recent
+  if(!currentSessionId || !_allMgmtSessions.find(s=>s.sessionId===currentSessionId)){
+    const active = _allMgmtSessions.find(s=>s.enabled);
+    const def = active || _allMgmtSessions[_allMgmtSessions.length-1];
+    if(def){ currentSessionId=def.sessionId; sel.value=currentSessionId; localStorage.setItem('mgmt_session',currentSessionId); }
+  }
+  const badge = document.getElementById('mgmtActiveBadge');
+  if(badge){ const s=_allMgmtSessions.find(s=>s.sessionId===currentSessionId); badge.style.display=(s&&s.enabled)?'inline-flex':'none'; }
+}
+
 function loadMgmtSessions(callback){
   fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
     .then(r => r.json())

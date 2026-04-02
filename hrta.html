@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>HR &amp; TA Dashboard</title>
 <link rel="stylesheet" href="css/style.css">
+<script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -282,15 +283,27 @@ function login(){
   adminPassword=pwd;
   const btn=document.querySelector('#loginScreen .btn-primary'), orig=btn.textContent;
   btn.textContent='Logging in…'; btn.disabled=true;
-  fetch(SCRIPT_URL+'?mode=admin&password='+adminPassword)
+  // Use ?mode=sessions for auth: returns { sessions:[] } on success (even if no sessions),
+  // or { error:"Unauthorized" } on wrong password. Never returns "No sessions" error.
+  fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
     .then(r=>r.json())
     .then(d=>{
       btn.textContent=orig; btn.disabled=false;
-      if(d.error){ adminPassword=''; showToast('Wrong password','error'); return; }
+      if(d.error){
+        // "Unauthorized" = wrong password. Any other error = server issue.
+        adminPassword='';
+        const msg = d.error === 'Unauthorized' ? 'Wrong password' : 'Server error: '+d.error;
+        showToast(msg,'error'); return;
+      }
+      // Auth succeeded — show dashboard
       document.getElementById('loginScreen').style.display='none';
       document.getElementById('dashboard').style.display='block';
       setStartMin();
-      loadSessionList(()=>{ loadData(); refreshTimer=setInterval(loadData,5000); });
+      sessionsCache = d.sessions || [];
+      _populateSessionDropdown();
+      // Start data refresh (handles empty session list gracefully)
+      loadData();
+      refreshTimer=setInterval(loadData,5000);
     })
     .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error','error'); });
 }
@@ -307,10 +320,25 @@ function logout(){
 /* ─── Data load ──────────────────────────────────────────────── */
 function loadData(){
   if(!adminPassword) return;
+  // If no sessions exist, just refresh session list and show empty state
+  if(!currentSessionId && !sessionsCache.length){
+    loadSessionList(()=>{});
+    return;
+  }
   const sid=currentSessionId?'&sessionId='+encodeURIComponent(currentSessionId):'';
   fetch(SCRIPT_URL+'?mode=admin&password='+adminPassword+sid)
     .then(r=>r.json())
-    .then(d=>{ if(d.error) return; allData=d; renderAll(d); })
+    .then(d=>{
+      if(d.error){
+        // Session may have been deleted — refresh list
+        if(d.error.includes('not found') || d.error.includes('No sessions')){
+          currentSessionId=''; localStorage.removeItem('hrta_session');
+          loadSessionList(()=>{});
+        }
+        return;
+      }
+      allData=d; renderAll(d);
+    })
     .catch(()=>{});
 }
 
@@ -321,19 +349,32 @@ function renderAll(d){
 }
 
 /* ─── Session list ───────────────────────────────────────────── */
+function _populateSessionDropdown(){
+  const sel = document.getElementById('sessionSelector');
+  if(!sel) return;
+  if(!sessionsCache.length){
+    sel.innerHTML = '<option value="">— No sessions yet — create one below —</option>';
+    currentSessionId = ''; localStorage.removeItem('hrta_session');
+    refreshActivePill(); return;
+  }
+  sel.innerHTML = sessionsCache.map(s =>
+    `<option value="${s.sessionId}"${s.sessionId===currentSessionId?' selected':''}>${s.sessionName||s.sessionId}${s.enabled?' 🟢 ACTIVE':''}</option>`
+  ).join('');
+  if(!currentSessionId || !sessionsCache.find(s=>s.sessionId===currentSessionId)){
+    currentSessionId = sessionsCache[sessionsCache.length-1].sessionId;
+    sel.value = currentSessionId; localStorage.setItem('hrta_session', currentSessionId);
+  }
+  refreshActivePill();
+}
+
 function loadSessionList(cb){
   fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
     .then(r=>r.json())
     .then(d=>{
-      if(d.error||!d.sessions){ if(cb) cb(); return; }
-      sessionsCache=d.sessions;
-      const sel=document.getElementById('sessionSelector');
-      sel.innerHTML=d.sessions.map(s=>`<option value="${s.sessionId}"${s.sessionId===currentSessionId?' selected':''}>${s.sessionName||s.sessionId}${s.enabled?' 🟢 ACTIVE':''}</option>`).join('');
-      if(!currentSessionId&&d.sessions.length){
-        currentSessionId=d.sessions[d.sessions.length-1].sessionId;
-        sel.value=currentSessionId; localStorage.setItem('hrta_session',currentSessionId);
-      }
-      refreshActivePill(); if(cb) cb();
+      if(d.error){ if(cb) cb(); return; }
+      sessionsCache = d.sessions || [];
+      _populateSessionDropdown();
+      if(cb) cb();
     })
     .catch(()=>{ if(cb) cb(); });
 }

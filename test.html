@@ -187,11 +187,16 @@
 
 <div class="exam-content">
   <div id="mcqSection"></div>
-</div>
 
-<div class="submit-bar">
-  <span style="font-size:13px;color:var(--text3);">Complete all sections before submitting</span>
-  <button class="submit-exam-btn" onclick="confirmSubmit()">Submit Exam ✓</button>
+  <!-- Submit button at the very bottom of the page, inline (not sticky) -->
+  <div style="margin-top:40px;padding:32px 0 48px;text-align:center;border-top:1px solid var(--border);">
+    <p style="font-size:13px;color:var(--text3);margin-bottom:20px;">
+      You have reached the end of the exam. Review your answers above before submitting.
+    </p>
+    <button class="submit-exam-btn" onclick="confirmSubmit()" style="padding:16px 56px;font-size:16px;">
+      Submit Exam ✓
+    </button>
+  </div>
 </div>
 
 <!-- Submit Confirm Modal -->
