@@ -432,12 +432,15 @@ function mgmtSearch(q){
     const scope=document.getElementById('mgmtSearchScope');
     if(scope) scope.textContent='Searching: '+(allData.sessionName||currentSessionId||'current');
     if(!results.length){ drop.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">No candidates found</div>'; drop.style.display='block'; return; }
-    drop.innerHTML=results.map(c=>{
-      const init=(c.name||'?')[0].toUpperCase();
-      return `<div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background 0.2s;" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background=''">
-        <div style="width:32px;height:32px;border-radius:50%;background:${c.result==='PASS'?'var(--accent)":'var(--danger)'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">${init}</div>
-        <div><div style="font-size:14px;font-weight:600;color:var(--text);">${c.name}</div><div style="font-size:12px;color:var(--text3);">${c.phone||''} · Score: ${c.score} · <span style="color:${c.result==='PASS'?'var(--pass)":'var(--fail)'}">${c.result}</span></div></div>
-      </div>`;
+    drop.innerHTML=results.map(function(c){
+      var init=(c.name||'?')[0].toUpperCase();
+      var bg=c.result==='PASS'?'var(--accent)':'var(--danger)';
+      var sc=c.result==='PASS'?'var(--pass)':'var(--fail)';
+      return '<div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background=''">'+
+        '<div style="width:32px;height:32px;border-radius:50%;background:'+bg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">'+init+'</div>'+
+        '<div><div style="font-size:14px;font-weight:600;color:var(--text);">'+c.name+'</div>'+
+        '<div style="font-size:12px;color:var(--text3);">'+(c.phone||'')+' &middot; Score: '+c.score+' &middot; <span style="color:'+sc+';">'+c.result+'</span></div></div>'+
+      '</div>';
     }).join('');
     drop.style.display='block';
   },300);
