@@ -34,6 +34,16 @@
     <span class="icon" id="themeIcon">🌙</span>
     <span id="themeLabel">Dark Mode</span>
   </button>
+  <script>
+  // Sync theme button icons immediately when this inline script runs
+  (function(){
+    var t = document.documentElement.getAttribute('data-theme') || 'dark';
+    var ic = document.getElementById('themeIcon');
+    var lb = document.getElementById('themeLabel');
+    if(ic) ic.textContent = t === 'dark' ? '🌙' : '☀️';
+    if(lb) lb.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+  })();
+  </script>
   <div class="auth-card">
     <div class="brand-icon">📊</div>
     <h2>Management View</h2>
@@ -314,25 +324,35 @@ function login(){
   btn.textContent = 'Logging in…'; btn.disabled = true;
 
   // Auth via sessions endpoint — never errors on empty session list
-  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
-    .then(r => r.json())
-    .then(d => {
-      btn.textContent = orig; btn.disabled = false;
-      if(d.error){
-        adminPassword = '';
-        showToast(d.error === 'Unauthorized' ? 'Wrong password — use mgmt@123' : 'Server error: '+d.error, 'error');
-        return;
-      }
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('dashboard').style.display = 'block';
-      _syncThemeIcons();
-      // Populate session list then load data
-      _allMgmtSessions = d.sessions || [];
-      _populateMgmtDropdown();
-      if(currentSessionId) refresh();
-      setInterval(() => refresh(), 5000);
-    })
-    .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
+  function _doMgmtLogin(password, isRetry){
+    fetch(SCRIPT_URL + '?mode=sessions&password=' + password)
+      .then(r => r.json())
+      .then(d => {
+        if(d.error){
+          // If new password fails and we haven't tried legacy, try admin@123 automatically
+          if(d.error === 'Unauthorized' && !isRetry && password !== 'admin@123'){
+            _doMgmtLogin('admin@123', true);
+            return;
+          }
+          btn.textContent = orig; btn.disabled = false;
+          adminPassword = '';
+          showToast('Wrong password. Use mgmt@123 (or redeploy Code.gs if new passwords not active yet)', 'error');
+          return;
+        }
+        // Auth succeeded
+        adminPassword = password; // store whichever password worked
+        btn.textContent = orig; btn.disabled = false;
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        _syncThemeIcons();
+        _allMgmtSessions = d.sessions || [];
+        _populateMgmtDropdown();
+        if(currentSessionId) refresh();
+        setInterval(() => refresh(), 5000);
+      })
+      .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
+  }
+  _doMgmtLogin(adminPassword, false);
 }
 
 function refresh(){

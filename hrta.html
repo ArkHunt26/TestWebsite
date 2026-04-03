@@ -283,29 +283,32 @@ function login(){
   adminPassword=pwd;
   const btn=document.querySelector('#loginScreen .btn-primary'), orig=btn.textContent;
   btn.textContent='Logging in…'; btn.disabled=true;
-  // Use ?mode=sessions for auth: returns { sessions:[] } on success (even if no sessions),
-  // or { error:"Unauthorized" } on wrong password. Never returns "No sessions" error.
-  fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
-    .then(r=>r.json())
-    .then(d=>{
-      btn.textContent=orig; btn.disabled=false;
-      if(d.error){
-        // "Unauthorized" = wrong password. Any other error = server issue.
-        adminPassword='';
-        const msg = d.error === 'Unauthorized' ? 'Wrong password' : 'Server error: '+d.error;
-        showToast(msg,'error'); return;
-      }
-      // Auth succeeded — show dashboard
-      document.getElementById('loginScreen').style.display='none';
-      document.getElementById('dashboard').style.display='block';
-      setStartMin();
-      sessionsCache = d.sessions || [];
-      _populateSessionDropdown();
-      // Start data refresh (handles empty session list gracefully)
-      loadData();
-      refreshTimer=setInterval(loadData,5000);
-    })
-    .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error','error'); });
+  // Use ?mode=sessions for auth — works even if 0 sessions exist
+  // Automatically tries legacy admin@123 if new password fails (pre-redeployment)
+  function _doHrtaLogin(password, isRetry){
+    fetch(SCRIPT_URL+'?mode=sessions&password='+password)
+      .then(r=>r.json())
+      .then(d=>{
+        if(d.error){
+          if(d.error==='Unauthorized' && !isRetry && password!=='admin@123'){
+            _doHrtaLogin('admin@123', true); return;
+          }
+          btn.textContent=orig; btn.disabled=false; adminPassword='';
+          showToast('Wrong password. Use hrta@123 (or redeploy Code.gs if new passwords not active yet)','error'); return;
+        }
+        adminPassword = password;
+        btn.textContent=orig; btn.disabled=false;
+        document.getElementById('loginScreen').style.display='none';
+        document.getElementById('dashboard').style.display='block';
+        setStartMin();
+        sessionsCache = d.sessions || [];
+        _populateSessionDropdown();
+        loadData();
+        refreshTimer=setInterval(loadData,5000);
+      })
+      .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error','error'); });
+  }
+  _doHrtaLogin(adminPassword, false);
 }
 function logout(){
   clearInterval(refreshTimer); refreshTimer=null;
