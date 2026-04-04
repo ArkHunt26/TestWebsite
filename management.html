@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Management Dashboard</title>
+<!-- Cache busting: v9-fixed -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Management Dashboard v9</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -420,28 +424,50 @@ function switchMgmtSession(sid){
 }
 
 /* ── MGMT GLOBAL SEARCH ── */
-let _mgmtSearchTimer=null;
+var _mgmtSearchTimer=null;
 function mgmtSearch(q){
   clearTimeout(_mgmtSearchTimer);
-  const drop=document.getElementById('mgmtSearchDrop');
+  var drop=document.getElementById('mgmtSearchDrop');
   if(!q||q.length<2){ drop.style.display='none'; return; }
-  _mgmtSearchTimer=setTimeout(()=>{
-    const lower=q.toLowerCase();
-    const all=[...(allData.passList||[]).map(c=>({...c,result:'PASS'})),...(allData.failList||[]).map(c=>({...c,result:'FAIL'}))];
-    const results=all.filter(c=>c.name?.toLowerCase().includes(lower)||c.phone?.toString().includes(lower)||c.result?.toLowerCase().includes(lower));
-    const scope=document.getElementById('mgmtSearchScope');
+  _mgmtSearchTimer=setTimeout(function(){
+    var lower=q.toLowerCase();
+    var allC=(allData.passList||[]).map(function(c){return Object.assign({},c,{result:'PASS'});})
+      .concat((allData.failList||[]).map(function(c){return Object.assign({},c,{result:'FAIL'});}));
+    var results=allC.filter(function(c){
+      return (c.name||'').toLowerCase().indexOf(lower)>=0
+          || String(c.phone||'').indexOf(lower)>=0
+          || (c.result||'').toLowerCase().indexOf(lower)>=0;
+    });
+    var scope=document.getElementById('mgmtSearchScope');
     if(scope) scope.textContent='Searching: '+(allData.sessionName||currentSessionId||'current');
-    if(!results.length){ drop.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">No candidates found</div>'; drop.style.display='block'; return; }
-    drop.innerHTML=results.map(function(c){
-      var init=(c.name||'?')[0].toUpperCase();
-      var bg=c.result==='PASS'?'var(--accent)':'var(--danger)';
-      var sc=c.result==='PASS'?'var(--pass)':'var(--fail)';
-      return '<div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background=''">'+
-        '<div style="width:32px;height:32px;border-radius:50%;background:'+bg+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">'+init+'</div>'+
-        '<div><div style="font-size:14px;font-weight:600;color:var(--text);">'+c.name+'</div>'+
-        '<div style="font-size:12px;color:var(--text3);">'+(c.phone||'')+' &middot; Score: '+c.score+' &middot; <span style="color:'+sc+';">'+c.result+'</span></div></div>'+
-      '</div>';
-    }).join('');
+    // Build results using DOM to avoid all quote-nesting issues
+    drop.innerHTML='';
+    if(!results.length){
+      drop.innerHTML='<div style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">No candidates found</div>';
+    } else {
+      results.forEach(function(c){
+        var row=document.createElement('div');
+        row.style.cssText='padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;';
+        row.onmouseover=function(){ this.style.background='var(--accent-soft)'; };
+        row.onmouseout=function(){ this.style.background=''; };
+        var av=document.createElement('div');
+        av.style.cssText='width:32px;height:32px;border-radius:50%;background:'+(c.result==='PASS'?'var(--accent)':'var(--danger)')+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;';
+        av.textContent=(c.name||'?')[0].toUpperCase();
+        var info=document.createElement('div');
+        var nameDiv=document.createElement('div');
+        nameDiv.style.cssText='font-size:14px;font-weight:600;color:var(--text);';
+        nameDiv.textContent=c.name||'';
+        var detailDiv=document.createElement('div');
+        detailDiv.style.cssText='font-size:12px;color:var(--text3);';
+        var scoreColor=c.result==='PASS'?'var(--pass)':'var(--fail)';
+        detailDiv.innerHTML=(c.phone||'')+' &middot; Score: '+c.score+' &middot; <span style="color:'+scoreColor+'">'+c.result+'</span>';
+        info.appendChild(nameDiv);
+        info.appendChild(detailDiv);
+        row.appendChild(av);
+        row.appendChild(info);
+        drop.appendChild(row);
+      });
+    }
     drop.style.display='block';
   },300);
 }
