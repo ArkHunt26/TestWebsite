@@ -235,6 +235,7 @@ async function startExam(){
     // Store experience level so questions.js picks the right difficulty
     localStorage.setItem('examExperienceLevel', String(config.experienceLevel || 2));
     localStorage.setItem('examQuestScope', config.questScope || 'both');
+    localStorage.setItem('examDuration', String(config.duration || 60));
     // Use remaining time from exam window, not full duration, in case candidate logs in late
     const start2 = config.startTime ? new Date(config.startTime).getTime() : Date.now();
     const examEnd = start2 + Number(config.duration) * 60000;

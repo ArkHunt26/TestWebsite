@@ -76,7 +76,6 @@
     <div class="topbar-actions">
       <div id="examLiveBadge" class="badge badge-pending">● Loading...</div>
       <button class="download-btn" onclick="downloadExcel()">⬇ Export Report</button>
-      <button class="btn-secondary" onclick="mgmtRefresh()" style="padding:7px 12px;font-size:12px;" title="Refresh data">🔄 Refresh</button>
       <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
         <span id="themeIconDash">🌙</span> Theme
       </button>
@@ -347,30 +346,19 @@ function login(){
   btn.textContent = 'Logging in…'; btn.disabled = true;
 
   // Auth via sessions endpoint — never errors on empty session list
-  function _doMgmtLogin(password, isRetry){
-    fetch(SCRIPT_URL + '?mode=sessions&password=' + password)
-      .then(r => r.json())
-      .then(d => {
-        if(d.error){
-          // If new password fails and we haven't tried legacy, try admin@123 automatically
-          if(d.error === 'Unauthorized' && !isRetry && password !== 'admin@123'){
-            _doMgmtLogin('admin@123', true);
-            return;
-          }
-          btn.textContent = orig; btn.disabled = false;
-          adminPassword = '';
-          showToast('Wrong password. Use mgmt@123 (or redeploy Code.gs if new passwords not active yet)', 'error');
-          return;
-        }
-        // Auth succeeded
-        adminPassword = password;
-        sessionStorage.setItem('mgmt_pwd', password);
-        btn.textContent = orig; btn.disabled = false;
-        _showMgmtDashboard(d.sessions || []);
-      })
-      .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
-  }
-  _doMgmtLogin(adminPassword, false);
+  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      btn.textContent = orig; btn.disabled = false;
+      if(d.error){
+        adminPassword = '';
+        showToast(d.error === 'Unauthorized' ? 'Incorrect password. Please try again.' : 'Server error: '+d.error, 'error');
+        return;
+      }
+      sessionStorage.setItem('mgmt_pwd', adminPassword);
+      _showMgmtDashboard(d.sessions || []);
+    })
+    .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error — check your internet.', 'error'); });
 }
 
 function refresh(){
@@ -900,22 +888,21 @@ function _showMgmtDashboard(sessions){
   _allMgmtSessions = sessions || [];
   _populateMgmtDropdown();
   if(currentSessionId) refresh();
-  if(!window._mgmtRefreshInterval)
-    window._mgmtRefreshInterval = setInterval(() => refresh(), 5000);
-}
-
-function mgmtRefresh(){
-  _isAutoRefresh = false;
-  loadMgmtSessions(function(){});  // reload session dropdown
-  refresh();                        // reload candidate data
-  showToast('Refreshed','success');
+  // Data refreshes every 5s; session list (dropdown) refreshes every 20s
+  // so newly created sessions in HR&TA appear automatically
+  if(!window._mgmtDataInterval)
+    window._mgmtDataInterval = setInterval(() => refresh(), 5000);
+  if(!window._mgmtSessionInterval)
+    window._mgmtSessionInterval = setInterval(() => loadMgmtSessions(function(){}), 20000);
 }
 
 function mgmtLogout(){
   adminPassword = '';
   sessionStorage.removeItem('mgmt_pwd');
-  clearInterval(window._mgmtRefreshInterval);
-  window._mgmtRefreshInterval = null;
+  clearInterval(window._mgmtDataInterval);
+  clearInterval(window._mgmtSessionInterval);
+  window._mgmtDataInterval = null;
+  window._mgmtSessionInterval = null;
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('dashboard').style.display = 'none';
   const pi = document.getElementById('passInput');

@@ -304,27 +304,19 @@ function login(){
   adminPassword=pwd;
   const btn=document.querySelector('#loginScreen .btn-primary'), orig=btn.textContent;
   btn.textContent='Logging in…'; btn.disabled=true;
-  // Use ?mode=sessions for auth — works even if 0 sessions exist
-  // Automatically tries legacy admin@123 if new password fails (pre-redeployment)
-  function _doHrtaLogin(password, isRetry){
-    fetch(SCRIPT_URL+'?mode=sessions&password='+password)
-      .then(r=>r.json())
-      .then(d=>{
-        if(d.error){
-          if(d.error==='Unauthorized' && !isRetry && password!=='admin@123'){
-            _doHrtaLogin('admin@123', true); return;
-          }
-          btn.textContent=orig; btn.disabled=false; adminPassword='';
-          showToast('Wrong password. Use hrta@123 (or redeploy Code.gs if new passwords not active yet)','error'); return;
-        }
-        adminPassword = password;
-        sessionStorage.setItem('hrta_pwd', password);
-        btn.textContent=orig; btn.disabled=false;
-        _showHrtaDashboard();
-      })
-      .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error','error'); });
-  }
-  _doHrtaLogin(adminPassword, false);
+  fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
+    .then(r=>r.json())
+    .then(d=>{
+      btn.textContent=orig; btn.disabled=false;
+      if(d.error){
+        adminPassword='';
+        showToast(d.error==='Unauthorized' ? 'Incorrect password. Please try again.' : 'Server error: '+d.error, 'error');
+        return;
+      }
+      sessionStorage.setItem('hrta_pwd', adminPassword);
+      _showHrtaDashboard();
+    })
+    .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error — check your internet.','error'); });
 }
 function _showHrtaDashboard(){
   document.getElementById('loginScreen').style.display='none';

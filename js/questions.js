@@ -280,56 +280,74 @@ const codingQuestions = [
 ];
 
 /* ══════════════════════════════════════════════════════════════════
-   QUESTION SELECTION
-   questScope  : 'both' → SW + HW   'sw' → SW only   'hw' → HW only
-   experienceLevel: 1–5
-   ══════════════════════════════════════════════════════════════ */
+   QUESTION SELECTION — time-proportional, scope + experience aware
+   ═══════════════════════════════════════════════════════════════ */
 
-function getExperienceLevel(){
-  return parseInt(localStorage.getItem('examExperienceLevel') || '2');
-}
-function getQuestScope(){
-  return (localStorage.getItem('examQuestScope') || 'both').trim().toLowerCase();
-}
+function getExperienceLevel(){ return parseInt(localStorage.getItem('examExperienceLevel')||'2'); }
+function getQuestScope(){ return (localStorage.getItem('examQuestScope')||'both').trim().toLowerCase(); }
+function getExamDuration(){ return parseInt(localStorage.getItem('examDuration')||'60'); }
 
 function filterByLevel(pool, level){
-  const minLevel = Math.max(1, level - 1);
+  const minLevel = Math.max(1, level-1);
   const eligible = pool.filter(q => q.level >= minLevel && q.level <= level);
-  // fall back to wider net if not enough
   return eligible.length >= 4 ? eligible : pool.filter(q => q.level <= level);
+}
+
+// Minutes per MCQ based on difficulty level
+function mcqMinutes(level){ return level<=2 ? 1.5 : level<=4 ? 2.0 : 2.5; }
+
+// Compute how many questions to pick from each pool
+function computeCounts(durationMin, scope, level){
+  const usable    = durationMin * 0.85;   // 15% safety buffer
+  const mpm       = mcqMinutes(level);
+  const textMin   = 3.0;
+  const codingMin = 15.0;
+
+  if(scope === 'sw'){
+    const avail = usable - codingMin;
+    const n = Math.max(1, Math.floor(avail / (4 * mpm)));
+    return { c:n, cpp:n, embedded:n, rtos:n, hwMCQ:0, hwText:0, coding:1 };
+  }
+  if(scope === 'hw'){
+    const hwMCQn  = Math.max(3, Math.floor(usable * 0.70 / mpm));
+    const hwTextn = Math.max(1, Math.floor(usable * 0.30 / textMin));
+    return { c:0, cpp:0, embedded:0, rtos:0, hwMCQ:hwMCQn, hwText:hwTextn, coding:0 };
+  }
+  // both
+  const avail    = usable - codingMin;
+  const swN      = Math.max(1, Math.floor(avail * 0.70 / (4 * mpm)));
+  const hwMCQn   = Math.max(2, Math.floor(avail * 0.30 * 0.70 / mpm));
+  const hwTextn  = Math.max(1, Math.floor(avail * 0.30 * 0.30 / textMin));
+  return { c:swN, cpp:swN, embedded:swN, rtos:swN, hwMCQ:hwMCQn, hwText:hwTextn, coding:1 };
 }
 
 const _expLevel = getExperienceLevel();
 const _scope    = getQuestScope();
+const _counts   = computeCounts(getExamDuration(), _scope, _expLevel);
 
 let selectedQuestions = [];
 
 if(_scope === 'sw'){
-  // ── SOFTWARE ONLY: C + C++ + Embedded Systems + RTOS + 1 coding ──
   selectedQuestions = [
-    ...pickRandom(filterByLevel(cQuestions,        _expLevel), 6).map(q=>({...q, section:"C Programming"})),
-    ...pickRandom(filterByLevel(cppQuestions,       _expLevel), 6).map(q=>({...q, section:"C++ Programming"})),
-    ...pickRandom(filterByLevel(embeddedQuestions,  _expLevel), 6).map(q=>({...q, section:"Embedded Systems"})),
-    ...pickRandom(filterByLevel(rtosQuestions,      _expLevel), 6).map(q=>({...q, section:"RTOS"})),
-    ...pickRandom(filterByLevel(codingQuestions,    _expLevel), 1).map(q=>({...q, section:"Coding Challenge"})),
+    ...pickRandom(filterByLevel(cQuestions,       _expLevel), _counts.c).map(q=>({...q,section:"C Programming"})),
+    ...pickRandom(filterByLevel(cppQuestions,      _expLevel), _counts.cpp).map(q=>({...q,section:"C++ Programming"})),
+    ...pickRandom(filterByLevel(embeddedQuestions, _expLevel), _counts.embedded).map(q=>({...q,section:"Embedded Systems"})),
+    ...pickRandom(filterByLevel(rtosQuestions,     _expLevel), _counts.rtos).map(q=>({...q,section:"RTOS"})),
+    ...pickRandom(filterByLevel(codingQuestions,   _expLevel), _counts.coding).map(q=>({...q,section:"Coding Challenge"})),
   ];
-
 } else if(_scope === 'hw'){
-  // ── HARDWARE ONLY: HW MCQ + HW text — NO software, NO coding ──
   selectedQuestions = [
-    ...pickRandom(filterByLevel(hardwareMCQ,  _expLevel), 15).map(q=>({...q, section:"Hardware"})),
-    ...pickRandom(filterByLevel(hardwareText, _expLevel),  5).map(q=>({...q, section:"Hardware"})),
+    ...pickRandom(filterByLevel(hardwareMCQ,  _expLevel), _counts.hwMCQ).map(q=>({...q,section:"Hardware"})),
+    ...pickRandom(filterByLevel(hardwareText, _expLevel), _counts.hwText).map(q=>({...q,section:"Hardware"})),
   ];
-
 } else {
-  // ── BOTH (default): balanced mix ──
   selectedQuestions = [
-    ...pickRandom(filterByLevel(cQuestions,        _expLevel), 5).map(q=>({...q, section:"C Programming"})),
-    ...pickRandom(filterByLevel(cppQuestions,       _expLevel), 5).map(q=>({...q, section:"C++ Programming"})),
-    ...pickRandom(filterByLevel(embeddedQuestions,  _expLevel), 5).map(q=>({...q, section:"Embedded Systems"})),
-    ...pickRandom(filterByLevel(rtosQuestions,      _expLevel), 5).map(q=>({...q, section:"RTOS"})),
-    ...pickRandom(filterByLevel(hardwareMCQ,        _expLevel), 4).map(q=>({...q, section:"Hardware"})),
-    ...pickRandom(filterByLevel(hardwareText,       _expLevel), 2).map(q=>({...q, section:"Hardware"})),
-    ...pickRandom(filterByLevel(codingQuestions,    _expLevel), 1).map(q=>({...q, section:"Coding Challenge"})),
+    ...pickRandom(filterByLevel(cQuestions,       _expLevel), _counts.c).map(q=>({...q,section:"C Programming"})),
+    ...pickRandom(filterByLevel(cppQuestions,      _expLevel), _counts.cpp).map(q=>({...q,section:"C++ Programming"})),
+    ...pickRandom(filterByLevel(embeddedQuestions, _expLevel), _counts.embedded).map(q=>({...q,section:"Embedded Systems"})),
+    ...pickRandom(filterByLevel(rtosQuestions,     _expLevel), _counts.rtos).map(q=>({...q,section:"RTOS"})),
+    ...pickRandom(filterByLevel(hardwareMCQ,       _expLevel), _counts.hwMCQ).map(q=>({...q,section:"Hardware"})),
+    ...pickRandom(filterByLevel(hardwareText,      _expLevel), _counts.hwText).map(q=>({...q,section:"Hardware"})),
+    ...pickRandom(filterByLevel(codingQuestions,   _expLevel), _counts.coding).map(q=>({...q,section:"Coding Challenge"})),
   ];
 }
