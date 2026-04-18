@@ -2,8 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMGYyOTQyIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMWEzYTVjIi8+CiAgPC9saW5lYXJHcmFkaWVudD48L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNnKSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMy4wNCIgZm9udC1zaXplPSIxNy42IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPvCfm6HvuI88L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>HR &amp; TA Dashboard</title>
+<title>HR &amp; TA — Exam Management</title>
 <link rel="stylesheet" href="css/style.css">
 <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -76,6 +77,7 @@
       <button class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="openAssignModal()">🔗 Assign to Invigilator</button>
       <button class="btn-danger"    style="padding:7px 12px;font-size:12px;" onclick="deleteCurrentSession()">🗑 Delete</button>
       <button class="download-btn"  style="padding:7px 12px;font-size:12px;" onclick="downloadExcel()">⬇ Export</button>
+      <button class="btn-secondary" style="padding:7px 12px;font-size:12px;" onclick="loadSessionList(()=>{loadData();});showToast('Refreshed','success');" title="Refresh data">🔄 Refresh</button>
     </div>
   </div>
 
@@ -126,25 +128,43 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Session Name <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;">(e.g. March 2026 Batch)</span></label>
-            <input type="text" id="cfgSessionName" placeholder="e.g. March 2026 Batch">
+            <input type="text" id="cfgSessionName" placeholder="e.g. March 2026 Batch" oninput="_dirtyFields.add('cfg')">
           </div>
           <div class="form-group">
             <label>Start Time</label>
-            <input type="datetime-local" id="cfgStartTime">
+            <input type="datetime-local" id="cfgStartTime" onchange="_dirtyFields.add('cfg')">
           </div>
           <div class="form-group">
             <label>Duration (minutes)</label>
-            <input type="number" id="cfgDuration" min="1" placeholder="60">
+            <input type="number" id="cfgDuration" min="1" placeholder="60" oninput="_dirtyFields.add('cfg')">
           </div>
           <div class="form-group">
             <label>Pass Mark</label>
-            <input type="number" id="cfgPassMark" min="0" placeholder="25">
+            <input type="number" id="cfgPassMark" min="0" placeholder="25" oninput="_dirtyFields.add('cfg')">
+          </div>
+          <div class="form-group">
+            <label>Experience Level <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;">(sets question difficulty)</span></label>
+            <select id="cfgExpLevel" onchange="_dirtyFields.add('cfgExpLevel')" style="width:100%;padding:10px 14px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;cursor:pointer;">
+              <option value="1">Fresher (0 yr) — Basics only</option>
+              <option value="2" selected>Junior (1–2 yrs) — Core concepts</option>
+              <option value="3">Mid-level (2–3 yrs) — Applied knowledge</option>
+              <option value="4">Senior (3–5 yrs) — Deep technical</option>
+              <option value="5">Expert (5+ yrs) — Advanced &amp; architectural</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Question Scope <span style="font-size:10px;color:var(--text3);font-weight:400;text-transform:none;">(which sections to include)</span></label>
+            <select id="cfgQuestScope" onchange="_dirtyFields.add('cfgQuestScope')" style="width:100%;padding:10px 14px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;cursor:pointer;">
+              <option value="both" selected>Software + Hardware (full exam)</option>
+              <option value="sw">Software only (C, C++, Embedded, RTOS)</option>
+              <option value="hw">Hardware only (Hardware MCQ + Hardware text)</option>
+            </select>
           </div>
         </div>
 
         <div class="form-group" style="margin-top:12px;">
           <label class="checkbox-label">
-            <input type="checkbox" id="cfgEnabled">
+            <input type="checkbox" id="cfgEnabled" onchange="_dirtyFields.add('cfg')">
             Enable Exam — candidates can log in
           </label>
         </div>
@@ -154,7 +174,7 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
             <div>
               <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Session ID <span style="color:var(--text3);font-weight:400;">(candidates type this)</span></div>
-              <input type="text" id="cfgCandidateCode" placeholder="e.g. EXAM2025"
+              <input type="text" id="cfgCandidateCode" placeholder="e.g. EXAM2025" oninput="_dirtyFields.add('cfg')"
                 style="font-family:'JetBrains Mono';font-size:13px;background:var(--bg);border:1.5px solid var(--border);border-radius:6px;padding:7px 10px;color:var(--accent);width:100%;outline:none;box-sizing:border-box;">
             </div>
             <div>
@@ -253,6 +273,7 @@ let adminPassword    = '';
 let chartInst        = null;
 let refreshTimer     = null;
 let settingsLoaded   = false;
+let _dirtyFields     = new Set(); // tracks fields user manually changed
 let allData          = {};
 let sessionsCache    = [];          // all sessions from server
 let currentSessionId = localStorage.getItem('hrta_session') || '';
@@ -297,22 +318,43 @@ function login(){
           showToast('Wrong password. Use hrta@123 (or redeploy Code.gs if new passwords not active yet)','error'); return;
         }
         adminPassword = password;
+        sessionStorage.setItem('hrta_pwd', password);
         btn.textContent=orig; btn.disabled=false;
-        document.getElementById('loginScreen').style.display='none';
-        document.getElementById('dashboard').style.display='block';
-        setStartMin();
-        sessionsCache = d.sessions || [];
-        _populateSessionDropdown();
-        loadData();
-        refreshTimer=setInterval(loadData,5000);
+        _showHrtaDashboard();
       })
       .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error','error'); });
   }
   _doHrtaLogin(adminPassword, false);
 }
+function _showHrtaDashboard(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  setStartMin();
+  sessionsCache = [];
+  _populateSessionDropdown();
+  loadData();
+  if(refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(loadData, 5000);
+}
+
+// Auto-login on page load/refresh using sessionStorage
+(function(){
+  const saved = sessionStorage.getItem('hrta_pwd');
+  if(!saved) return;
+  adminPassword = saved;
+  // Silent verify — show dashboard immediately, re-auth in background
+  _showHrtaDashboard();
+  // Validate password is still good (server may have restarted)
+  fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
+    .then(r=>r.json())
+    .then(d=>{ if(d.error){ sessionStorage.removeItem('hrta_pwd'); logout(); }})
+    .catch(()=>{}); // keep session on network error
+})();
+
 function logout(){
   clearInterval(refreshTimer); refreshTimer=null;
   adminPassword=''; settingsLoaded=false; allData={}; sessionsCache=[];
+  sessionStorage.removeItem('hrta_pwd');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('dashboard').style.display='none';
   document.getElementById('passInput').value='';
@@ -390,7 +432,7 @@ function refreshActivePill(){
 
 function switchSession(sid){
   currentSessionId=sid; localStorage.setItem('hrta_session',sid);
-  settingsLoaded=false; _r2Filter=null; _listHashes={allList:'',passList:'',failList:''};
+  settingsLoaded=false; _r2Filter=null; _listHashes={allList:'',passList:'',failList:''}; _dirtyFields=new Set();
   const r2=document.getElementById('adminR2List'); if(r2) delete r2.dataset.hash;
   refreshActivePill(); loadData(); loadSessionList(()=>{});
 }
@@ -419,13 +461,18 @@ function saveSession(isNew){
     if(!sessionId){ showToast('No session selected to update','error'); return; }
   }
 
+  const expLevel = document.getElementById('cfgExpLevel').value || '2';
+  const questScope = document.getElementById('cfgQuestScope').value || 'both';
+
   const fd=new URLSearchParams();
-  fd.append('type','UPDATE_CONFIG'); fd.append('password',adminPassword);
-  fd.append('sessionId',sessionId);  fd.append('sessionName',sessionName);
+  fd.append('type','UPDATE_CONFIG');    fd.append('password',adminPassword);
+  fd.append('sessionId',sessionId);    fd.append('sessionName',sessionName);
   fd.append('candidateCode',candidateCode);
-  fd.append('duration',duration);    fd.append('startTime',startTime);
-  fd.append('enabled',enabled);      fd.append('passMark',passMark);
+  fd.append('duration',duration);      fd.append('startTime',startTime);
+  fd.append('enabled',enabled);        fd.append('passMark',passMark);
   fd.append('invCode',invCode);
+  fd.append('experienceLevel',expLevel);
+  fd.append('questScope',questScope);
 
   const btn=event.target, orig=btn.textContent;
   btn.textContent='Saving…'; btn.disabled=true;
@@ -437,7 +484,7 @@ function saveSession(isNew){
       if(d.error){ showToast(d.error,'error'); return; }
       if(isNew){ currentSessionId=sessionId; localStorage.setItem('hrta_session',sessionId); showToast('Session created: '+sessionName,'success'); }
       else showToast('Session updated!','success');
-      settingsLoaded=false;
+      settingsLoaded=false; _dirtyFields=new Set();
       loadSessionList(()=>{ document.getElementById('sessionSelector').value=currentSessionId; loadData(); });
     })
     .catch(()=>{ btn.textContent=orig; btn.disabled=false; showToast('Save failed','error'); });
@@ -489,20 +536,39 @@ function generateInvCode(){
 
 /* ─── Settings loader (focus-aware) ─────────────────────────── */
 function applySettings(d){
-  const editing=['cfgSessionName','cfgCandidateCode','cfgDuration','cfgPassMark','cfgStartTime'];
-  if(editing.some(id=>document.activeElement&&document.activeElement.id===id)) return;
+  // If user has touched ANY config field this session, never overwrite the whole form.
+  // This prevents the 5-second poll from resetting fields mid-edit.
+  if(_dirtyFields.size > 0) return;
+
   const set=(id,v)=>{ const el=document.getElementById(id); if(el&&v!=null&&v!=='') el.value=v; };
-  set('cfgSessionName', d.sessionName||d.sessionId||'');
+  set('cfgSessionName',   d.sessionName||d.sessionId||'');
   set('cfgCandidateCode', d.candidateCode||d.sessionId||'');
-  set('cfgDuration', d.duration); set('cfgPassMark', d.passMark);
-  const en=document.getElementById('cfgEnabled'); if(en) en.checked=(d.enabled===true);
+  set('cfgDuration',      d.duration);
+  set('cfgPassMark',      d.passMark);
+
+  const en=document.getElementById('cfgEnabled');
+  if(en) en.checked=(d.enabled===true);
+
   const st=document.getElementById('cfgStartTime');
-  if(st&&d.startTime){ const sm=st.min; st.removeAttribute('min');
-    try{ const dt=new Date(d.startTime); if(!isNaN(dt)){ st.value=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,16); }}catch(e){}
-    st.min=sm; }
+  if(st && d.startTime){
+    const sm=st.min; st.removeAttribute('min');
+    try{
+      const dt=new Date(d.startTime);
+      if(!isNaN(dt)) st.value=new Date(dt-dt.getTimezoneOffset()*60000).toISOString().slice(0,16);
+    }catch(e){}
+    st.min=sm;
+  }
+
   const srv=d.invCode||'';
   if(srv){ pendingInvCode=srv; localStorage.setItem('invCode',srv); }
   const ic=document.getElementById('cfgInvCode'); if(ic) ic.value=pendingInvCode||srv;
+
+  const expEl=document.getElementById('cfgExpLevel');
+  if(expEl && d.experienceLevel) expEl.value=String(d.experienceLevel);
+
+  const qsEl=document.getElementById('cfgQuestScope');
+  if(qsEl && d.questScope) qsEl.value=d.questScope;
+
   settingsLoaded=true;
 }
 
@@ -550,7 +616,9 @@ function updateLists(d){
   Object.entries(sets).forEach(([id,{items,empty}])=>{
     const html=items.length?items.map(c=>{
       const init=(c.name||'?')[0].toUpperCase(),av=c.result==='PASS'?'avatar-pass':'avatar-fail',cl=c.result==='PASS'?'badge-pass':'badge-fail';
-      return `<div class="live-entry"><div class="entry-avatar ${av}">${init}</div><div><div class="entry-name">${c.name}</div><div class="entry-detail">${c.result==='PASS'?'✅ Passed':'❌ Failed'}</div></div><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="badge ${cl}">${c.result}</span><span class="entry-score">${c.score}</span></div></div>`;
+      const maxM=Object.values(c.sections||{}).reduce((s,x)=>s+(x.maxMarks||0),0);
+    const scoreStr=maxM>0?c.score+'/'+maxM:c.score;
+    return `<div class="live-entry"><div class="entry-avatar ${av}">${init}</div><div><div class="entry-name">${c.name}</div><div class="entry-detail">${c.result==='PASS'?'✅ Passed':'❌ Failed'}</div></div><div style="margin-left:auto;display:flex;align-items:center;gap:10px;"><span class="badge ${cl}">${c.result}</span><span class="entry-score">${scoreStr}</span></div></div>`;
     }).join(''):empty;
     const hash=items.length+'|'+items.map(c=>c.name+c.score).join('');
     if(_listHashes[id]===hash) return; _listHashes[id]=hash;

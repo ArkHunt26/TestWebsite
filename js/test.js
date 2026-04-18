@@ -221,7 +221,8 @@ async function submitTest(fromCheat){
 
   const sectionScores = calculateSectionScores();
   let totalScore = 0;
-  Object.values(sectionScores).forEach(s => totalScore += s.marks);
+  let totalMaxMarks = 0;
+  Object.values(sectionScores).forEach(s => { totalScore += s.marks; totalMaxMarks += s.maxMarks; });
 
   const passMark = parseInt(localStorage.getItem('passMark') || '0');
   const result = totalScore >= passMark ? 'PASS' : 'FAIL';
@@ -245,12 +246,15 @@ async function submitTest(fromCheat){
   if(codingQObj){
     const div = document.createElement('div');
     div.innerHTML = codingQObj.description;
-    const plainDesc = div.textContent || div.innerText || '';
-    const firstLine = plainDesc.split('\n')[0].trim();
-    sectionBreakdown._codingQuestion = firstLine;
-    // Also store locally as fallback for same-browser invigilator
+    const plainDesc = (div.textContent || div.innerText || '').trim();
+    const firstLine  = plainDesc.split('\n')[0].trim();
+    // Store both title (firstLine) and full plain-text description
+    sectionBreakdown._codingQuestion     = firstLine;
+    sectionBreakdown._codingQuestionFull = plainDesc; // full question for invigilator
+    // Also store locally as fallback
     const candidateName = localStorage.getItem('name') || '';
-    localStorage.setItem('codingQ_' + candidateName.replace(/\s/g,'_'), firstLine);
+    localStorage.setItem('codingQ_'     + candidateName.replace(/\s/g,'_'), firstLine);
+    localStorage.setItem('codingQFull_' + candidateName.replace(/\s/g,'_'), plainDesc);
   }
 
   const formData = new URLSearchParams();
@@ -258,6 +262,7 @@ async function submitTest(fromCheat){
   formData.append('name', localStorage.getItem('name'));
   formData.append('phone', localStorage.getItem('phone'));
   formData.append('score', totalScore);
+  formData.append('maxMarks', totalMaxMarks);
   formData.append('result', result);
   formData.append('sections', JSON.stringify(sectionBreakdown));
   formData.append('sessionId', localStorage.getItem('examSessionId') || '');
@@ -267,6 +272,7 @@ async function submitTest(fromCheat){
   } catch(e) {}
 
   localStorage.setItem('score', totalScore);
+  localStorage.setItem('maxMarks', totalMaxMarks);
   localStorage.setItem('result', result);
   localStorage.setItem('sectionBreakdown', JSON.stringify(sectionBreakdown));
 
@@ -274,7 +280,7 @@ async function submitTest(fromCheat){
 }
 
 /* ========================= ANTI CHEAT ========================= */
-// cheatPopup is overridden by test.html to use the custom overlay
+// cheatPopup is overridden by exam.html to use the custom overlay
 // This is a fallback only — should not be called directly
 function cheatPopup(reason){
   if(examSubmitted || cheatPopupActive) return;

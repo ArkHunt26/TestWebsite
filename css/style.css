@@ -14,20 +14,20 @@
   --pass: #00c896;
   --fail: #ff4d6d;
 
-  /* Light Theme */
-  --bg: #f0f4f8;
-  --bg2: #e3eaf3;
-  --surface: #ffffff;
-  --surface2: #f7fafc;
-  --border: rgba(0,0,0,0.08);
-  --text: #1a2332;
-  --text2: #4a5568;
-  --text3: #8898aa;
-  --shadow: 0 4px 24px rgba(0,0,0,0.08);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.12);
-  --card-bg: #ffffff;
-  --header-bg: linear-gradient(135deg,#0f2942 0%,#1a3a5c 100%);
-  --code-bg: #1e2a3a;
+  /* Premium blue palette (light base, overridden by dark) */
+  --bg:       #eef2f8;
+  --bg2:      #dde5f0;
+  --surface:  #ffffff;
+  --surface2: #f4f7fc;
+  --border:   rgba(15,41,66,0.1);
+  --text:     #0f1f32;
+  --text2:    #3a4f68;
+  --text3:    #7a8fa8;
+  --shadow:    0 4px 24px rgba(15,41,66,0.10);
+  --shadow-lg: 0 12px 40px rgba(15,41,66,0.16);
+  --card-bg:   #ffffff;
+  --header-bg: linear-gradient(90deg,#0f2942 0%,#1a3a5c 100%);
+  --code-bg:   #1e2a3a;
   --code-text: #e2e8f0;
 
   /* Spacing / Shape */
@@ -38,18 +38,18 @@
 }
 
 [data-theme="dark"] {
-  --bg: #0d1117;
-  --bg2: #161b22;
-  --surface: #1c2333;
-  --surface2: #22304a;
-  --border: rgba(255,255,255,0.07);
-  --text: #e6edf3;
-  --text2: #8b949e;
-  --text3: #6e7681;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
-  --shadow-lg: 0 12px 40px rgba(0,0,0,0.6);
-  --card-bg: #1c2333;
-  --code-bg: #0d1117;
+  --bg:        #0a0f1a;
+  --bg2:       #0f1825;
+  --surface:   #141e2e;
+  --surface2:  #1a2640;
+  --border:    rgba(255,255,255,0.07);
+  --text:      #e6edf3;
+  --text2:     #8b949e;
+  --text3:     #6e7681;
+  --shadow:    0 4px 24px rgba(0,0,0,0.5);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.7);
+  --card-bg:   #141e2e;
+  --code-bg:   #0a0f1a;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -64,6 +64,12 @@ body {
   transition: background var(--transition), color var(--transition);
   min-height: 100vh;
 }
+/* Dashboard body gets a very subtle blue-tinged gradient for premium feel */
+body[data-page="dashboard"] {
+  background: linear-gradient(160deg, #0c1828 0%, #0f2238 40%, #0a1520 100%);
+  min-height: 100vh;
+}
+[data-theme="dark"] body { background: var(--bg); }
 
 /* ==========================================
    DARK MODE TOGGLE
@@ -73,8 +79,9 @@ body {
   top: 18px;
   right: 18px;
   z-index: 9999;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  /* On auth pages (dark bg) use a semi-transparent white pill */
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
   border-radius: 50px;
   padding: 8px 16px;
   cursor: pointer;
@@ -83,12 +90,27 @@ body {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--text2);
-  box-shadow: var(--shadow);
+  color: rgba(255,255,255,0.9);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   transition: all var(--transition);
+  backdrop-filter: blur(8px);
 }
-.theme-toggle:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.theme-toggle:hover { transform: translateY(-2px); background: rgba(255,255,255,0.22); box-shadow: 0 6px 20px rgba(0,0,0,0.25); }
 .theme-toggle .icon { font-size: 16px; }
+/* On dashboard pages (after login), theme-toggle uses surface colours */
+.topbar ~ .theme-toggle,
+[data-page="dashboard"] .theme-toggle {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text2);
+}
+/* Light theme on auth pages: dark pill on light bg */
+[data-theme="light"] .auth-screen + .theme-toggle,
+[data-theme="light"] body > .theme-toggle {
+  background: rgba(15,41,66,0.1);
+  border-color: rgba(15,41,66,0.2);
+  color: #1a3a5c;
+}
 
 /* ==========================================
    SHARED LOGIN CARD
@@ -99,19 +121,86 @@ body {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--bg);
+  /* Dark theme: deep blue premium gradient */
+  background: linear-gradient(135deg, #0f2942 0%, #1a3a5c 50%, #0d1f30 100%);
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s ease;
+}
+/* Light theme: softer blue-white gradient */
+[data-theme="light"] .auth-screen {
+  background: linear-gradient(135deg, #d6e8f7 0%, #e8f2fb 50%, #c8dff2 100%);
 }
 
+/* Subtle radial glow accents */
+.auth-screen::before {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(0,200,150,0.07) 0%, transparent 70%);
+  top: -120px; right: -120px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+[data-theme="light"] .auth-screen::before {
+  background: radial-gradient(circle, rgba(0,160,210,0.12) 0%, transparent 70%);
+}
+.auth-screen::after {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(59,158,255,0.06) 0%, transparent 70%);
+  bottom: -60px; left: -60px;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Auth card — dark theme */
 .auth-card {
-  background: var(--surface);
+  background: rgba(28, 35, 51, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   padding: 48px 40px;
   border-radius: var(--r-lg);
-  box-shadow: var(--shadow-lg);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
   width: 100%;
   max-width: 420px;
   text-align: center;
-  border: 1px solid var(--border);
+  border: 1px solid rgba(255,255,255,0.08);
   animation: fadeUp 0.5s ease;
+  position: relative;
+  z-index: 1;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+/* Auth card — light theme: white glass */
+[data-theme="light"] .auth-card {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(15, 41, 66, 0.12);
+  box-shadow: 0 20px 56px rgba(15,41,66,0.18);
+}
+/* Text colours — forced per theme */
+.auth-card h2 { color: #e6edf3; }
+.auth-card p.subtitle { color: #6e7681; }
+.auth-card label { color: #8b949e; }
+[data-theme="light"] .auth-card h2 { color: #0f1f32 !important; }
+[data-theme="light"] .auth-card p.subtitle { color: #4a6080 !important; }
+[data-theme="light"] .auth-card label { color: #3a5068 !important; }
+/* Input fields in light theme */
+[data-theme="light"] .auth-card input,
+[data-theme="light"] .auth-card select {
+  background: rgba(15,41,66,0.06) !important;
+  border-color: rgba(15,41,66,0.18) !important;
+  color: #0f1f32 !important;
+}
+[data-theme="light"] .auth-card input::placeholder { color: #7a90a8 !important; }
+/* Brand icon in light theme */
+[data-theme="light"] .auth-card .brand-icon {
+  background: rgba(0,160,200,0.12);
+}
+/* Notice box inside auth-card */
+[data-theme="light"] .auth-card .notice-box {
+  background: rgba(255,193,7,0.12);
+  border-color: rgba(255,193,7,0.3);
 }
 
 .auth-card .brand-icon {
@@ -221,17 +310,18 @@ body {
    TOPBAR
    ========================================== */
 .topbar {
-  background: var(--header-bg);
+  background: linear-gradient(90deg, #0f2942 0%, #1a3a5c 100%);
   color: #fff;
   padding: 0 32px;
   height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 2px 16px rgba(0,0,0,0.35);
   position: sticky;
   top: 0;
   z-index: 100;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 .topbar-brand {
@@ -684,19 +774,20 @@ body {
 .submit-bar { display: none; }
 
 .submit-exam-btn {
-  padding: 13px 40px;
-  background: var(--accent);
+  padding: 15px 56px;
+  background: linear-gradient(135deg,#00c896,#00a0d0);
   color: #fff;
   border: none;
   border-radius: var(--r);
   font-family: 'Sora', sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   transition: all var(--transition);
-  box-shadow: 0 4px 20px var(--accent-glow);
+  box-shadow: 0 6px 24px var(--accent-glow);
+  letter-spacing: 0.02em;
 }
-.submit-exam-btn:hover { filter: brightness(1.1); transform: translateY(-2px); }
+.submit-exam-btn:hover { filter: brightness(1.1); transform: translateY(-2px); box-shadow: 0 10px 32px var(--accent-glow); }
 
 /* ==========================================
    RESULT PAGE

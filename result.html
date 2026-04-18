@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMGYyOTQyIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMWEzYTVjIi8+CiAgPC9saW5lYXJHcmFkaWVudD48L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNnKSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMy4wNCIgZm9udC1zaXplPSIxNy42IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPvCfjok8L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Exam Completed</title>
 <link rel="stylesheet" href="css/style.css">
@@ -131,6 +132,8 @@ body { background: var(--bg); }
       <span id="candidateName">Candidate</span>
     </div>
 
+
+
     <div class="quote-card">
       <span class="quote-mark">"</span>
       <div class="quote-text" id="quoteText">Loading...</div>
@@ -147,14 +150,14 @@ body { background: var(--bg); }
 
 <script>
 // Fix 5: Replace entire history so Back from result goes to login, not test
-// Also clear the exam end time so test.html guard redirects back here if visited
+// Also clear the exam end time so exam.html guard redirects back here if visited
 localStorage.setItem('examSubmittedFlag', '1');
-localStorage.removeItem('examEndTime'); // nullify end time so test.html guard fires
+localStorage.removeItem('examEndTime'); // nullify end time so exam.html guard fires
 history.replaceState({ page: 'result' }, '', 'result.html');
 history.pushState({ page: 'result' }, '', 'result.html'); // extra entry so one Back still stays here
 // Intercept any popstate attempt — redirect to index (never back to test)
 window.addEventListener('popstate', function(){
-  window.location.replace('index.html');
+  window.location.replace('login.html');
 });
 </script>
 
@@ -178,6 +181,7 @@ const q = quotes[Math.floor(Math.random() * quotes.length)];
 document.getElementById('quoteText').textContent = q.text;
 document.getElementById('quoteAuthor').textContent = '— ' + q.author;
 document.getElementById('candidateName').textContent = localStorage.getItem('name') || 'Candidate';
+
 </script>
 </body>
 </html>

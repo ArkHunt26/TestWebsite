@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMGYyOTQyIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMDBhMGQwIi8+CiAgPC9saW5lYXJHcmFkaWVudD48L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNnKSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMy4wNCIgZm9udC1zaXplPSIxNy42IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPvCfkrs8L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Embedded Systems Exam — Login</title>
 <link rel="stylesheet" href="css/style.css">
@@ -126,32 +127,11 @@ body { background: var(--bg); }
   text-align: center;
   line-height: 1.6;
 }
-.dm-toggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.15);
-  border-radius: 50px;
-  padding: 7px 14px;
-  cursor: pointer;
-  color: #e6edf3;
-  font-size: 13px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  z-index: 9999;
-  transition: all 0.25s;
-  font-family: 'Sora', sans-serif;
-}
-.dm-toggle:hover { background: rgba(255,255,255,0.15); }
+/* theme toggle removed from candidate login */
 </style>
 </head>
 <body>
-<button class="dm-toggle" onclick="toggleTheme()">
-  <span id="themeIcon">🌙</span><span id="themeLabel">Dark</span>
-</button>
+
 
 <div class="login-bg">
   <div class="login-card">
@@ -183,21 +163,9 @@ body { background: var(--bg); }
 <script src="js/config.js"></script>
 <script>
 // Theme
-const saved = localStorage.getItem('theme') || 'dark';
-if(saved === 'light'){
-  document.documentElement.setAttribute('data-theme','light');
-  document.getElementById('themeIcon').textContent = '☀️';
-  document.getElementById('themeLabel').textContent = 'Light';
-}
+// Candidate login page — always dark mode, no theme toggle
 
-function toggleTheme(){
-  const cur = document.documentElement.getAttribute('data-theme');
-  const next = cur === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-  document.getElementById('themeIcon').textContent = next === 'dark' ? '🌙' : '☀️';
-  document.getElementById('themeLabel').textContent = next === 'dark' ? 'Dark' : 'Light';
-}
+
 
 async function startExam(){
   const name = document.getElementById('name').value.trim();
@@ -264,12 +232,15 @@ async function startExam(){
     localStorage.setItem('passMark', config.passMark);
     // Store internalId (used by test.js to POST result to correct sheet)
     localStorage.setItem('examSessionId', config.internalId || config.sessionId);
+    // Store experience level so questions.js picks the right difficulty
+    localStorage.setItem('examExperienceLevel', String(config.experienceLevel || 2));
+    localStorage.setItem('examQuestScope', config.questScope || 'both');
     // Use remaining time from exam window, not full duration, in case candidate logs in late
     const start2 = config.startTime ? new Date(config.startTime).getTime() : Date.now();
     const examEnd = start2 + Number(config.duration) * 60000;
     localStorage.setItem('examEndTime', String(examEnd));
 
-    window.location.href = 'test.html';
+    window.location.href = 'exam.html';
   } catch(err) {
     alert('Unable to connect. Check your internet connection.');
     btn.textContent = 'Start Exam →'; btn.disabled = false;

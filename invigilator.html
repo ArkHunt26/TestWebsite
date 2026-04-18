@@ -2,8 +2,9 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMGYyOTQyIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMWEzYTVjIi8+CiAgPC9saW5lYXJHcmFkaWVudD48L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNnKSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMy4wNCIgZm9udC1zaXplPSIxNy42IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPvCflI08L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Invigilator Panel — Round 2</title>
+<title>Invigilator Panel</title>
 <link rel="stylesheet" href="css/style.css">
 <script>(function(){var t=localStorage.getItem('theme')||'dark';document.documentElement.setAttribute('data-theme',t);})();</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -134,7 +135,13 @@
     </div>
 
     <div class="topbar-actions">
-      <span id="invName" style="font-size:13px;color:rgba(255,255,255,0.7);"></span>
+      <button id="invNamePill" onclick="openChangeName()"
+  style="display:flex;align-items:center;gap:7px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:30px;padding:6px 14px;cursor:pointer;font-family:'Sora',sans-serif;font-size:13px;color:rgba(255,255,255,0.9);transition:all 0.2s;" 
+  title="Click to edit your name">
+  <span style="font-size:14px;">🪪</span>
+  <span id="invName">—</span>
+  <span style="font-size:10px;color:rgba(255,255,255,0.5);">✎</span>
+</button>
       <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
         <span id="themeIconDash">🌙</span> Theme
       </button>
@@ -189,16 +196,23 @@
       <button class="modal-close" onclick="closeGrading()">✕</button>
     </div>
 
-    <!-- Fix 7: Short coding question summary for the invigilator -->
-    <div id="codingQBox" class="coding-q-box" style="display:none;">
-      <div class="cq-label">💻 Coding Question Assigned (Round 1) — ask related questions</div>
-      <div class="cq-text" id="codingQText">—</div>
+    <!-- Coding question card — shows full question the candidate received -->
+    <div id="codingQBox" style="display:none;margin-bottom:18px;padding:14px 16px;background:rgba(59,158,255,0.07);border:1.5px solid rgba(59,158,255,0.2);border-radius:12px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#3b9eff;margin-bottom:8px;">
+        💻 Candidate's Round 1 Coding Question — use this to evaluate their understanding
+      </div>
+      <div id="codingQTitle" style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;"></div>
+      <div id="codingQText" style="font-size:13px;color:var(--text2);line-height:1.7;"></div>
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;">
       <div class="form-group">
-        <label>Invigilator Name</label>
-        <input type="text" id="gradInvName" placeholder="Your name">
+        <label style="display:flex;align-items:center;justify-content:space-between;">
+          <span>Invigilator Name</span>
+          <span style="font-size:11px;color:var(--text3);font-weight:400;text-transform:none;">auto-filled · editable</span>
+        </label>
+        <input type="text" id="gradInvName" placeholder="Your name"
+          style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;width:100%;color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;box-sizing:border-box;">
       </div>
       <div class="form-group">
         <label>Date &amp; Time</label>
@@ -240,9 +254,17 @@
       <div id="verdictError" style="font-size:12px;color:var(--danger);margin-top:6px;display:none;">Please select a verdict before submitting.</div>
     </div>
 
-    <div style="display:flex;justify-content:flex-end;gap:12px;">
-      <button class="btn-secondary" onclick="closeGrading()">Cancel</button>
-      <button class="btn-primary" style="width:auto;padding:12px 28px;" onclick="submitGrading()">
+    <div style="display:flex;justify-content:flex-end;gap:12px;padding-top:4px;">
+      <button onclick="closeGrading()"
+        style="padding:12px 24px;min-width:110px;background:var(--surface2);color:var(--text);border:1.5px solid var(--border);border-radius:var(--r-sm);font-family:'Sora',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;"
+        onmouseover="this.style.borderColor='var(--danger)';this.style.color='var(--danger)'"
+        onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text)'">
+        Cancel
+      </button>
+      <button onclick="submitGrading()"
+        style="padding:12px 24px;min-width:160px;background:var(--accent);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Sora',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all 0.2s;box-shadow:0 4px 16px var(--accent-glow);"
+        onmouseover="this.style.filter='brightness(1.1)'"
+        onmouseout="this.style.filter=''">
         Submit Evaluation ✓
       </button>
     </div>
@@ -254,6 +276,7 @@
 <script src="js/config.js"></script>
 <script>
 let adminPass = '';
+let _invigName = ''; // loaded after login only — always confirmed per session
 let currentInvCode = '';
 let allCandidates = [];
 let invigSessionId = '';
@@ -272,22 +295,45 @@ function setVerdict(val, el){
   document.getElementById('verdictError').style.display = 'none';
 }
 
-const RATING_FIELDS = [
-  { key: 'communication', label: 'Communication', icon: '🗣️' },
-  { key: 'c_prog',        label: 'C Programming', icon: '⚙️'  },
-  { key: 'hardware',      label: 'Hardware',       icon: '🔋'  },
-  { key: 'c_plus',        label: 'C++ / OOP',      icon: '🔧'  },
-  { key: 'rtos',          label: 'RTOS',           icon: '⏱️'  }
+// All possible rating fields
+const RATING_FIELDS_ALL = [
+  { key: 'communication', label: 'Communication', icon: '🗣️', scopes: ['sw','hw','both'] },
+  { key: 'c_prog',        label: 'C Programming', icon: '⚙️',  scopes: ['sw','both'] },
+  { key: 'hardware',      label: 'Hardware',       icon: '🔋',  scopes: ['hw','both'] },
+  { key: 'c_plus',        label: 'C++ / OOP',      icon: '🔧',  scopes: ['sw','both'] },
+  { key: 'rtos',          label: 'RTOS',           icon: '⏱️',  scopes: ['sw','both'] }
 ];
 
-const SECTIONS = {
-  c:        { label: 'C Programming',   color: '#00c896', max: 5   },
-  cpp:      { label: 'C++ Programming', color: '#3b9eff', max: 5   },
-  hw:       { label: 'Embedded Sys.',   color: '#ffc107', max: 5   },
-  rtos:     { label: 'RTOS',            color: '#ff7043', max: 5   },
-  hardware: { label: 'Hardware',        color: '#ab47bc', max: 6   },
-  coding:   { label: 'Coding',          color: '#26c6da', max: 4   }
+let _sessionQuestScope = 'both'; // updated when session data arrives
+let RATING_FIELDS = RATING_FIELDS_ALL; // rebuilt per scope
+
+function buildRatingFields(scope) {
+  var s = (scope||'both').trim().toLowerCase();
+  return RATING_FIELDS_ALL.filter(function(f){ return f.scopes.indexOf(s) >= 0; });
+}
+
+const SECTIONS_ALL = {
+  c:        { label: 'C Programming',   color: '#00c896', max: 5  },
+  cpp:      { label: 'C++ Programming', color: '#3b9eff', max: 5  },
+  hw:       { label: 'Embedded Sys.',   color: '#ffc107', max: 5  },
+  rtos:     { label: 'RTOS',            color: '#ff7043', max: 5  },
+  hardware: { label: 'Hardware',        color: '#ab47bc', max: 10 },
+  coding:   { label: 'Coding',          color: '#26c6da', max: 4  }
 };
+
+// Built dynamically from actual candidate sections — only shows tested sections
+function buildSections(candidates){
+  const seen = new Set();
+  candidates.forEach(c => {
+    Object.keys(c.sections || {}).forEach(k => {
+      if(k && k !== '_codingQuestion' && k !== '_codingQuestionFull') seen.add(k);
+    });
+  });
+  const meta = {};
+  Object.keys(SECTIONS_ALL).forEach(k => { if(seen.has(k)) meta[k] = SECTIONS_ALL[k]; });
+  return Object.keys(meta).length > 0 ? meta : SECTIONS_ALL;
+}
+let SECTIONS = SECTIONS_ALL;
 
 /* ─── THEME ─── */
 const savedTheme = localStorage.getItem('theme') || 'dark';
@@ -328,9 +374,20 @@ function login(){
       if(d.error){ adminPass = ''; showToast('Wrong password. Ensure Code.gs has been redeployed with new passwords.', 'error'); return; }
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainPanel').style.display   = 'block';
-      document.getElementById('invName').textContent = '🔍 Invigilator';
       invigSessionId = d.sessionId || '';
-      document.getElementById('invName').textContent = '🔍 Invigilator';
+      // Always show name confirmation modal on every login.
+      // Pre-fill with stored name so the same invigilator just presses Enter.
+      // Different invigilator can clear and type their own name.
+      const storedName = localStorage.getItem('invigName') || '';
+      const nameInp = document.getElementById('nameSetupInput');
+      if(nameInp) nameInp.value = storedName;
+      document.getElementById('nameSetupModal').classList.remove('hidden');
+      setTimeout(() => {
+        if(nameInp){
+          nameInp.focus();
+          nameInp.select(); // select all so they can immediately type to replace
+        }
+      }, 120);
       // Show session banner in topbar
       const bn = document.getElementById('sessionBanner');
       const bnt = document.getElementById('sessionBannerName');
@@ -354,8 +411,51 @@ function logout(){
   document.getElementById('mainPanel').style.display   = 'none';
 }
 
+/* ── Invigilator name management ─────────────────────────── */
+function _setInvigName(name){
+  _invigName = name;
+  localStorage.setItem('invigName', name);
+  document.getElementById('invName').textContent = name;
+}
+
+function confirmInvigName(){
+  const inp = document.getElementById('nameSetupInput');
+  const name = inp.value.trim();
+  if(!name){
+    document.getElementById('nameSetupErr').style.display = 'block';
+    inp.focus(); return;
+  }
+  _setInvigName(name);
+  document.getElementById('nameSetupModal').classList.add('hidden');
+  showToast('Welcome, ' + name + '!', 'success');
+}
+
+function openChangeName(){
+  const inp = document.getElementById('changeNameInput');
+  inp.value = _invigName;
+  document.getElementById('changeNameModal').classList.remove('hidden');
+  setTimeout(()=>inp.focus(), 80);
+}
+
+function saveChangedName(){
+  const name = document.getElementById('changeNameInput').value.trim();
+  if(!name){ showToast('Name cannot be empty', 'error'); return; }
+  _setInvigName(name);
+  document.getElementById('changeNameModal').classList.add('hidden');
+  showToast('Name updated to: ' + name, 'success');
+}
+
+
 /* ─── CANDIDATE DATA ─── */
 function loadCandidates(d){
+  // Store and apply session scope
+  _sessionQuestScope = (d.questScope || 'both').trim().toLowerCase();
+  RATING_FIELDS = buildRatingFields(_sessionQuestScope);
+
+  // Rebuild SECTIONS dynamically from actual session data
+  const allC = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  SECTIONS = buildSections(allC);
+
   // Sync server-side evaluations into localStorage so grading UI shows correct state
   if(d.evalsMap){
     Object.entries(d.evalsMap).forEach(([name, evals])=>{
@@ -509,7 +609,7 @@ function renderProfile(c){
         <div style="flex:1;min-width:0;">
           <div style="font-size:20px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name}</div>
           <div style="font-size:13px;color:var(--text3);">
-            Round 1: <strong style="font-family:'JetBrains Mono';color:var(--text);">${c.score} pts</strong>
+            Round 1: <strong style="font-family:'JetBrains Mono';color:var(--text);">${(()=>{const mx=Object.values(c.sections||{}).reduce((t,s)=>t+(s.maxMarks||0),0);return mx>0?c.score+'/'+mx:c.score})() } pts</strong>
             &nbsp;•&nbsp;
             <span class="badge ${c.result==='PASS'?'badge-pass':'badge-fail'}">${c.result}</span>
           </div>
@@ -642,7 +742,7 @@ function openGrading(){
   ratings = {};
 
   document.getElementById('gradingCandidateName').textContent = gradingCandidate.name;
-  document.getElementById('gradInvName').value   = '';
+  document.getElementById('gradInvName').value   = _invigName || '';
   document.getElementById('gradRemarks').value   = '';
   document.getElementById('gradDateTime').value  = new Date().toLocaleString('en-IN', {
     day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit'
@@ -654,13 +754,31 @@ function openGrading(){
   const localCodingQ  = localStorage.getItem('codingQ_' + gradingCandidate.name.replace(/\s/g,'_')) || '';
   const resolvedCodingQ = serverCodingQ || localCodingQ;
 
-  const codingBox = document.getElementById('codingQBox');
-  if(resolvedCodingQ){
-    document.getElementById('codingQText').textContent = resolvedCodingQ;
+  const codingBox  = document.getElementById('codingQBox');
+  const titleEl    = document.getElementById('codingQTitle');
+  const textEl     = document.getElementById('codingQText');
+
+  // resolvedCodingQ contains the firstLine (title). Also try to get the full description
+  // from the sections object which may contain a richer _codingQuestionFull field,
+  // otherwise fall back to a descriptive message for the invigilator.
+  const fullQ = (gradingCandidate.sections && gradingCandidate.sections._codingQuestionFull) || '';
+
+  if(resolvedCodingQ || fullQ){
+    if(titleEl) titleEl.textContent = resolvedCodingQ || 'Coding Challenge';
+    if(textEl){
+      if(fullQ){
+        // Strip HTML tags for plain display
+        const tmp = document.createElement('div');
+        tmp.innerHTML = fullQ;
+        textEl.textContent = tmp.textContent || tmp.innerText || fullQ;
+      } else {
+        textEl.textContent = 'Full question details not available. The candidate solved: "' + resolvedCodingQ + '". Ask them to explain their approach, time complexity, and edge cases.';
+      }
+    }
     codingBox.style.display = 'block';
   } else {
-    // Show box with a "not available" message so invigilator knows to ask generally
-    document.getElementById('codingQText').textContent = 'Question data not available — ask candidate to describe their solution.';
+    if(titleEl) titleEl.textContent = 'Coding Challenge';
+    if(textEl) textEl.textContent = 'Question data not available — ask the candidate to describe what problem they solved and walk through their solution.';
     codingBox.style.display = 'block';
   }
 
@@ -758,5 +876,53 @@ function showToast(msg, type='info'){
   setTimeout(() => t.remove(), 3500);
 }
 </script>
+
+<!-- ══ INVIGILATOR NAME SETUP MODAL (shown once after login) ══ -->
+<div id="nameSetupModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div style="font-size:52px;margin-bottom:12px;">🪪</div>
+    <h3 style="font-size:20px;font-weight:700;margin-bottom:6px;color:var(--text);">Welcome, Invigilator</h3>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:24px;line-height:1.6;">
+      Confirm your name below. It is pre-filled from the last session.<br>
+      <strong style="color:var(--accent);">If you are a different invigilator, clear the field and enter your name.</strong>
+    </p>
+    <div style="text-align:left;margin-bottom:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);">Your Full Name</label>
+        <button type="button" onclick="document.getElementById('nameSetupInput').value='';document.getElementById('nameSetupInput').focus();"
+          style="font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;padding:0;font-family:'Sora',sans-serif;">✕ Clear</button>
+      </div>
+      <input type="text" id="nameSetupInput" placeholder="Enter your full name"
+        style="width:100%;padding:12px 16px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:15px;outline:none;box-sizing:border-box;transition:border-color 0.2s;"
+        onkeydown="if(event.key==='Enter')confirmInvigName()"
+        oninput="document.getElementById('nameSetupErr').style.display='none'">
+      <div id="nameSetupErr" style="display:none;font-size:12px;color:var(--danger);margin-top:6px;">Please enter your name to continue.</div>
+    </div>
+    <button class="btn-primary" style="width:100%;font-size:15px;padding:13px;" onclick="confirmInvigName()">
+      Confirm &amp; Start Invigilating →
+    </button>
+  </div>
+</div>
+
+<!-- ══ CHANGE NAME MODAL ══ -->
+<div id="changeNameModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <div class="modal-header">
+      <h3>Edit Your Name</h3>
+      <button class="modal-close" onclick="document.getElementById('changeNameModal').classList.add('hidden')">✕</button>
+    </div>
+    <div style="text-align:left;margin:16px 0;">
+      <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);display:block;margin-bottom:6px;">Full Name</label>
+      <input type="text" id="changeNameInput" placeholder="Your name"
+        style="width:100%;padding:11px 14px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:14px;outline:none;box-sizing:border-box;"
+        onkeydown="if(event.key==='Enter')saveChangedName()">
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn-secondary" style="padding:9px 20px;" onclick="document.getElementById('changeNameModal').classList.add('hidden')">Cancel</button>
+      <button class="btn-primary" style="padding:9px 24px;width:auto;" onclick="saveChangedName()">Save</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

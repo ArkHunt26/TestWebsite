@@ -2,12 +2,13 @@
 <html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWEzYTVjIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMGYyOTQyIi8+CiAgPC9saW5lYXJHcmFkaWVudD48L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNnKSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMy4wNCIgZm9udC1zaXplPSIxNy42IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPvCfk4o8L3RleHQ+Cjwvc3ZnPg==">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- Cache busting: v9-fixed -->
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>Management Dashboard v9</title>
+<title>Management Dashboard</title>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -75,9 +76,11 @@
     <div class="topbar-actions">
       <div id="examLiveBadge" class="badge badge-pending">● Loading...</div>
       <button class="download-btn" onclick="downloadExcel()">⬇ Export Report</button>
+      <button class="btn-secondary" onclick="mgmtRefresh()" style="padding:7px 12px;font-size:12px;" title="Refresh data">🔄 Refresh</button>
       <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
         <span id="themeIconDash">🌙</span> Theme
       </button>
+      <button style="padding:8px 16px;font-size:13px;background:var(--danger);color:#fff;border:none;border-radius:var(--r-sm);font-family:'Sora',sans-serif;font-weight:600;cursor:pointer;" onclick="mgmtLogout()">Logout</button>
     </div>
   </nav>
 
@@ -96,8 +99,8 @@
             style="padding:8px 12px;border-radius:var(--r-sm);border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'Sora',sans-serif;font-size:13px;outline:none;min-width:240px;">
             <option value="">Loading…</option>
           </select>
-          <div id="mgmtActiveBadge" style="display:none;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);color:var(--accent);border:1px solid rgba(0,200,150,0.25);">
-            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:5px;animation:pulse 1.5s infinite;"></span>Active Session
+          <div id="mgmtActiveBadge" style="display:none;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;background:rgba(0,200,150,0.12);color:var(--accent);border:1px solid rgba(0,200,150,0.25);">
+            <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;animation:pulse 1.5s infinite;"></span>Active Session
           </div>
           <button class="download-btn" onclick="downloadExcel()" style="padding:8px 14px;font-size:12px;">⬇ Export</button>
         </div>
@@ -281,14 +284,30 @@ let r1Chart = null;
 let secBarChart = null;
 let r2Radar = null;
 
-const SECTION_META = {
-  c: { label: 'C Prog.', color: '#00c896' },
-  cpp: { label: 'C++', color: '#3b9eff' },
-  hw: { label: 'Embedded', color: '#ffc107' },
-  rtos: { label: 'RTOS', color: '#ff7043' },
-  hardware: { label: 'Hardware', color: '#ab47bc' },
-  coding: { label: 'Coding', color: '#26c6da' }
+const SECTION_META_ALL = {
+  c:        { label: 'C Prog.',     color: '#00c896' },
+  cpp:      { label: 'C++',         color: '#3b9eff' },
+  hw:       { label: 'Embedded',    color: '#ffc107' },
+  rtos:     { label: 'RTOS',        color: '#ff7043' },
+  hardware: { label: 'Hardware',    color: '#ab47bc' },
+  coding:   { label: 'Coding',      color: '#26c6da' }
 };
+
+// Build SECTION_META dynamically from actual candidate data — only shows sections that exist
+function buildSectionMeta(allCandidates){
+  const seen = new Set();
+  allCandidates.forEach(c => {
+    Object.keys(c.sections || {}).forEach(k => {
+      if(k && k !== '_codingQuestion' && k !== '_codingQuestionFull') seen.add(k);
+    });
+  });
+  // Preserve display order from SECTION_META_ALL
+  const meta = {};
+  Object.keys(SECTION_META_ALL).forEach(k => { if(seen.has(k)) meta[k] = SECTION_META_ALL[k]; });
+  // Fall back to full list if no data yet
+  return Object.keys(meta).length > 0 ? meta : SECTION_META_ALL;
+}
+let SECTION_META = SECTION_META_ALL; // updated when data arrives
 
 const RATING_FIELDS = [
   { key: 'communication', label: 'Communication' },
@@ -344,15 +363,10 @@ function login(){
           return;
         }
         // Auth succeeded
-        adminPassword = password; // store whichever password worked
+        adminPassword = password;
+        sessionStorage.setItem('mgmt_pwd', password);
         btn.textContent = orig; btn.disabled = false;
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('dashboard').style.display = 'block';
-        _syncThemeIcons();
-        _allMgmtSessions = d.sessions || [];
-        _populateMgmtDropdown();
-        if(currentSessionId) refresh();
-        setInterval(() => refresh(), 5000);
+        _showMgmtDashboard(d.sessions || []);
       })
       .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error', 'error'); });
   }
@@ -473,6 +487,9 @@ function mgmtSearch(q){
 }
 
 function processData(d){
+  // Rebuild section columns dynamically based on what sections actually exist in this session
+  const allC = [...(d.passList||[]).map(c=>({...c,result:'PASS'})), ...(d.failList||[]).map(c=>({...c,result:'FAIL'}))];
+  SECTION_META = buildSectionMeta(allC);
   allData = d;
   updateTopStats(d);
   updateExamStatus(d);
@@ -637,7 +654,7 @@ function renderR1Table(skipFade){
               </div>
             </td>
             ${secCells}
-            <td style="font-family:'JetBrains Mono';font-weight:700;">${c.score}</td>
+            <td style="font-family:'JetBrains Mono';font-weight:700;">${c.score}${Object.values(c.sections||{}).reduce((s,x)=>s+(x.maxMarks||0),0)>0?'/'+Object.values(c.sections||{}).reduce((s,x)=>s+(x.maxMarks||0),0):''}</td>
             <td><span class="badge ${c.result==='PASS'?'badge-pass':'badge-fail'}">${c.result}</span></td>
           </tr>`;
         }).join('')}
@@ -758,7 +775,7 @@ function renderR2Section(d){
       <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
       <div>
         <div class="entry-name" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;">${c.name}${vBadge}</div>
-        <div class="entry-detail">R1: ${c.score} pts • ${evals.length} evaluation(s)</div>
+        <div class="entry-detail">R1: ${(()=>{const mx=Object.values(c.sections||{}).reduce((s,x)=>s+(x.maxMarks||0),0);return mx>0?c.score+'/'+mx:c.score})()} pts • ${evals.length} evaluation(s)</div>
       </div>
       <div style="margin-left:auto;text-align:right;">
         <div style="font-size:16px;">${stars}</div>
@@ -773,7 +790,7 @@ function renderR2Section(d){
       <div class="entry-avatar ${c.result==='PASS'?'avatar-pass':'avatar-fail'}">${init}</div>
       <div>
         <div class="entry-name">${c.name}</div>
-        <div class="entry-detail">R1: ${c.score} pts • <span style="color:var(--text3);">⏳ Awaiting Round 2</span></div>
+        <div class="entry-detail">R1: ${(()=>{const mx=Object.values(c.sections||{}).reduce((s,x)=>s+(x.maxMarks||0),0);return mx>0?c.score+'/'+mx:c.score})()} pts • <span style="color:var(--text3);">⏳ Awaiting Round 2</span></div>
       </div>
       <span class="badge badge-pending" style="margin-left:auto;">Pending</span>
     </div>`;
@@ -874,6 +891,53 @@ function showToast(msg, type='info'){
 
 document.addEventListener('keydown', e => {
   if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
+
+/* ── Session persistence helpers ── */
+function _showMgmtDashboard(sessions){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  _syncThemeIcons();
+  _allMgmtSessions = sessions || [];
+  _populateMgmtDropdown();
+  if(currentSessionId) refresh();
+  if(!window._mgmtRefreshInterval)
+    window._mgmtRefreshInterval = setInterval(() => refresh(), 5000);
+}
+
+function mgmtRefresh(){
+  _isAutoRefresh = false;
+  loadMgmtSessions(function(){});  // reload session dropdown
+  refresh();                        // reload candidate data
+  showToast('Refreshed','success');
+}
+
+function mgmtLogout(){
+  adminPassword = '';
+  sessionStorage.removeItem('mgmt_pwd');
+  clearInterval(window._mgmtRefreshInterval);
+  window._mgmtRefreshInterval = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  const pi = document.getElementById('passInput');
+  if(pi){ pi.value=''; pi.type='password'; }
+}
+
+// Auto-login on page refresh using sessionStorage (cleared when tab closes)
+(function(){
+  const saved = sessionStorage.getItem('mgmt_pwd');
+  if(!saved) return;
+  adminPassword = saved;
+  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ sessionStorage.removeItem('mgmt_pwd'); adminPassword=''; return; }
+      _showMgmtDashboard(d.sessions || []);
+    })
+    .catch(() => {
+      // On network error keep session, will retry on next refresh
+      _showMgmtDashboard([]);
+    });
+})();
 });
 </script>
 </body>

@@ -2,7 +2,7 @@
 let timerInterval;
 
 function initExamTimer(){
-  // examEndTime is set by index.html as: startTime + duration*60000 (absolute epoch ms)
+  // examEndTime is set by login.html as: startTime + duration*60000 (absolute epoch ms)
   const endTime = parseInt(localStorage.getItem('examEndTime') || '0');
 
   if(!endTime || endTime <= Date.now()){
