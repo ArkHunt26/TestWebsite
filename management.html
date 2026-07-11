@@ -991,6 +991,7 @@ function submitResetPassword(role){
 
 document.addEventListener('keydown', e => {
   if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
+});
 
 /* ── Session persistence helpers ── */
 function _showMgmtDashboard(sessions){
@@ -1021,7 +1022,8 @@ function mgmtLogout(){
   if(pi){ pi.value=''; pi.type='password'; }
 }
 
-// Auto-login on page refresh using sessionStorage (cleared when tab closes)
+// Auto-login on page refresh using sessionStorage (cleared when tab closes).
+// Runs exactly once, on initial page load — NOT on every keystroke.
 (function(){
   const saved = sessionStorage.getItem('mgmt_pwd');
   if(!saved) return;
@@ -1033,11 +1035,12 @@ function mgmtLogout(){
       _showMgmtDashboard(d.sessions || []);
     })
     .catch(() => {
-      // On network error keep session, will retry on next refresh
-      _showMgmtDashboard([]);
+      // Network error: do NOT grant access. Stay on the login screen and
+      // let the person retry — the server was never actually confirmed.
+      adminPassword = '';
     });
 })();
-});
+
 </script>
 </body>
 </html>
