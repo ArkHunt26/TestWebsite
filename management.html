@@ -636,7 +636,14 @@ function updateR1Charts(d){
   const secColors = Object.keys(SECTION_META).map(k => SECTION_META[k].color);
 
   if(secBarChart){
+    // IMPORTANT: also resync labels & colors, not just the data values.
+    // Chart.js keeps stale labels otherwise — if the chart was first drawn
+    // with all 6 sections (e.g. before any results existed) and a session
+    // later only uses one scope (e.g. hardware-only), the single data
+    // value would silently render under the wrong, stale label.
+    secBarChart.data.labels = secLabels;
     secBarChart.data.datasets[0].data = secAvgs;
+    secBarChart.data.datasets[0].backgroundColor = secColors;
     secBarChart.update();
   } else {
     const ctx2 = document.getElementById('sectionBarChart');
