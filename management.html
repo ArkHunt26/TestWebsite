@@ -76,6 +76,7 @@
     <div class="topbar-actions">
       <div id="examLiveBadge" class="badge badge-pending">● Loading...</div>
       <button class="download-btn" onclick="downloadExcel()">⬇ Export Report</button>
+      <button class="btn-secondary" onclick="openUserMgmtModal()" style="padding:7px 14px;font-size:12px;">🔐 User Management</button>
       <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
         <span id="themeIconDash">🌙</span> Theme
       </button>
@@ -265,6 +266,62 @@
           <div class="empty-state"><div class="empty-icon">🎯</div><p>No Round 2 evaluations yet.</p></div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== USER MANAGEMENT / RESET PASSWORD ========== -->
+<div id="userMgmtModal" class="modal-overlay hidden">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-header">
+      <h3>🔐 User Management</h3>
+      <button class="modal-close" onclick="closeUserMgmtModal()">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text3);margin-bottom:16px;">
+      Reset login passwords for HR &amp; TA or Invigilator access. Only Management can do this —
+      HR and Invigilator users who forget their password are shown a message telling them to contact you.
+    </p>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--r-sm);padding:14px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;justify-content:between;gap:8px;margin-bottom:10px;">
+        <strong style="font-size:14px;">🛡️ HR &amp; TA Password</strong>
+      </div>
+      <div class="form-field" style="margin-bottom:10px;">
+        <label>New Password</label>
+        <div class="password-wrap">
+          <input type="password" id="hrNewPwd" placeholder="Min. 6 characters">
+          <button class="eye-btn" type="button" onclick="togglePwd('hrNewPwd',this)" tabindex="-1">👁️</button>
+        </div>
+      </div>
+      <div class="form-field" style="margin-bottom:10px;">
+        <label>Confirm Password</label>
+        <div class="password-wrap">
+          <input type="password" id="hrConfirmPwd" placeholder="Re-enter new password">
+          <button class="eye-btn" type="button" onclick="togglePwd('hrConfirmPwd',this)" tabindex="-1">👁️</button>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:auto;padding:9px 20px;font-size:13px;" onclick="submitResetPassword('HR')">Save HR Password</button>
+    </div>
+
+    <div style="border:1.5px solid var(--border);border-radius:var(--r-sm);padding:14px;">
+      <div style="display:flex;align-items:center;justify-content:between;gap:8px;margin-bottom:10px;">
+        <strong style="font-size:14px;">🔍 Invigilator Password</strong>
+      </div>
+      <div class="form-field" style="margin-bottom:10px;">
+        <label>New Password</label>
+        <div class="password-wrap">
+          <input type="password" id="invNewPwd" placeholder="Min. 6 characters">
+          <button class="eye-btn" type="button" onclick="togglePwd('invNewPwd',this)" tabindex="-1">👁️</button>
+        </div>
+      </div>
+      <div class="form-field" style="margin-bottom:10px;">
+        <label>Confirm Password</label>
+        <div class="password-wrap">
+          <input type="password" id="invConfirmPwd" placeholder="Re-enter new password">
+          <button class="eye-btn" type="button" onclick="togglePwd('invConfirmPwd',this)" tabindex="-1">👁️</button>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:auto;padding:9px 20px;font-size:13px;" onclick="submitResetPassword('Invigilator')">Save Invigilator Password</button>
     </div>
   </div>
 </div>
@@ -875,6 +932,61 @@ function showToast(msg, type='info'){
   t.textContent = msg;
   c.appendChild(t);
   setTimeout(() => t.remove(), 3500);
+}
+
+/* ── User Management: reset HR / Invigilator passwords ── */
+function openUserMgmtModal(){
+  ['hrNewPwd','hrConfirmPwd','invNewPwd','invConfirmPwd'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.value = ''; el.type = 'password'; }
+  });
+  document.getElementById('userMgmtModal').classList.remove('hidden');
+}
+function closeUserMgmtModal(){
+  document.getElementById('userMgmtModal').classList.add('hidden');
+}
+
+function submitResetPassword(role){
+  const newIdMap = { HR: 'hrNewPwd', Invigilator: 'invNewPwd' };
+  const confirmIdMap = { HR: 'hrConfirmPwd', Invigilator: 'invConfirmPwd' };
+  const newPwd = document.getElementById(newIdMap[role]).value;
+  const confirmPwd = document.getElementById(confirmIdMap[role]).value;
+
+  if(!newPwd || !confirmPwd){
+    showToast('Enter and confirm the new password', 'error');
+    return;
+  }
+  if(newPwd.length < 6){
+    showToast('Password must be at least 6 characters', 'error');
+    return;
+  }
+  if(newPwd !== confirmPwd){
+    showToast('Passwords do not match', 'error');
+    return;
+  }
+  if(!adminPassword){
+    showToast('Session expired — please log in again', 'error');
+    return;
+  }
+
+  const fd = new FormData();
+  fd.append('type', 'RESET_PASSWORD');
+  fd.append('password', adminPassword);   // management password, used to authorize this action
+  fd.append('role', role);                // 'HR' or 'Invigilator'
+  fd.append('newPassword', newPwd);
+
+  fetch(SCRIPT_URL, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){
+        showToast('Failed: ' + d.error, 'error');
+        return;
+      }
+      showToast(role + ' password updated successfully', 'success');
+      document.getElementById(newIdMap[role]).value = '';
+      document.getElementById(confirmIdMap[role]).value = '';
+    })
+    .catch(() => showToast('Connection error — check your internet.', 'error'));
 }
 
 document.addEventListener('keydown', e => {
