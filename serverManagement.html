@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMiAzMiI+CiAgPGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+CiAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdG9wLWNvbG9yPSIjMWEzYTVjIi8+PHN0b3Agb2Zmc2V0PSIxMDAlIiBzdG9wLWNvbG9yPSIjMGYyOTQyIi8+CiAgPC9saW5lYXJHcmFkaWVudD48L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjMyIiBoZWlnaHQ9IjMyIiByeD0iOCIgZmlsbD0idXJsKCNnKSIvPgogIDx0ZXh0IHg9IjE2IiB5PSIyMy4wNCIgZm9udC1zaXplPSIxNy42IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0ic2VyaWYiPvCfk4o8L3RleHQ+Cjwvc3ZnPg==">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Server Management</title>
+<link rel="stylesheet" href="css/style.css">
+<script>
+(function(){
+  var t = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
+<style>
+.sm-layout{ display:flex; gap:20px; padding:24px; align-items:flex-start; }
+.sm-sidebar{ width:260px; flex-shrink:0; }
+.sm-sheet-btn{
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; text-align:left; padding:11px 14px; border-radius:10px;
+  border:1.5px solid var(--border); background:var(--card-bg); color:var(--text);
+  font-size:13px; font-weight:600; margin-bottom:8px; cursor:pointer;
+  transition: all var(--transition);
+}
+.sm-sheet-btn:hover{ border-color:var(--accent); }
+.sm-sheet-btn.active{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+.sm-sheet-btn .count{ font-size:11px; font-weight:700; color:var(--text3); background:var(--bg2); padding:2px 8px; border-radius:10px; }
+.sm-sheet-btn.active .count{ color:var(--accent); }
+.sm-sheet-btn .lock{ font-size:11px; margin-left:4px; }
+.sm-main{ flex:1; min-width:0; }
+.sm-toolbar{ display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+.sm-toolbar input[type="text"]{
+  flex:1; min-width:200px; padding:9px 14px; border-radius:8px;
+  border:1.5px solid var(--border); background:var(--bg2); color:var(--text); font-size:13px;
+}
+.sm-table-wrap{ overflow:auto; max-height:70vh; border:1px solid var(--border); border-radius:12px; }
+.sm-table{ width:100%; border-collapse:collapse; font-size:13px; white-space:nowrap; }
+.sm-table th{
+  position:sticky; top:0; background:var(--card-bg); text-align:left; padding:10px 14px;
+  font-size:11px; text-transform:uppercase; letter-spacing:0.05em; color:var(--text3);
+  border-bottom:1.5px solid var(--border); cursor:pointer; user-select:none; z-index:1;
+}
+.sm-table th:hover{ color:var(--accent); }
+.sm-table th .arrow{ opacity:0.4; margin-left:4px; }
+.sm-table th.sorted .arrow{ opacity:1; color:var(--accent); }
+.sm-table td{ padding:10px 14px; border-bottom:1px solid var(--border); color:var(--text); max-width:320px; overflow:hidden; text-overflow:ellipsis; }
+.sm-table tr:hover td{ background:var(--accent-soft); }
+.sm-table td.sm-actions{ white-space:nowrap; }
+.sm-del-btn{
+  background:none; border:1px solid var(--danger); color:var(--danger);
+  border-radius:6px; padding:5px 10px; font-size:12px; cursor:pointer; font-weight:600;
+}
+.sm-del-btn:hover{ background:var(--danger); color:#fff; }
+.sm-empty{ text-align:center; padding:60px 20px; color:var(--text3); }
+.sm-protected-note{
+  display:flex; gap:8px; align-items:center; padding:10px 14px; margin-bottom:14px;
+  background:rgba(255,193,7,0.08); border:1px solid rgba(255,193,7,0.25); border-radius:8px;
+  font-size:12.5px; color:#ffc107;
+}
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="loginScreen" class="auth-screen">
+  <button class="theme-toggle" onclick="toggleTheme()">
+    <span class="icon" id="themeIcon">🌙</span>
+    <span id="themeLabel">Dark Mode</span>
+  </button>
+  <script>
+  (function(){
+    var t = document.documentElement.getAttribute('data-theme') || 'dark';
+    var ic = document.getElementById('themeIcon');
+    var lb = document.getElementById('themeLabel');
+    if(ic) ic.textContent = t === 'dark' ? '🌙' : '☀️';
+    if(lb) lb.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+  })();
+  </script>
+  <div class="auth-card">
+    <div class="brand-icon">🗄️</div>
+    <h2>Server Management</h2>
+    <p class="subtitle">Raw data storage — view, delete, and sort records</p>
+    <div class="form-field">
+      <label>Management Password</label>
+      <div class="password-wrap">
+        <input type="password" id="passInput" placeholder="Enter management password" onkeydown="if(event.key==='Enter')login()">
+        <button class="eye-btn" type="button" onclick="togglePwd('passInput',this)" tabindex="-1">👁️</button>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="login()">Open Server Management →</button>
+  </div>
+</div>
+
+<!-- ========== DASHBOARD ========== -->
+<div id="dashboard" style="display:none;">
+  <nav class="topbar">
+    <div class="topbar-brand">
+      <span style="font-size:22px;">🗄️</span>
+      <h1>Server Management</h1>
+      <span class="badge badge-pass">DATA</span>
+    </div>
+    <div class="topbar-actions">
+      <a href="management.html" class="btn-secondary" style="padding:7px 14px;font-size:12px;text-decoration:none;display:inline-flex;align-items:center;">← Back to Dashboard</a>
+      <button class="btn-secondary" onclick="loadSheetList()" style="padding:7px 14px;font-size:12px;">🔄 Refresh</button>
+      <button class="btn-secondary" onclick="toggleTheme()" style="padding:7px 14px;font-size:12px;">
+        <span id="themeIconDash">🌙</span> Theme
+      </button>
+      <button class="btn-secondary" onclick="smLogout()" style="padding:7px 14px;font-size:12px;background:var(--danger);color:#fff;border-color:var(--danger);">Logout</button>
+    </div>
+  </nav>
+
+  <div class="sm-layout">
+    <div class="sm-sidebar">
+      <div class="card" style="padding:14px;">
+        <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:0.05em;color:var(--text3);margin-bottom:12px;">📁 Data Sheets</h3>
+        <div id="sheetList">Loading…</div>
+      </div>
+    </div>
+
+    <div class="sm-main">
+      <div class="card" style="padding:20px;">
+        <div id="protectedNote"></div>
+        <div class="sm-toolbar">
+          <h3 id="sheetTitle" style="font-size:16px;">Select a sheet</h3>
+          <input type="text" id="sheetSearch" placeholder="🔍 Search this sheet…" oninput="renderSheetTable()" style="display:none;">
+        </div>
+        <div id="sheetTableWrap" class="sm-empty">Choose a sheet from the left to view its data.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="js/config.js"></script>
+<script>
+let adminPassword = '';
+let currentSheetName = '';
+let currentHeaders = [];
+let currentRows = [];      // [{rowIndex, values:[...]}]
+let sortCol = -1;
+let sortDir = 1;
+
+/* ---- THEME ---- */
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute('data-theme') || 'dark';
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+  _syncThemeIcons();
+}
+function _syncThemeIcons(){
+  const t = document.documentElement.getAttribute('data-theme') || 'dark';
+  const ic = document.getElementById('themeIcon');
+  const lb = document.getElementById('themeLabel');
+  if(ic) ic.textContent = t === 'dark' ? '🌙' : '☀️';
+  if(lb) lb.textContent = t === 'dark' ? 'Dark Mode' : 'Light Mode';
+  const icd = document.getElementById('themeIconDash');
+  if(icd) icd.textContent = t === 'dark' ? '🌙' : '☀️';
+}
+
+/* ---- TOAST ---- */
+function showToast(msg, type='info'){
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+/* ---- LOGIN ---- */
+function login(){
+  const pwd = document.getElementById('passInput').value.trim();
+  if(!pwd){ showToast('Enter password', 'error'); return; }
+  adminPassword = pwd;
+  const btn = document.querySelector('#loginScreen .btn-primary');
+  const orig = btn.textContent;
+  btn.textContent = 'Opening…'; btn.disabled = true;
+
+  fetch(SCRIPT_URL + '?mode=sheetlist&password=' + encodeURIComponent(adminPassword))
+    .then(r => r.json())
+    .then(d => {
+      btn.textContent = orig; btn.disabled = false;
+      if(d.error){
+        adminPassword = '';
+        showToast(d.error === 'Unauthorized' ? 'Incorrect password, or this account lacks Management access.' : 'Server error: '+d.error, 'error');
+        return;
+      }
+      sessionStorage.setItem('sm_pwd', adminPassword);
+      _showDashboard(d.sheets || []);
+    })
+    .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword=''; showToast('Connection error — check your internet.', 'error'); });
+}
+
+function smLogout(){
+  adminPassword = '';
+  sessionStorage.removeItem('sm_pwd');
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('dashboard').style.display = 'none';
+  const pi = document.getElementById('passInput');
+  if(pi){ pi.value=''; pi.type='password'; }
+}
+
+function _showDashboard(sheets){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  _syncThemeIcons();
+  renderSheetList(sheets);
+}
+
+document.addEventListener('keydown', e => {
+  if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
+});
+
+// Auto-login on page refresh using sessionStorage — runs once on load only
+(function(){
+  const saved = sessionStorage.getItem('sm_pwd');
+  if(!saved) return;
+  adminPassword = saved;
+  fetch(SCRIPT_URL + '?mode=sheetlist&password=' + encodeURIComponent(adminPassword))
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ sessionStorage.removeItem('sm_pwd'); adminPassword=''; return; }
+      _showDashboard(d.sheets || []);
+    })
+    .catch(() => { adminPassword = ''; });
+})();
+
+/* ---- SHEET LIST ---- */
+function loadSheetList(){
+  fetch(SCRIPT_URL + '?mode=sheetlist&password=' + encodeURIComponent(adminPassword))
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast('Failed to refresh: ' + d.error, 'error'); return; }
+      renderSheetList(d.sheets || []);
+      if(currentSheetName) loadSheetData(currentSheetName);
+    })
+    .catch(() => showToast('Connection error', 'error'));
+}
+
+function renderSheetList(sheets){
+  const el = document.getElementById('sheetList');
+  if(!sheets.length){ el.innerHTML = '<p style="font-size:12px;color:var(--text3);">No sheets found.</p>'; return; }
+  el.innerHTML = sheets.map(s => `
+    <button class="sm-sheet-btn ${s.name===currentSheetName?'active':''}" onclick="loadSheetData('${s.name.replace(/'/g,"\\'")}')">
+      <span>${s.protected ? '🔒 ' : '📄 '}${s.name}</span>
+      <span class="count">${s.rowCount}</span>
+    </button>
+  `).join('');
+}
+
+/* ---- SHEET DATA ---- */
+function loadSheetData(sheetName){
+  currentSheetName = sheetName;
+  sortCol = -1; sortDir = 1;
+  document.getElementById('sheetTitle').textContent = sheetName;
+  document.getElementById('sheetTableWrap').innerHTML = '<div class="sm-empty">Loading…</div>';
+  document.getElementById('sheetSearch').style.display = 'block';
+  document.getElementById('sheetSearch').value = '';
+
+  // re-highlight active sheet button
+  document.querySelectorAll('.sm-sheet-btn').forEach(b => b.classList.remove('active'));
+  const btns = document.querySelectorAll('.sm-sheet-btn');
+  btns.forEach(b => { if(b.textContent.trim().replace('🔒','').replace('📄','').trim().startsWith(sheetName)) b.classList.add('active'); });
+
+  fetch(SCRIPT_URL + '?mode=sheetdata&sheet=' + encodeURIComponent(sheetName) + '&password=' + encodeURIComponent(adminPassword))
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast(d.error, 'error'); document.getElementById('sheetTableWrap').innerHTML = '<div class="sm-empty">'+d.error+'</div>'; return; }
+      currentHeaders = d.headers || [];
+      currentRows = d.rows || [];
+      const note = document.getElementById('protectedNote');
+      note.innerHTML = d.protected
+        ? `<div class="sm-protected-note">🔒 This sheet is protected. Deleting rows directly here is disabled — use the dedicated Session or User Management screens for changes.</div>`
+        : '';
+      renderSheetTable();
+    })
+    .catch(() => showToast('Connection error loading sheet', 'error'));
+}
+
+function renderSheetTable(){
+  const wrap = document.getElementById('sheetTableWrap');
+  if(!currentHeaders.length){ wrap.innerHTML = '<div class="sm-empty">This sheet has no data yet.</div>'; return; }
+
+  const q = (document.getElementById('sheetSearch').value || '').toLowerCase();
+  const isProtected = document.getElementById('protectedNote').innerHTML.length > 0;
+
+  let rows = currentRows.filter(r => !q || r.values.some(v => String(v).toLowerCase().includes(q)));
+
+  if(sortCol >= 0){
+    rows = [...rows].sort((a,b) => {
+      const av = a.values[sortCol], bv = b.values[sortCol];
+      const an = parseFloat(av), bn = parseFloat(bv);
+      let cmp;
+      if(!isNaN(an) && !isNaN(bn)) cmp = an - bn;
+      else cmp = String(av).localeCompare(String(bv));
+      return cmp * sortDir;
+    });
+  }
+
+  if(!rows.length){ wrap.innerHTML = '<div class="sm-empty">No matching rows.</div>'; return; }
+
+  const thead = `<tr>${currentHeaders.map((h,i) => `
+    <th class="${sortCol===i?'sorted':''}" onclick="sortByColumn(${i})">${h || ('Col '+(i+1))}<span class="arrow">${sortCol===i ? (sortDir===1?'▲':'▼') : '⇅'}</span></th>
+  `).join('')}${isProtected ? '' : '<th>Actions</th>'}</tr>`;
+
+  const tbody = rows.map(r => `
+    <tr>
+      ${r.values.map(v => `<td title="${_esc(String(v))}">${_esc(_fmt(v))}</td>`).join('')}
+      ${isProtected ? '' : `<td class="sm-actions"><button class="sm-del-btn" onclick="deleteRow(${r.rowIndex})">🗑 Delete</button></td>`}
+    </tr>
+  `).join('');
+
+  wrap.innerHTML = `<div class="sm-table-wrap"><table class="sm-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table></div>`;
+}
+
+function _fmt(v){
+  if(v === null || v === undefined || v === '') return '—';
+  // Pretty-print obvious JSON blobs (e.g. section breakdowns, ratings) shorter
+  if(typeof v === 'string' && (v.startsWith('{') || v.startsWith('['))){
+    return v.length > 60 ? v.slice(0,60) + '…' : v;
+  }
+  return v;
+}
+function _esc(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function sortByColumn(i){
+  if(sortCol === i) sortDir *= -1;
+  else { sortCol = i; sortDir = 1; }
+  renderSheetTable();
+}
+
+/* ---- DELETE ROW ---- */
+function deleteRow(rowIndex){
+  if(!confirm('Delete this row permanently? This cannot be undone.')) return;
+
+  const fd = new FormData();
+  fd.append('type', 'DELETE_ROW');
+  fd.append('password', adminPassword);
+  fd.append('sheet', currentSheetName);
+  fd.append('rowIndex', rowIndex);
+
+  fetch(SCRIPT_URL, { method:'POST', body: fd })
+    .then(r => r.json())
+    .then(d => {
+      if(d.error){ showToast('Failed: ' + d.error, 'error'); return; }
+      showToast('Row deleted', 'success');
+      loadSheetData(currentSheetName);
+      loadSheetList();
+    })
+    .catch(() => showToast('Connection error — row may not have been deleted.', 'error'));
+}
+</script>
+</body>
+</html>
