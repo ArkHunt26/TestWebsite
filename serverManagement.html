@@ -17,7 +17,12 @@
 </script>
 <style>
 .sm-layout{ display:flex; gap:20px; padding:24px; align-items:flex-start; }
-.sm-sidebar{ width:260px; flex-shrink:0; }
+.sm-sidebar{ width:290px; flex-shrink:0; max-height:calc(100vh - 120px); overflow-y:auto; }
+.sm-section-label{
+  font-size:11px; text-transform:uppercase; letter-spacing:0.06em; color:var(--text3);
+  font-weight:700; margin:18px 0 10px; display:flex; align-items:center; gap:6px;
+}
+.sm-section-label:first-child{ margin-top:0; }
 .sm-sheet-btn{
   display:flex; align-items:center; justify-content:space-between;
   width:100%; text-align:left; padding:11px 14px; border-radius:10px;
@@ -29,7 +34,34 @@
 .sm-sheet-btn.active{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
 .sm-sheet-btn .count{ font-size:11px; font-weight:700; color:var(--text3); background:var(--bg2); padding:2px 8px; border-radius:10px; }
 .sm-sheet-btn.active .count{ color:var(--accent); }
-.sm-sheet-btn .lock{ font-size:11px; margin-left:4px; }
+
+/* Grouped test-session cards */
+.sm-session-card{
+  border:1.5px solid var(--border); border-radius:12px; margin-bottom:10px;
+  overflow:hidden; background:var(--card-bg);
+}
+.sm-session-header{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+  padding:12px 14px; cursor:pointer; transition: background var(--transition);
+}
+.sm-session-header:hover{ background:var(--accent-soft); }
+.sm-session-name{ font-size:13.5px; font-weight:700; color:var(--text); }
+.sm-session-date{ font-size:11px; color:var(--text3); font-weight:500; margin-top:2px; }
+.sm-session-chevron{ font-size:11px; color:var(--text3); transition: transform var(--transition); flex-shrink:0; }
+.sm-session-card.open .sm-session-chevron{ transform: rotate(90deg); }
+.sm-session-body{ display:none; padding:0 10px 10px; }
+.sm-session-card.open .sm-session-body{ display:block; }
+.sm-session-subbtn{
+  display:flex; align-items:center; justify-content:space-between;
+  width:100%; text-align:left; padding:9px 12px; border-radius:8px;
+  border:1px solid var(--border); background:var(--bg2); color:var(--text);
+  font-size:12.5px; font-weight:600; margin-top:6px; cursor:pointer;
+  transition: all var(--transition);
+}
+.sm-session-subbtn:hover{ border-color:var(--accent); }
+.sm-session-subbtn.active{ border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+.sm-session-subbtn .count{ font-size:10.5px; font-weight:700; color:var(--text3); background:var(--card-bg); padding:2px 7px; border-radius:10px; }
+.sm-session-subbtn.active .count{ color:var(--accent); }
 .sm-main{ flex:1; min-width:0; }
 .sm-toolbar{ display:flex; align-items:center; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
 .sm-toolbar input[type="text"]{
@@ -143,6 +175,9 @@ let currentHeaders = [];
 let currentRows = [];      // [{rowIndex, values:[...]}]
 let sortCol = -1;
 let sortDir = 1;
+let lastSheets = [];       // raw sheet list from server
+let configMap = {};        // sheetKey -> {sessionName, createdAt, sessionId}
+let openSessions = new Set(); // which grouped session cards are expanded
 
 /* ---- THEME ---- */
 function toggleTheme(){
@@ -209,7 +244,8 @@ function _showDashboard(sheets){
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('dashboard').style.display = 'block';
   _syncThemeIcons();
-  renderSheetList(sheets);
+  lastSheets = sheets;
+  loadConfigMap(() => renderSheetList(lastSheets));
 }
 
 document.addEventListener('keydown', e => {
@@ -230,28 +266,166 @@ document.addEventListener('keydown', e => {
     .catch(() => { adminPassword = ''; });
 })();
 
+/* ---- CONFIG MAP (session key -> friendly name/date, for grouping labels) ---- */
+function loadConfigMap(cb){
+  fetch(SCRIPT_URL + '?mode=sheetdata&sheet=Config&password=' + encodeURIComponent(adminPassword))
+    .then(r => r.json())
+    .then(d => {
+      configMap = {};
+      if(d.headers && d.rows){
+        const idx = name => d.headers.indexOf(name);
+        const iName = idx('SessionName'), iKey = idx('SheetKey'),
+              iCreated = idx('CreatedAt'), iSid = idx('SessionId');
+        d.rows.forEach(r => {
+          const key = iKey >= 0 ? r.values[iKey] : null;
+          if(!key) return;
+          configMap[key] = {
+            sessionName: (iName >= 0 && r.values[iName]) ? r.values[iName] : key,
+            createdAt:   iCreated >= 0 ? r.values[iCreated] : null,
+            sessionId:   iSid >= 0 ? r.values[iSid] : null
+          };
+        });
+      }
+      cb();
+    })
+    .catch(() => cb()); // non-fatal — falls back to showing raw sheet-key names
+}
+
 /* ---- SHEET LIST ---- */
 function loadSheetList(){
   fetch(SCRIPT_URL + '?mode=sheetlist&password=' + encodeURIComponent(adminPassword))
     .then(r => r.json())
     .then(d => {
       if(d.error){ showToast('Failed to refresh: ' + d.error, 'error'); return; }
-      renderSheetList(d.sheets || []);
-      if(currentSheetName) loadSheetData(currentSheetName);
+      lastSheets = d.sheets || [];
+      loadConfigMap(() => {
+        renderSheetList(lastSheets);
+        if(currentSheetName) loadSheetData(currentSheetName);
+      });
     })
     .catch(() => showToast('Connection error', 'error'));
 }
 
+function _esc(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function _escAttr(s){
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+function _fmtDate(v){
+  const d = new Date(v);
+  if(isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'}) +
+    ' · ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+
+/* Group flat sheet list into: test sessions (Results_X + Evals_X paired),
+   system sheets (Config/Settings/AuditLogs), and anything else/legacy. */
+function _groupSheets(sheets){
+  const sessions = {}; // key -> {results, evals}
+  const system = [];
+  const other = [];
+  const SYSTEM_NAMES = ['Config','Settings','AuditLogs'];
+
+  sheets.forEach(s => {
+    let m;
+    if((m = s.name.match(/^Results_(.+)$/))){
+      const key = m[1];
+      sessions[key] = sessions[key] || {};
+      sessions[key].results = s;
+    } else if((m = s.name.match(/^Evals_(.+)$/))){
+      const key = m[1];
+      sessions[key] = sessions[key] || {};
+      sessions[key].evals = s;
+    } else if(SYSTEM_NAMES.indexOf(s.name) !== -1){
+      system.push(s);
+    } else {
+      other.push(s);
+    }
+  });
+
+  return { sessions, system, other };
+}
+
 function renderSheetList(sheets){
   const el = document.getElementById('sheetList');
-  if(!sheets.length){ el.innerHTML = '<p style="font-size:12px;color:var(--text3);">No sheets found.</p>'; return; }
-  el.innerHTML = sheets.map(s => `
-    <button class="sm-sheet-btn ${s.name===currentSheetName?'active':''}" onclick="loadSheetData('${s.name.replace(/'/g,"\\'")}')">
-      <span>${s.protected ? '🔒 ' : '📄 '}${s.name}</span>
-      <span class="count">${s.rowCount}</span>
-    </button>
-  `).join('');
+  const { sessions, system, other } = _groupSheets(sheets);
+  let keys = Object.keys(sessions);
+
+  // Most recent test session first — by Config's CreatedAt if we have it,
+  // otherwise fall back to the key itself (keys embed a yymmdd date, so
+  // plain reverse-alphabetical still puts newest first).
+  keys.sort((a, b) => {
+    const da = configMap[a] && configMap[a].createdAt ? new Date(configMap[a].createdAt).getTime() : 0;
+    const db = configMap[b] && configMap[b].createdAt ? new Date(configMap[b].createdAt).getTime() : 0;
+    if(da || db) return db - da;
+    return b.localeCompare(a);
+  });
+
+  let html = '';
+
+  if(keys.length){
+    html += `<div class="sm-section-label">🗂️ Test Sessions (${keys.length})</div>`;
+    html += keys.map(key => {
+      const g = sessions[key];
+      const meta = configMap[key];
+      const name = meta ? meta.sessionName : key;
+      const dateStr = meta && meta.createdAt ? _fmtDate(meta.createdAt) : '';
+      const isOpen = openSessions.has(key);
+      return `
+        <div class="sm-session-card ${isOpen ? 'open' : ''}" data-key="${_escAttr(key)}">
+          <div class="sm-session-header" onclick="toggleSession('${_escAttr(key)}')">
+            <div>
+              <div class="sm-session-name">📁 ${_esc(name)}</div>
+              ${dateStr ? `<div class="sm-session-date">${dateStr}</div>` : ''}
+            </div>
+            <span class="sm-session-chevron">▶</span>
+          </div>
+          <div class="sm-session-body">
+            ${g.results ? `<button class="sm-session-subbtn ${g.results.name===currentSheetName?'active':''}" onclick="event.stopPropagation();loadSheetData('${_escAttr(g.results.name)}')">
+              <span>📥 Results</span><span class="count">${g.results.rowCount}</span>
+            </button>` : ''}
+            ${g.evals ? `<button class="sm-session-subbtn ${g.evals.name===currentSheetName?'active':''}" onclick="event.stopPropagation();loadSheetData('${_escAttr(g.evals.name)}')">
+              <span>📝 Evaluations</span><span class="count">${g.evals.rowCount}</span>
+            </button>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  if(system.length){
+    html += `<div class="sm-section-label">⚙️ System</div>`;
+    html += system.map(s => _sheetBtnHtml(s)).join('');
+  }
+
+  if(other.length){
+    html += `<div class="sm-section-label">📄 Other</div>`;
+    html += other.map(s => _sheetBtnHtml(s)).join('');
+  }
+
+  if(!html){
+    html = '<p style="font-size:12px;color:var(--text3);">No sheets found.</p>';
+  }
+
+  el.innerHTML = html;
 }
+
+function _sheetBtnHtml(s){
+  return `<button class="sm-sheet-btn ${s.name===currentSheetName?'active':''}" onclick="loadSheetData('${_escAttr(s.name)}')">
+    <span>${s.protected ? '🔒 ' : '📄 '}${_esc(s.name)}</span>
+    <span class="count">${s.rowCount}</span>
+  </button>`;
+}
+
+function toggleSession(key){
+  if(openSessions.has(key)) openSessions.delete(key);
+  else openSessions.add(key);
+  const card = document.querySelector('.sm-session-card[data-key="' + CSS.escape(key) + '"]');
+  if(card) card.classList.toggle('open');
+}
+
 
 /* ---- SHEET DATA ---- */
 function loadSheetData(sheetName){
@@ -262,10 +436,11 @@ function loadSheetData(sheetName){
   document.getElementById('sheetSearch').style.display = 'block';
   document.getElementById('sheetSearch').value = '';
 
-  // re-highlight active sheet button
-  document.querySelectorAll('.sm-sheet-btn').forEach(b => b.classList.remove('active'));
-  const btns = document.querySelectorAll('.sm-sheet-btn');
-  btns.forEach(b => { if(b.textContent.trim().replace('🔒','').replace('📄','').trim().startsWith(sheetName)) b.classList.add('active'); });
+  // Auto-expand the session group this sheet belongs to (if any), then
+  // re-render the sidebar so the correct card is open and highlighted.
+  const m = sheetName.match(/^(?:Results|Evals)_(.+)$/);
+  if(m) openSessions.add(m[1]);
+  renderSheetList(lastSheets);
 
   fetch(SCRIPT_URL + '?mode=sheetdata&sheet=' + encodeURIComponent(sheetName) + '&password=' + encodeURIComponent(adminPassword))
     .then(r => r.json())
@@ -325,11 +500,6 @@ function _fmt(v){
     return v.length > 60 ? v.slice(0,60) + '…' : v;
   }
   return v;
-}
-function _esc(s){
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
 }
 
 function sortByColumn(i){
