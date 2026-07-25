@@ -225,7 +225,6 @@ function login(){
         showToast(d.error === 'Unauthorized' ? 'Incorrect password, or this account lacks Management access.' : 'Server error: '+d.error, 'error');
         return;
       }
-      sessionStorage.setItem('sm_pwd', adminPassword);
       _showDashboard(d.sheets || []);
     })
     .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword=''; showToast('Connection error — check your internet.', 'error'); });
@@ -233,7 +232,6 @@ function login(){
 
 function smLogout(){
   adminPassword = '';
-  sessionStorage.removeItem('sm_pwd');
   document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('dashboard').style.display = 'none';
   const pi = document.getElementById('passInput');
@@ -252,19 +250,9 @@ document.addEventListener('keydown', e => {
   if(e.key === 'Enter' && document.getElementById('loginScreen').style.display !== 'none') login();
 });
 
-// Auto-login on page refresh using sessionStorage — runs once on load only
-(function(){
-  const saved = sessionStorage.getItem('sm_pwd');
-  if(!saved) return;
-  adminPassword = saved;
-  fetch(SCRIPT_URL + '?mode=sheetlist&password=' + encodeURIComponent(adminPassword))
-    .then(r => r.json())
-    .then(d => {
-      if(d.error){ sessionStorage.removeItem('sm_pwd'); adminPassword=''; return; }
-      _showDashboard(d.sheets || []);
-    })
-    .catch(() => { adminPassword = ''; });
-})();
+// NOTE: there is intentionally NO auto-login here. The login screen always
+// requires the password to be typed and submitted — every page load/refresh
+// starts fully logged out, with no cached-session bypass of any kind.
 
 /* ---- CONFIG MAP (session key -> friendly name/date, for grouping labels) ---- */
 function loadConfigMap(cb){

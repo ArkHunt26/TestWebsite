@@ -319,7 +319,6 @@ function login(){
         showToast(d.error==='Unauthorized' ? 'Incorrect password. Please try again.' : 'Server error: '+d.error, 'error');
         return;
       }
-      sessionStorage.setItem('hrta_pwd', adminPassword);
       _showHrtaDashboard();
     })
     .catch(()=>{ btn.textContent=orig; btn.disabled=false; adminPassword=''; showToast('Connection error — check your internet.','error'); });
@@ -335,24 +334,13 @@ function _showHrtaDashboard(){
   refreshTimer = setInterval(loadData, 5000);
 }
 
-// Auto-login on page load/refresh using sessionStorage
-(function(){
-  const saved = sessionStorage.getItem('hrta_pwd');
-  if(!saved) return;
-  adminPassword = saved;
-  // Silent verify — show dashboard immediately, re-auth in background
-  _showHrtaDashboard();
-  // Validate password is still good (server may have restarted)
-  fetch(SCRIPT_URL+'?mode=sessions&password='+adminPassword)
-    .then(r=>r.json())
-    .then(d=>{ if(d.error){ sessionStorage.removeItem('hrta_pwd'); logout(); }})
-    .catch(()=>{}); // keep session on network error
-})();
+// NOTE: there is intentionally NO auto-login here. The login screen always
+// requires the password to be typed and submitted — every page load/refresh
+// starts fully logged out, with no cached-session bypass of any kind.
 
 function logout(){
   clearInterval(refreshTimer); refreshTimer=null;
   adminPassword=''; settingsLoaded=false; allData={}; sessionsCache=[];
-  sessionStorage.removeItem('hrta_pwd');
   document.getElementById('loginScreen').style.display='flex';
   document.getElementById('dashboard').style.display='none';
   document.getElementById('passInput').value='';

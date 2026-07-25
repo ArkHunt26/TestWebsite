@@ -413,7 +413,6 @@ function login(){
         showToast(d.error === 'Unauthorized' ? 'Incorrect password. Please try again.' : 'Server error: '+d.error, 'error');
         return;
       }
-      sessionStorage.setItem('mgmt_pwd', adminPassword);
       _showMgmtDashboard(d.sessions || []);
     })
     .catch(() => { btn.textContent = orig; btn.disabled = false; adminPassword = ''; showToast('Connection error — check your internet.', 'error'); });
@@ -1019,7 +1018,6 @@ function _showMgmtDashboard(sessions){
 
 function mgmtLogout(){
   adminPassword = '';
-  sessionStorage.removeItem('mgmt_pwd');
   clearInterval(window._mgmtDataInterval);
   clearInterval(window._mgmtSessionInterval);
   window._mgmtDataInterval = null;
@@ -1030,24 +1028,9 @@ function mgmtLogout(){
   if(pi){ pi.value=''; pi.type='password'; }
 }
 
-// Auto-login on page refresh using sessionStorage (cleared when tab closes).
-// Runs exactly once, on initial page load — NOT on every keystroke.
-(function(){
-  const saved = sessionStorage.getItem('mgmt_pwd');
-  if(!saved) return;
-  adminPassword = saved;
-  fetch(SCRIPT_URL + '?mode=sessions&password=' + adminPassword)
-    .then(r => r.json())
-    .then(d => {
-      if(d.error){ sessionStorage.removeItem('mgmt_pwd'); adminPassword=''; return; }
-      _showMgmtDashboard(d.sessions || []);
-    })
-    .catch(() => {
-      // Network error: do NOT grant access. Stay on the login screen and
-      // let the person retry — the server was never actually confirmed.
-      adminPassword = '';
-    });
-})();
+// NOTE: there is intentionally NO auto-login here. The login screen always
+// requires the password to be typed and submitted — every page load/refresh
+// starts fully logged out, with no cached-session bypass of any kind.
 
 </script>
 </body>
